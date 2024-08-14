@@ -28,16 +28,16 @@ DEPFLAGS	=	-c -MT $$@ -MMD -MP -MF $(DEPENDDIR)/$$*.d
 #    SOURCES
 # **************************************************************************** #
 
-MODULES		:=	utils
+MODULES :=	utils
 
-SOURCES		:= 	main \
-				Logger
+SOURCES :=	main \
+			Logger
 
 SOURCES	:= $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
 DEPENDS := $(addprefix $(DEPENDDIR)/, $(SOURCES:.cpp=.d))
 
-SOURCEDIR	+= $(addprefix $(SOURCEDIR)/, $(MODULES))
+SOURCEDIR += $(addprefix $(SOURCEDIR)/, $(MODULES))
 
 vpath %.cpp $(SOURCEDIR)
 
