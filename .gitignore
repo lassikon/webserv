@@ -1,0 +1,4 @@
+webserv
+**/*build
+**/*.deps
+**/*.log

@@ -2,36 +2,36 @@
 #    VARIABLES
 # **************************************************************************** #
 
-NAME 		:=	webserv
-BUILDLOG	:=	build.log
-SOURCEDIR	:=	sources
-BUILDDIR	:=	build
-DEPENDDIR	:=	.deps
+NAME      := webserv
+BUILDLOG  := build.log
+SOURCEDIR := sources
+BUILDDIR  := build
+DEPENDDIR := .deps
 
 # **************************************************************************** #
 #    COMMANDS
 # **************************************************************************** #
 
-RM			:=	rm -rf
-SCREENCLEAR	:=	printf "\033c"
+RM          := rm -rf
+SCREENCLEAR := printf "\033c"
 
 # **************************************************************************** #
 #    COMPILATION
 # **************************************************************************** #
 
-CC			:=	c++
-CFLAGS		:=	-Wall -Werror -Wextra
-DBGFLAGS	=	-g -fsanitize=address
-DEPFLAGS	=	-c -MT $$@ -MMD -MP -MF $(DEPENDDIR)/$$*.d
+CC       := c++
+CFLAGS   := -Wall -Werror -Wextra
+DBGFLAGS = -g -fsanitize=address
+DEPFLAGS = -c -MT $$@ -MMD -MP -MF $(DEPENDDIR)/$$*.d
 
 # **************************************************************************** #
 #    SOURCES
 # **************************************************************************** #
 
-MODULES :=	utils
+MODULES := utils
 
-SOURCES :=	main \
-			Logger
+SOURCES := main \
+           Logger
 
 SOURCES	:= $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
@@ -79,11 +79,6 @@ endef
 # **************************************************************************** #
 #    CLEAN
 # **************************************************************************** #
-
-define clean_cmd
-	@printf "$(R)$(B)Delete: $(T)$(Y)$1$(T)\n"
-	@$(RM) $(NAME)
-endef
 
 clean:
 	@printf "$(R)$(B)Delete: $(T)$(Y)$(DEPENDDIR) $(BUILDDIR) $(BUILDLOG)$(T)\n"
