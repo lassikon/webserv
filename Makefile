@@ -62,7 +62,7 @@ run: all
 
 $(NAME): $(OBJECTS)
 	@$(CC) $(CFLAGS) $^ -o $@
-	@printf "$(C)$(B)Binary:$(T)$(Y) $@\n"
+	@printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
 
 define build_cmd
 $1/%.o: %.cpp | $(BUILDDIR) $(DEPENDDIR)
@@ -80,13 +80,18 @@ endef
 #    CLEAN
 # **************************************************************************** #
 
+define delete_cmd
+	@printf "$(R)$(B)Delete:$(T)$(Y)$1$(T)\n"
+	@$(RM) $1
+endef
+
 clean:
-	@printf "$(R)$(B)Delete: $(T)$(Y)$(DEPENDDIR) $(BUILDDIR) $(BUILDLOG)$(T)\n"
-	@$(RM) $(DEPENDDIR) $(BUILDDIR)  $(BUILDLOG)
+	$(call delete_cmd, $(DEPENDDIR))
+	$(call delete_cmd, $(BUILDDIR))
+	$(call delete_cmd, $(BUILDLOG))
 
 fclean: clean
-	@printf "$(R)$(B)Delete: $(T)$(Y)$(NAME)$(T)\n"
-	@$(RM) $(NAME)
+	$(call delete_cmd, $(NAME))
 
 # **************************************************************************** #
 #    COLORS
