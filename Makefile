@@ -6,7 +6,6 @@ NAME      := webserv
 BUILDLOG  := build.log
 SOURCEDIR := sources
 BUILDDIR  := build
-DEPENDDIR := .deps
 
 # **************************************************************************** #
 #    COMMANDS
@@ -19,10 +18,11 @@ SCREENCLEAR := printf "\033c"
 #    COMPILATION
 # **************************************************************************** #
 
-CC       := c++
-CFLAGS   := -Wall -Werror -Wextra
-DBGFLAGS = -g -fsanitize=address
-DEPFLAGS = -c -MT $$@ -MMD -MP -MF $(DEPENDDIR)/$$*.d
+CC         ?= c++
+CFLAGS     := -g -Wall -Werror -Wextra
+CPPFLAGS   := -c -MMD -MP
+DEBUGFLAGS := -fsanitize=address
+MAKEFLAGS  += -j 4 --no-print-directory
 
 # **************************************************************************** #
 #    SOURCES
@@ -33,11 +33,12 @@ MODULES := utils
 SOURCES := main \
            Logger
 
-SOURCES	:= $(addsuffix .cpp, $(SOURCES))
+SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
-DEPENDS := $(addprefix $(DEPENDDIR)/, $(SOURCES:.cpp=.d))
 
 SOURCEDIR += $(addprefix $(SOURCEDIR)/, $(MODULES))
+
+DEPS := $(OBJECTS:.o=.d)
 
 vpath %.cpp $(SOURCEDIR)
 
@@ -47,26 +48,27 @@ vpath %.cpp $(SOURCEDIR)
 
 all: $(NAME)
 
-re: fclean all
+re: fclean
+	make all
 
-debug: CFLAGS += $(DBGFLAGS)
+debug: CFLAGS += $(DEBUGFLAGS)
 debug: re
 
 run: all
 	$(SCREENCLEAR)
-	@./$(NAME)
+	./$(NAME)
 
 # **************************************************************************** #
 #    BUILD
 # **************************************************************************** #
 
 $(NAME): $(OBJECTS)
-	@$(CC) $(CFLAGS) $^ -o $@
-	@printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
+	$(CC) $(CFLAGS) $^ -o $@
+	printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
 
 define build_cmd
-$1/%.o: %.cpp | $(BUILDDIR) $(DEPENDDIR)
-	@if ! $(CC) $(CFLAGS) $(DEPFLAGS) $$< -o $$@ 2> $(BUILDLOG); then \
+$1/%.o: %.cpp | $(BUILDDIR)
+	if ! $(CC) $(CFLAGS) $(CPPFLAGS) $$< -o $$@ 2> $(BUILDLOG); then \
 		printf "$(R)$(B)\nError: \
 		$(V)Unable to create object file: \
 		$(R)$(B)$$@$(Y)\n\n"; \
@@ -80,18 +82,16 @@ endef
 #    CLEAN
 # **************************************************************************** #
 
-define delete_cmd
-	@printf "$(R)$(B)Delete:$(T)$(Y)$1$(T)\n"
-	@$(RM) $1
-endef
-
 clean:
-	$(call delete_cmd, $(DEPENDDIR))
-	$(call delete_cmd, $(BUILDDIR))
-	$(call delete_cmd, $(BUILDLOG))
+	$(call delete_cmd, $(BUILDDIR), $(BUILDLOG))
 
 fclean: clean
 	$(call delete_cmd, $(NAME))
+
+define delete_cmd
+	printf "$(R)$(B)Delete:$(T)$(Y)$1$2$3$4$5$(T)\n"
+	$(RM) $1 $2 $3 $4 $5
+endef
 
 # **************************************************************************** #
 #    COLORS
@@ -109,11 +109,10 @@ R = \033[31m
 #    UTILS
 # **************************************************************************** #
 
-$(BUILDDIR) $(DEPENDDIR):
-	@mkdir -p $@
+-include $(DEPS)
 
-$(DEPENDS):
-	include $(wildcard $(DEPENDS))
+$(BUILDDIR):
+	mkdir -p $@
 
 $(foreach build, $(BUILDDIR), $(eval $(call build_cmd, $(build))))
 
@@ -124,3 +123,5 @@ $(foreach build, $(BUILDDIR), $(eval $(call build_cmd, $(build))))
 .PHONY: all re
 .PHONY: clean fclean
 .PHONY: debug run
+
+.SILENT:
