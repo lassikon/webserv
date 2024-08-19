@@ -1,0 +1,13 @@
+
+- **`socket`**: Creates an endpoint for communication, returning a socket file descriptor.
+- **`bind`**: Associates a socket with a specific local address and port.
+- **`connect`**: Initiates a connection on a socket to a remote server.
+- **`listen`**: Marks a socket as a passive socket that will accept incoming connection requests.
+- **`accept`**: Accepts a connection on a listening socket, returning a new socket for the communication.
+- **`send`**: Sends data through a connected socket.
+- **`recv`**: Receives data from a connected socket.
+- **`socketpair`**: Creates a pair of connected, indistinguishable sockets for inter-process communication.
+- **`getaddrinfo`**: Resolves a hostname and service to one or more socket addresses.
+- **`getsockname`**: Retrieves the current address to which the socket is bound.
+- **`getprotobyname`**: Retrieves protocol information (like TCP or UDP) based on its name.
+- **`poll`**: Waits for one or more file descriptors to become ready for some class of I/O operation.
