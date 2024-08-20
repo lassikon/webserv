@@ -2,3 +2,4 @@ webserv
 **/*build
 **/*.deps
 **/*.log
+**/*.sh

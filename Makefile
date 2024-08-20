@@ -18,11 +18,11 @@ SCREENCLEAR := printf "\033c"
 #    COMPILATION
 # **************************************************************************** #
 
-CC         ?= c++
+CC         := c++
 CFLAGS     := -g -Wall -Werror -Wextra
 CPPFLAGS   := -c -MMD -MP
 DEBUGFLAGS := -fsanitize=address
-MAKEFLAGS  += -j 4 --no-print-directory
+MAKEFLAGS  += -j4 --no-print-directory
 
 # **************************************************************************** #
 #    SOURCES
