@@ -42,16 +42,16 @@ hints.ai_socktype = SOCK_STREAM;
 hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
 
 GETADDRINFO()
-int getaddrinfo(const char *node,             // host name or IP to connect to
-                const char *service,          // "http" or port number, NULL will return socked addresses without a specific port
-                const struct addrinfo *hints, // optional(?) to specify criteria for the type of addresses returned
-                struct addrinfo **res);       // points to a linked list of addrinfos containing the resolved addresses
+int getaddrinfo(const char *node,     // host name or IP to connect to
+        const char *service,          // "http" or port number, NULL will return socked addresses without a specific port
+        const struct addrinfo *hints, // optional(?) to specify criteria for the type of addresses returned
+        struct addrinfo **res);       // points to a linked list of addrinfos containing the resolved addresses
 returns 0 on success and fills **res, if non-zero use gai_strerror for error message
 
 SOCKET()
-int socket(int domain,      // res->ai_family, PF_INET for IPv4, PF_INET6 for IPv6
-            int type,       // res->ai_socktype, SOCK_STREAM for reliable TCP sockets (send(), recv())
-            int protocol);  // res->ai_protocol, (can be set to 0 when using SOCK_STREAM)
+int socket(int domain,  // res->ai_family, PF_INET for IPv4, PF_INET6 for IPv6
+        int type,       // res->ai_socktype, SOCK_STREAM for reliable TCP sockets (send(), recv())
+        int protocol);  // res->ai_protocol, (can be set to 0 when using SOCK_STREAM)
 returns socket descriptor, or -1 on error
 
 BIND()
@@ -64,3 +64,21 @@ LISTEN()
 int listen(int sockfd,  // socket fd
         int backlog);   // incoming connections queue size default 20(?)
 returns 0 on success, or -1 on error
+
+POLL()
+struct pollfd {
+    int fd;         // the socket descriptor
+    short events;   // bitmap of events we're interested in
+    short revents;  // when poll() returns, bitmap of events that occurred
+};
+
+int poll(struct pollfd *ufds, // array of struct pollfd's
+        unsigned int nfds,    // size of the array
+        int timeout);         // milliseconds
+returns number of fds that have had event occur on them, or -1 on error
+
+ACCEPT()
+int accept(int sockfd,
+        struct sockaddr *addr,
+        socklen_t *addrlen);
+returns new socket fd, or -1 on error
