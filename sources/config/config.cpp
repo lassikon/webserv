@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:39 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/20 21:05:02 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/21 10:48:59 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@ Config::Config(std::string configPath)
     }
     std::stringstream configFileBuffer;
     configFileBuffer << _configFile.rdbuf();
-    //std::cout << configFileBuffer.str() << std::endl;
     parseConfigFile(configFileBuffer);
 }
 
@@ -52,32 +51,27 @@ void Config::parseConfigFile(std::stringstream& configFile)
   
     while(std::getline(configFile, _line))
     {
-
-        //remove comments and whitespaces
+        //remove comments, whitespaces and empty lines
         _line = Utility::trimCommentsAndWhitespaces(_line);
-        //remove empty lines
         if (_line.empty())
             continue;
-        // find [server] block
+        // find [server] block first
         if (_line.compare("[server]") == 0)
         {
             //init server struct and parse server block
             std::cout << "Found server block" << std::endl;
             parseServerBlock(configFile);
-            if (_line.compare("[server]") == 0)
-            {
-                configFile.clear();
-                configFile.seekg(_getlinePos);
-            }
+            // reread same line from parseServerBlock
+            configFile.clear();
+            configFile.seekg(_getlinePos);
         }
         else
         {
             //throw exception config error
-            std::cout << "Error: Invalid key in config file" << std::endl;
+            std::cout << "Error: Invalid header in config file" << std::endl;
+            std::cout << _line << std::endl;
             return;
         }
-        // save get line position
-        _getlinePos = configFile.tellg();
     }
 }
 
@@ -88,9 +82,8 @@ void Config::parseServerBlock(std::stringstream& configFile)
     serverConfig = ServerConfig();
     while(std::getline(configFile, _line))
     {
-        //remove comments and whitespaces
+        //remove comments, whitespaces and empty lines
         _line = Utility::trimCommentsAndWhitespaces(_line);
-        //remove empty lines
         if (_line.empty())
             continue;
         // find [route] block or populate server struct
@@ -109,19 +102,19 @@ void Config::parseServerBlock(std::stringstream& configFile)
             std::cout << "Found route block" << std::endl;
             //init route struct and parse route block
             parseRouteBlock(serverConfig, configFile);
-            std::cout << "Route block parsed" << _line << std::endl;
-            if (_line.compare("[route]") == 0 || _line.compare("[server]") == 0)
-            {
-                std::cout << "Route block found again" << std::endl;
-                configFile.clear();
-                configFile.seekg(_getlinePos);
-            }
+            // reread same line from parseRouteBlock
+            configFile.clear();
+            configFile.seekg(_getlinePos);
         }
+        else if (_line.compare("[server]") == 0)
+            break;
         else
         {
-            break;
+            //throw exception config error
+            std::cout << "Error: Invalid header in server block" << std::endl;
+            return;
         }
-        // save get line position
+        //get previous getline position
         _getlinePos = configFile.tellg();
     }
     //add server to map
@@ -132,9 +125,47 @@ void Config::parseServerBlock(std::stringstream& configFile)
         hostName = serverConfig.serverName;
     _servers[hostName] = serverConfig;
     std::cout << "Server added to map" << std::endl;
-    
 }
 
+//populate route block
+void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& configFile)
+{
+    RouteConfig     routeConfig;
+    
+    routeConfig = RouteConfig();
+    while(std::getline(configFile, _line))
+    {
+        //remove comments and whitespaces and empty lines
+        _line = Utility::trimCommentsAndWhitespaces(_line);
+        if (_line.empty())
+            continue;
+        // populate route struct
+        auto delimiter_pos = _line.find(":");
+        if (delimiter_pos != std::string::npos)
+        {
+            std::cout << "populating route block" << std::endl;
+            std::string key = _line.substr(0, delimiter_pos);
+            key = Utility::trimCommentsAndWhitespaces(key);
+            std::string value = _line.substr(delimiter_pos + 1);
+            value = Utility::trimCommentsAndWhitespaces(value);
+            populateRoute(routeConfig, key, value);
+        }
+        else if(_line.compare("[route]") == 0 || _line.compare("[server]") == 0)
+            break;
+        else
+        {
+            //throw exception config error
+            std::cout << "Error: Invalid header in route block" << std::endl;
+            std::cout << _line << std::endl;
+            return;
+        }
+        //get previous getline position
+        _getlinePos = configFile.tellg();
+    }
+    //add route to server
+    std::cout << "Route added to server" << std::endl;
+    serverConfig.routes.push_back(routeConfig);
+}
 // populate server struct
 void Config::populateServer(ServerConfig& serverConfig, std::string const & key, std::string const & value)
 {
@@ -152,46 +183,10 @@ void Config::populateServer(ServerConfig& serverConfig, std::string const & key,
     {
         //throw exception config error
         std::cout << "Error: Invalid key in server block" << std::endl;
+        std::cout << _line << std::endl;
         return;
     }
         
-}
-
-//populate route block
-void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& configFile)
-{
-    RouteConfig     routeConfig;
-    
-    routeConfig = RouteConfig();
-    while(std::getline(configFile, _line))
-    {
-        //remove comments and whitespaces
-        _line = Utility::trimCommentsAndWhitespaces(_line);
-        //remove empty lines
-        if (_line.empty())
-            continue;
-        // populate route struct
-        auto delimiter_pos = _line.find(":");
-        if (delimiter_pos != std::string::npos)
-        {
-            std::cout << "populating route block" << std::endl;
-            std::string key = _line.substr(0, delimiter_pos);
-            key = Utility::trimCommentsAndWhitespaces(key);
-            std::string value = _line.substr(delimiter_pos + 1);
-            value = Utility::trimCommentsAndWhitespaces(value);
-            populateRoute(routeConfig, key, value);
-        }
-        else
-        {
-            break;
-        }
-        // save get line position
-        _getlinePos = configFile.tellg();
-    }
-    //add route to server
-    serverConfig.routes.push_back(routeConfig);
-    std::cout << "Route added to server" << std::endl;
-    std::cout << "debug " <<_line << std::endl;
 }
 
 // populate route struct
@@ -204,7 +199,8 @@ void Config::populateRoute(RouteConfig& routeConfig, std::string const & key, st
         {"directory_listing", setDirectoryListing},
         {"default_file", setDefaultFile},
         {"upload_path", setUploadPath},
-        {"redirect", setRedirect}
+        {"redirect", setRedirect},
+        {"cgi", setCgi}
     };
     auto it_key = routeStructMap.find(key);
     if (it_key != routeStructMap.end())
@@ -213,6 +209,7 @@ void Config::populateRoute(RouteConfig& routeConfig, std::string const & key, st
     {
         //throw exception config error
         std::cout << "Error: Invalid key in route block" << std::endl;
+        std::cout << _line << std::endl;
         return;
     }
 }
@@ -237,7 +234,6 @@ void Config::setErrorPages(ServerConfig& server, std::string const & value)
     std::getline(ss, error, ' ');
     int error_code = std::stoi(error);
     std::getline(ss, error, ' ');
-    std::cout << "Error: " << error << std::endl;
     server.errorPages[error_code] = error;
 }
 
@@ -292,6 +288,17 @@ void Config::setRedirect(RouteConfig& route, std::string const & value)
     route.redirect = value;
 }
 
+void Config::setCgi(RouteConfig& route, std::string const & value)
+{
+    std::stringstream ss(value);
+    std::string cgi;
+    while (std::getline(ss, cgi, ','))
+    {
+        cgi = Utility::trimCommentsAndWhitespaces(cgi);
+        route.cgi.push_back(cgi);
+    }
+}
+
 void Config::printServerConfig()
 {
     std::cout << "Printing server config" << std::endl;
@@ -319,6 +326,12 @@ void Config::printServerConfig()
             for (const auto& method : route.methods)
             {
                 std::cout << method << " ";
+            }
+            std::cout << std::endl;
+            std::cout << "  Route cgi: ";
+            for (const auto& cgi : route.cgi)
+            {
+                std::cout << cgi << " ";
             }
             std::cout << std::endl;
             std::cout << "  Route root: " << route.root << std::endl;

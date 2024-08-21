@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:16 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/20 20:00:19 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/21 10:44:39 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,7 @@ struct RouteConfig
     std::string                 defaultFile;
     std::string                 uploadPath;
     std::string                 redirect;
+	std::vector<std::string>    cgi;
 };
 
 struct ServerConfig
@@ -77,6 +78,7 @@ class Config
 		static void	setDefaultFile(RouteConfig& route, std::string const & value);
 		static void	setUploadPath(RouteConfig& route, std::string const & value);
 		static void	setRedirect(RouteConfig& route, std::string const & value);
+		static void	setCgi(RouteConfig& route, std::string const & value);
 		
 		// getters
 
