@@ -61,7 +61,7 @@ int main()
             else
             {
                 // Add the new client socket to the poll list
-                std::cout << "client " << nfds << " accepted" << std::endl;
+                std::cout << "client fd " << clientFD << " accepted" << std::endl;
                 fds[nfds].fd = clientFD;
                 fds[nfds].events = POLLIN;
                 nfds++;
@@ -90,13 +90,13 @@ int main()
                     nfds--;
                     if (nfds == 1)
                         allConnectionsClosed = true;
-                    std::cout << "connection closed for client " << i << std::endl;
+                    std::cout << "connection closed for client " << fds[i].fd << std::endl;
                     i--;
                 }
                 else
                 {
                     // Process the received data
-                    std::cout << "receiving data from client " << i << std::endl;
+                    std::cout << "receiving data from client " << fds[i].fd << std::endl;
                     std::cout << "buffer: " << buf;
                     int sentBytes = send(fds[i].fd, buf, receivedBytes, 0);
 
