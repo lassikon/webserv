@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:16 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/21 10:44:39 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/21 19:58:44 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,11 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stack>
 #include <unordered_map>
 #include <functional>
-#include "utility.hpp"
+#include <regex>
+#include "../utils/utility.hpp"
 
 struct RouteConfig
 {
@@ -50,7 +52,7 @@ class Config
 		std::map<std::string, ServerConfig> _servers;
 		std::ifstream						_configFile;
 		std::string     					_line;
-		std::streampos						_getlinePos;
+		std::stack<std::string>				_blockStack;
     public:
         Config(std::string configPath);
         ~Config();
@@ -59,9 +61,11 @@ class Config
 
         void    parseConfigFile(std::stringstream& configFile);
         void    parseServerBlock(std::stringstream& configFile);
-		void	populateServer(ServerConfig& serverConfig, std::string const & key, std::string const & value);
+		void	populateServer(ServerConfig& serverConfig, std::size_t & pos);
         void    parseRouteBlock(ServerConfig& serverConfig ,std::stringstream& configFile);
-		void	populateRoute(RouteConfig& routeConfig, std::string const & key, std::string const & value);
+		void	populateRoute(RouteConfig& routeConfig, std::size_t & pos);
+		void	addServerToMap(ServerConfig& serverConfig);
+		
 		// server struct setters
 		static void	setIP(ServerConfig& server, std::string const & value);
 		static void	setServerName(ServerConfig& server, std::string const & value);
@@ -80,7 +84,6 @@ class Config
 		static void	setRedirect(RouteConfig& route, std::string const & value);
 		static void	setCgi(RouteConfig& route, std::string const & value);
 		
-		// getters
 
 		// print server config
 		void printServerConfig();

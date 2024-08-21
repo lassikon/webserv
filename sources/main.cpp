@@ -6,8 +6,15 @@ int main(int argc, char **argv) {
         std::cerr << "Error: Invalid number of arguments" << std::endl;
         return 1;
     }
-    Config config(argv[1]);
-    config.printServerConfig();
-    return 0;
+    try
+    {
+        Config config(argv[1]);
+        config.printServerConfig();
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        return EXIT_FAILURE;
+    }
     return 0;
 }

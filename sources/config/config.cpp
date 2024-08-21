@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:39 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/21 10:48:59 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/21 20:27:31 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,7 @@ Config::Config(std::string configPath)
 {
     _configFile.open(configPath);
     if (_configFile.fail())
-    {
-        std::cerr << "Error: Could not open config file" << std::endl;
-        return;
-    }
+        throw std::runtime_error("Error: Could not open config file");
     std::stringstream configFileBuffer;
     configFileBuffer << _configFile.rdbuf();
     parseConfigFile(configFileBuffer);
@@ -39,39 +36,26 @@ Config::Config(Config const & src)
 Config & Config::operator=(Config const & src)
 {
     if (this != &src)
-    {
         _servers = src._servers;
-    }
     return *this;
 }
 
 void Config::parseConfigFile(std::stringstream& configFile)
 {    
-    RouteConfig     routeTmp;
-  
     while(std::getline(configFile, _line))
     {
-        //remove comments, whitespaces and empty lines
         _line = Utility::trimCommentsAndWhitespaces(_line);
         if (_line.empty())
             continue;
-        // find [server] block first
         if (_line.compare("[server]") == 0)
         {
-            //init server struct and parse server block
-            std::cout << "Found server block" << std::endl;
+            _blockStack.push("[server]");
             parseServerBlock(configFile);
-            // reread same line from parseServerBlock
-            configFile.clear();
-            configFile.seekg(_getlinePos);
+            if (!_blockStack.empty() && _blockStack.top() == "[server]")
+                throw std::runtime_error("Error: unclosed server block");
         }
         else
-        {
-            //throw exception config error
-            std::cout << "Error: Invalid header in config file" << std::endl;
-            std::cout << _line << std::endl;
-            return;
-        }
+            throw std::runtime_error("Error: no server block header found, " + _line);
     }
 }
 
@@ -79,52 +63,33 @@ void Config::parseServerBlock(std::stringstream& configFile)
 {
     ServerConfig    serverConfig;
     
-    serverConfig = ServerConfig();
+    serverConfig = ServerConfig{};
     while(std::getline(configFile, _line))
     {
-        //remove comments, whitespaces and empty lines
         _line = Utility::trimCommentsAndWhitespaces(_line);
         if (_line.empty())
             continue;
-        // find [route] block or populate server struct
         auto delimiter_pos = _line.find(":");
         if (delimiter_pos != std::string::npos)
-        {
-            std::cout << "Populating server block" << std::endl;
-            std::string key = _line.substr(0, delimiter_pos);
-            key = Utility::trimCommentsAndWhitespaces(key);
-            std::string value = _line.substr(delimiter_pos + 1);
-            value = Utility::trimCommentsAndWhitespaces(value);
-            populateServer(serverConfig, key, value);
-        }
-        else if (_line.compare("[route]") == 0)
-        {
-            std::cout << "Found route block" << std::endl;
-            //init route struct and parse route block
-            parseRouteBlock(serverConfig, configFile);
-            // reread same line from parseRouteBlock
-            configFile.clear();
-            configFile.seekg(_getlinePos);
-        }
+            populateServer(serverConfig, delimiter_pos);
         else if (_line.compare("[server]") == 0)
-            break;
-        else
+            return;
+        else if (_line.compare("[route]") == 0) 
         {
-            //throw exception config error
-            std::cout << "Error: Invalid header in server block" << std::endl;
+            _blockStack.push("[route]");
+            parseRouteBlock(serverConfig, configFile);
+            if (!_blockStack.empty() && _blockStack.top() == "[route]")
+                throw std::runtime_error("Error: unclosed route block");
+        }
+        else if (_line.compare("[/server]") == 0 && (!_blockStack.empty() && _blockStack.top() == "[server]"))
+        {
+            _blockStack.pop();
+            addServerToMap(serverConfig);
             return;
         }
-        //get previous getline position
-        _getlinePos = configFile.tellg();
+        else
+            throw std::runtime_error("Error: Invalid line in server block, " + _line);
     }
-    //add server to map
-    std::string hostName;
-    if (serverConfig.serverName.empty())
-        hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port);
-    else
-        hostName = serverConfig.serverName;
-    _servers[hostName] = serverConfig;
-    std::cout << "Server added to map" << std::endl;
 }
 
 //populate route block
@@ -132,42 +97,29 @@ void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& conf
 {
     RouteConfig     routeConfig;
     
-    routeConfig = RouteConfig();
+    routeConfig = RouteConfig{};
     while(std::getline(configFile, _line))
     {
-        //remove comments and whitespaces and empty lines
         _line = Utility::trimCommentsAndWhitespaces(_line);
         if (_line.empty())
             continue;
-        // populate route struct
         auto delimiter_pos = _line.find(":");
         if (delimiter_pos != std::string::npos)
+            populateRoute(routeConfig, delimiter_pos);
+        else if (_line.compare("[route]") == 0)
+            return;
+        else if(_line.compare("[/route]") == 0 && (!_blockStack.empty() && _blockStack.top() == "[route]"))
         {
-            std::cout << "populating route block" << std::endl;
-            std::string key = _line.substr(0, delimiter_pos);
-            key = Utility::trimCommentsAndWhitespaces(key);
-            std::string value = _line.substr(delimiter_pos + 1);
-            value = Utility::trimCommentsAndWhitespaces(value);
-            populateRoute(routeConfig, key, value);
-        }
-        else if(_line.compare("[route]") == 0 || _line.compare("[server]") == 0)
-            break;
-        else
-        {
-            //throw exception config error
-            std::cout << "Error: Invalid header in route block" << std::endl;
-            std::cout << _line << std::endl;
+            _blockStack.pop();
+            serverConfig.routes.push_back(routeConfig);
             return;
         }
-        //get previous getline position
-        _getlinePos = configFile.tellg();
+        else
+            throw std::runtime_error("Error: Invalid line in route block, " + _line);
     }
-    //add route to server
-    std::cout << "Route added to server" << std::endl;
-    serverConfig.routes.push_back(routeConfig);
 }
 // populate server struct
-void Config::populateServer(ServerConfig& serverConfig, std::string const & key, std::string const & value)
+void Config::populateServer(ServerConfig& serverConfig, std::size_t & pos)
 {
     static std::unordered_map<std::string, std::function<void(ServerConfig&, std::string const &)>> serverStructMap = {
         {"server_ip", setIP},
@@ -176,21 +128,21 @@ void Config::populateServer(ServerConfig& serverConfig, std::string const & key,
         {"error_page", setErrorPages},
         {"client_body_size_limit", setClientBodySizeLimit},
     };
+    std::string key = _line.substr(0, pos);
+    key = Utility::trimCommentsAndWhitespaces(key);
+    std::string value = _line.substr(pos + 1);
+    value = Utility::trimCommentsAndWhitespaces(value);
+    if (value.empty())
+        throw std::runtime_error("Error: Value not found for key " + key);
     auto it_key = serverStructMap.find(key);
     if (it_key != serverStructMap.end())
         it_key->second(serverConfig, value);
     else
-    {
-        //throw exception config error
-        std::cout << "Error: Invalid key in server block" << std::endl;
-        std::cout << _line << std::endl;
-        return;
-    }
-        
+        throw std::runtime_error("Error: Invalid key in server block, " + key);
 }
 
 // populate route struct
-void Config::populateRoute(RouteConfig& routeConfig, std::string const & key, std::string const & value)
+void Config::populateRoute(RouteConfig& routeConfig, std::size_t & pos)
 {
     static std::unordered_map<std::string, std::function<void(RouteConfig&, std::string const &)>> routeStructMap = {
         {"location", setLocation},
@@ -202,29 +154,54 @@ void Config::populateRoute(RouteConfig& routeConfig, std::string const & key, st
         {"redirect", setRedirect},
         {"cgi", setCgi}
     };
+    std::string key = _line.substr(0, pos);
+    key = Utility::trimCommentsAndWhitespaces(key);
+    std::string value = _line.substr(pos + 1);
+    value = Utility::trimCommentsAndWhitespaces(value);
+    if (value.empty())
+        throw std::runtime_error("Error: Value not found for key " + key);
     auto it_key = routeStructMap.find(key);
     if (it_key != routeStructMap.end())
         it_key->second(routeConfig, value);
     else
-    {
-        //throw exception config error
-        std::cout << "Error: Invalid key in route block" << std::endl;
-        std::cout << _line << std::endl;
-        return;
-    }
+        throw std::runtime_error("Error: Invalid key in route block, " + key);
+}
+
+void Config::addServerToMap(ServerConfig& serverConfig)
+{
+    std::string hostName;
+    if (serverConfig.serverName.empty())
+        hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port);
+    else
+        hostName = serverConfig.serverName;
+    if (_servers.find(hostName) != _servers.end())
+        throw std::runtime_error("Error: Server already exists");
+    _servers[hostName] = serverConfig;
 }
 
 // server struct setters
 void Config::setIP(ServerConfig& server, std::string const & value)
 {
+    if (!server.ipAddress.empty())
+        throw std::runtime_error("Error: IP already set");
+    const std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
+    if (!std::regex_match(value, ipPattern))
+        throw std::runtime_error("Error: Invalid IP address");
     server.ipAddress = value;
 }
 void Config::setServerName(ServerConfig& server, std::string const & value)
 {
+    if (!server.serverName.empty())
+        throw std::runtime_error("Error: Server name already set");
     server.serverName = value;
 }
 void Config::setPort(ServerConfig& server, std::string const & value)
 {
+    if (server.port != 0)
+        throw std::runtime_error("Error: Port already set");
+    const std::regex port_pattern("^[0-9]+$");
+    if (!std::regex_match(value, port_pattern))
+        throw std::runtime_error("Error: Invalid port number");
     server.port = std::stoi(value);
 }
 void Config::setErrorPages(ServerConfig& server, std::string const & value)
@@ -239,6 +216,8 @@ void Config::setErrorPages(ServerConfig& server, std::string const & value)
 
 void Config::setClientBodySizeLimit(ServerConfig& server, std::string const & value)
 {
+    if (!server.clientBodySizeLimit.empty())
+        throw std::runtime_error("Error: Client body size limit already set");
     server.clientBodySizeLimit = value;
 }
 
@@ -246,6 +225,8 @@ void Config::setClientBodySizeLimit(ServerConfig& server, std::string const & va
 
 void Config::setLocation(RouteConfig& route, std::string const & value)
 {
+    if (!route.location.empty())
+        throw std::runtime_error("Error: Location already set");
     route.location = value;
 }
 
@@ -262,6 +243,8 @@ void Config::setMethods(RouteConfig& route, std::string const & value)
 
 void Config::setRoot(RouteConfig& route, std::string const & value)
 {
+    if (!route.root.empty())
+        throw std::runtime_error("Error: Root already set");
     route.root = value;
 }
 
@@ -269,22 +252,30 @@ void Config::setDirectoryListing(RouteConfig& route, std::string const & value)
 {
     if (value == "on")
         route.directoryListing = true;
-    else
+    else if (value == "off")
         route.directoryListing = false;
+    else
+        throw std::runtime_error("Error: Invalid value for directory listing");
 }
 
 void Config::setDefaultFile(RouteConfig& route, std::string const & value)
 {
+    if (!route.defaultFile.empty())
+        throw std::runtime_error("Error: Default file already set");
     route.defaultFile = value;
 }
 
 void Config::setUploadPath(RouteConfig& route, std::string const & value)
 {
+    if (!route.uploadPath.empty())
+        throw std::runtime_error("Error: Upload path already set");
     route.uploadPath = value;
 }
 
 void Config::setRedirect(RouteConfig& route, std::string const & value)
 {
+    if (!route.redirect.empty())
+        throw std::runtime_error("Error: Redirect already set");
     route.redirect = value;
 }
 
