@@ -41,7 +41,6 @@ int main()
     {
         std::cout << "poll()" << std::endl;
         int pollCount = poll(fds, nfds, -1);
-
         if (pollCount == -1)
         {
             std::cout << "poll error" << std::endl;
@@ -53,9 +52,7 @@ int main()
         {
             struct sockaddr_storage their_addr;
             socklen_t addr_size = sizeof their_addr;
-            std::cout << "accept()" << std::endl;
             int clientFD = accept(serverFD, (struct sockaddr *)&their_addr, &addr_size);
-
             if (clientFD == -1)
             {
                 std::cout << "accept error" << std::endl;
@@ -64,6 +61,7 @@ int main()
             else
             {
                 // Add the new client socket to the poll list
+                std::cout << "client " << nfds << " accepted" << std::endl;
                 fds[nfds].fd = clientFD;
                 fds[nfds].events = POLLIN;
                 nfds++;
@@ -92,12 +90,13 @@ int main()
                     nfds--;
                     if (nfds == 1)
                         allConnectionsClosed = true;
+                    std::cout << "connection closed for client " << i << std::endl;
                     i--;
-                    std::cout << "connection closed" << std::endl;
                 }
                 else
                 {
                     // Process the received data
+                    std::cout << "receiving data from client " << i << std::endl;
                     std::cout << "buffer: " << buf;
                     int sentBytes = send(fds[i].fd, buf, receivedBytes, 0);
 
