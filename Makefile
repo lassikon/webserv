@@ -38,6 +38,8 @@ OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
 
 SOURCEDIR += $(addprefix $(SOURCEDIR)/, $(MODULES))
 
+INCS := $(addprefix -I, $(SOURCEDIR))
+
 DEPS := $(OBJECTS:.o=.d)
 
 vpath %.cpp $(SOURCEDIR)
@@ -63,7 +65,7 @@ run: all
 # **************************************************************************** #
 
 $(NAME): $(OBJECTS)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $(INCS) $^ -o $@
 	printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
 
 define build_cmd
