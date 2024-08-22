@@ -37,8 +37,7 @@ SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
 
 SOURCEDIR += $(addprefix $(SOURCEDIR)/, $(MODULES))
-
-INCS := $(addprefix -I, $(SOURCEDIR))
+CPPFLAGS  += $(addprefix -I, $(SOURCEDIR))
 
 DEPS := $(OBJECTS:.o=.d)
 
@@ -65,7 +64,7 @@ run: all
 # **************************************************************************** #
 
 $(NAME): $(OBJECTS)
-	$(CC) $(CFLAGS) $(INCS) $^ -o $@
+	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
 	printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
 
 define build_cmd
