@@ -3,6 +3,7 @@
 #include <cstring>
 #include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -12,7 +13,7 @@
 #define LOGFILE "webserv.log"
 
 enum class logLevel { Trace, Debug, Info, Warn, Error, Critical };
-enum class logDetail { None, TimeStamp, SourceFile, LineNumber, All };
+enum class logDetail { None, Time, Time_File, Time_File_Line, All };
 enum class logOutput { ConsoleOnly, FileOnly, Both };
 
 class Logger {
@@ -22,11 +23,11 @@ private:
   logDetail currentDetail;
   std::ofstream logFile;
 
-  std::string levelToString(logLevel Level) const;
-  std::string logTimeStamp(void) const;
   void createLogFile(void);
   void closeLogFile(void);
 
+  std::string levelToString(logLevel Level) const;
+  std::string logTimeStamp(void) const;
   static Logger &getLogInstance(void) {
     static Logger logger;
     return logger;
@@ -44,14 +45,15 @@ public:
 
 private:
   template <typename... Args>
-  void output(logLevel logLvl, int lineNbr, const char *srcFile, Args... args) {
+  void create(logLevel logLvl, int lineNbr, const char *srcFile, Args... args) {
     if (logLvl < currentLevel)
       return;
+    std::string color = GREEN;
     std::ostringstream logEntry;
+    logEntry << color << "[" << levelToString(logLvl) << "]";
     logEntry << "[" << logTimeStamp() << "]"
              << "[" << srcFile << "]"
-             << "[LINE: " << lineNbr << "]"
-             << "[" << levelToString(logLvl) << "] ";
+             << "[line:" << lineNbr << "]";
     (logEntry << ... << args);
     if (currentOutput != logOutput::FileOnly)
       std::cerr << logEntry.str() << std::endl;
@@ -63,7 +65,7 @@ public:
   template <typename... Args>
   static void Log(logLevel logLvl, int lineNbr, const char *srcFile,
                   Args... args) {
-    getLogInstance().output(logLvl, lineNbr, srcFile, args...);
+    getLogInstance().create(logLvl, lineNbr, srcFile, args...);
   }
 };
 
