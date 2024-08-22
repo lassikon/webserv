@@ -29,10 +29,14 @@ MAKEFLAGS  += -j4 --no-print-directory
 #    SOURCES
 # **************************************************************************** #
 
-MODULES := utils
+MODULES := utils \
+					network
 
 SOURCES := main \
-           Logger
+           Logger \
+		   Server \
+		   Client \
+			 PollManager
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))

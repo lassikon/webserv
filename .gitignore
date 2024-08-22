@@ -5,4 +5,5 @@ webserv
 **/*.log
 **/*.txt
 **/*.sh
-**/.vscode/settings.json
+.vscode/settings.json
+.clang-format
