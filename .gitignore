@@ -3,4 +3,5 @@ webserv
 **/*.deps
 **/dump*
 **/*.log
+**/*.txt
 **/*.sh

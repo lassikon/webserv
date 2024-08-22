@@ -37,7 +37,8 @@ SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
 
 SOURCEDIR += $(addprefix $(SOURCEDIR)/, $(MODULES))
-CPPFLAGS  += $(addprefix -I, $(SOURCEDIR))
+
+INCS := $(addprefix -I, $(SOURCEDIR))
 
 DEPS := $(OBJECTS:.o=.d)
 
@@ -64,12 +65,12 @@ run: all
 # **************************************************************************** #
 
 $(NAME): $(OBJECTS)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@
 	printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
 
 define build_cmd
 $1/%.o: %.cpp | $(BUILDDIR)
-	if ! $(CC) $(CFLAGS) $(CPPFLAGS) $$< -o $$@ 2> $(BUILDLOG); then \
+	if ! $(CC) $(CFLAGS) $(CPPFLAGS) $(INCS) $$< -o $$@ 2> $(BUILDLOG); then \
 		printf "$(R)$(B)\nError: \
 		$(V)Unable to create object file: \
 		$(R)$(B)$$@$(Y)\n\n"; \
