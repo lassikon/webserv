@@ -4,8 +4,9 @@
 
 class Client {
  private:
- public:
   int fd;
+
+ public:
   Client(int socketFD);
   ~Client(void);
   bool operator==(const Client& other);

@@ -63,7 +63,7 @@ void Server::acceptConnection(PollManager& pollManager) {
 void Server::handleClient(PollManager& pollManager, int clientFD) {
   Client* client = nullptr;
   for (Client& c : clients) {
-    if (c.fd == clientFD) {
+    if (c.getFD() == clientFD) {
       client = &c;
       break;
     }
