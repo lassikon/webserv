@@ -4,6 +4,7 @@
 
 NAME      := webserv
 BUILDLOG  := build.log
+SERVERLOG := webserv.log
 SOURCEDIR := sources
 BUILDDIR  := build
 
@@ -88,7 +89,7 @@ clean:
 	$(call delete_cmd, $(BUILDDIR), $(BUILDLOG))
 
 fclean: clean
-	$(call delete_cmd, $(NAME))
+	$(call delete_cmd, $(NAME), $(SERVERLOG))
 
 define delete_cmd
 	printf "$(R)$(B)Delete:$(T)$(Y)$1$2$3$4$5$(T)\n"
