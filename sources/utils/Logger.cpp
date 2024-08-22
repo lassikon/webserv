@@ -3,7 +3,9 @@
 Logger::Logger(void) {
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
-  currentDetail = logDetail::All;
+  enabledDetail[(int)logDetail::TimeStamp] = true;
+  enabledDetail[(int)logDetail::SourceFile] = true;
+  enabledDetail[(int)logDetail::LineNumber] = true;
   if (currentOutput != logOutput::ConsoleOnly)
     createLogFile();
 }
@@ -11,9 +13,9 @@ Logger::Logger(void) {
 Logger::~Logger(void) { closeLogFile(); }
 
 void Logger::createLogFile(void) {
-  logFile.open(LOGFILE, std::fstream::out);
+  logFile.open(logFileName, std::fstream::out);
   if (logFile.fail())
-    std::cerr << LOGFILE << ": " << strerror(errno) << std::endl;
+    std::cerr << logFileName << ": " << strerror(errno) << std::endl;
 }
 
 void Logger::closeLogFile(void) {
@@ -23,31 +25,46 @@ void Logger::closeLogFile(void) {
 
 void Logger::setLogLevel(logLevel newLevel) { currentLevel = newLevel; }
 void Logger::setLogOutput(logOutput newOutput) { currentOutput = newOutput; }
-void Logger::setLogDetail(logDetail newDetail) { currentDetail = newDetail; }
 
-std::string Logger::levelToString(logLevel Level) const {
+std::vector<std::string> Logger::getLogInfo(logLevel Level) {
+  std::vector<std::string> logInfo;
   switch (Level) {
   case logLevel::Trace:
-    return "TRACE";
+    logInfo.push_back("TRACE");
+    logInfo.push_back(CYAN);
+    return logInfo;
   case logLevel::Debug:
-    return "DEBUG";
+    logInfo.push_back("DEBUG");
+    logInfo.push_back(GREEN);
+    return logInfo;
   case logLevel::Info:
-    return "INFO";
+    logInfo.push_back("INFO");
+    logInfo.push_back(BLUE);
+    return logInfo;
   case logLevel::Warn:
-    return "WARNING";
+    logInfo.push_back("WARNING");
+    logInfo.push_back(YELLOW);
+    return logInfo;
   case logLevel::Error:
-    return "ERROR";
+    logInfo.push_back("ERROR");
+    logInfo.push_back(RED);
+    return logInfo;
   case logLevel::Critical:
-    return "CRITICAL";
+    logInfo.push_back("CRITICAL");
+    logInfo.push_back(RED);
+    return logInfo;
   default:
-    return "UNKNOWN";
+    logInfo.push_back("UNKNOWN");
+    logInfo.push_back(WHITE);
+    return logInfo;
   }
 }
 
-std::string Logger::logTimeStamp(void) const {
+std::string Logger::getTimeStamp(void) const {
   time_t now = time(0);
   tm *timeInfo = localtime(&now);
   char timeStamp[20];
-  strftime(timeStamp, sizeof(timeStamp), "%Y-%m-%d %H:%M:%S", timeInfo);
+  strftime(timeStamp, sizeof(timeStamp),
+    "%Y-%m-%d %H:%M:%S", timeInfo);
   return timeStamp;
 }
