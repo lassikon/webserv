@@ -4,6 +4,7 @@
 
 NAME      := webserv
 BUILDLOG  := build.log
+SERVERLOG := webserv.log
 SOURCEDIR := sources
 BUILDDIR  := build
 
@@ -22,22 +23,26 @@ CC         := c++
 CFLAGS     := -g -Wall -Werror -Wextra
 CPPFLAGS   := -c -MMD -MP
 DEBUGFLAGS := -fsanitize=address
-MAKEFLAGS  += -j 4 --no-print-directory
+MAKEFLAGS  += -j4 --no-print-directory
 
 # **************************************************************************** #
 #    SOURCES
 # **************************************************************************** #
 
 MODULES := utils \
-		   config
+		   config 
+
 SOURCES := main \
-           utility \
-		   config
+           Logger \
+		   config \
+		   utility
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
 
 SOURCEDIR += $(addprefix $(SOURCEDIR)/, $(MODULES))
+
+INCS := $(addprefix -I, $(SOURCEDIR))
 
 DEPS := $(OBJECTS:.o=.d)
 
@@ -69,7 +74,7 @@ $(NAME): $(OBJECTS)
 
 define build_cmd
 $1/%.o: %.cpp | $(BUILDDIR)
-	if ! $(CC) $(CFLAGS) $(CPPFLAGS) $$< -o $$@ 2> $(BUILDLOG); then \
+	if ! $(CC) $(CFLAGS) $(CPPFLAGS) $(INCS) $$< -o $$@ 2> $(BUILDLOG); then \
 		printf "$(R)$(B)\nError: \
 		$(V)Unable to create object file: \
 		$(R)$(B)$$@$(Y)\n\n"; \
@@ -87,7 +92,7 @@ clean:
 	$(call delete_cmd, $(BUILDDIR), $(BUILDLOG))
 
 fclean: clean
-	$(call delete_cmd, $(NAME))
+	$(call delete_cmd, $(NAME), $(SERVERLOG))
 
 define delete_cmd
 	printf "$(R)$(B)Delete:$(T)$(Y)$1$2$3$4$5$(T)\n"

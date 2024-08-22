@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:39 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/21 20:27:31 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/22 13:58:13 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 Config::Config(std::string configPath)
 {
+    LOG_DEBUG("Config constructor");
     _configFile.open(configPath);
     if (_configFile.fail())
         throw std::runtime_error("Error: Could not open config file");
@@ -42,9 +43,8 @@ Config & Config::operator=(Config const & src)
 
 void Config::parseConfigFile(std::stringstream& configFile)
 {    
-    while(std::getline(configFile, _line))
+    while(callGetLine(configFile))
     {
-        _line = Utility::trimCommentsAndWhitespaces(_line);
         if (_line.empty())
             continue;
         if (_line.compare("[server]") == 0)
@@ -64,9 +64,8 @@ void Config::parseServerBlock(std::stringstream& configFile)
     ServerConfig    serverConfig;
     
     serverConfig = ServerConfig{};
-    while(std::getline(configFile, _line))
+    while(callGetLine(configFile))
     {
-        _line = Utility::trimCommentsAndWhitespaces(_line);
         if (_line.empty())
             continue;
         auto delimiter_pos = _line.find(":");
@@ -98,9 +97,8 @@ void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& conf
     RouteConfig     routeConfig;
     
     routeConfig = RouteConfig{};
-    while(std::getline(configFile, _line))
+    while(callGetLine(configFile))
     {
-        _line = Utility::trimCommentsAndWhitespaces(_line);
         if (_line.empty())
             continue;
         auto delimiter_pos = _line.find(":");
@@ -132,11 +130,13 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t & pos)
     key = Utility::trimCommentsAndWhitespaces(key);
     std::string value = _line.substr(pos + 1);
     value = Utility::trimCommentsAndWhitespaces(value);
-    if (value.empty())
-        throw std::runtime_error("Error: Value not found for key " + key);
     auto it_key = serverStructMap.find(key);
     if (it_key != serverStructMap.end())
+    {   
+        if (value.empty())
+            throw std::runtime_error("Error: Value not found for key " + key);
         it_key->second(serverConfig, value);
+    }
     else
         throw std::runtime_error("Error: Invalid key in server block, " + key);
 }
@@ -158,19 +158,21 @@ void Config::populateRoute(RouteConfig& routeConfig, std::size_t & pos)
     key = Utility::trimCommentsAndWhitespaces(key);
     std::string value = _line.substr(pos + 1);
     value = Utility::trimCommentsAndWhitespaces(value);
-    if (value.empty())
-        throw std::runtime_error("Error: Value not found for key " + key);
     auto it_key = routeStructMap.find(key);
     if (it_key != routeStructMap.end())
+    {
+        if (value.empty())
+            throw std::runtime_error("Error: Value not found for key " + key);
         it_key->second(routeConfig, value);
+    }
     else
         throw std::runtime_error("Error: Invalid key in route block, " + key);
 }
-
+// NGINX uses ip:port first, server_name second and default server last
 void Config::addServerToMap(ServerConfig& serverConfig)
 {
     std::string hostName;
-    if (serverConfig.serverName.empty())
+    if (serverConfig.port != 0)
         hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port);
     else
         hostName = serverConfig.serverName;
@@ -193,6 +195,10 @@ void Config::setServerName(ServerConfig& server, std::string const & value)
 {
     if (!server.serverName.empty())
         throw std::runtime_error("Error: Server name already set");
+ 
+    const std::regex serverNamePattern("^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
+    if (!std::regex_match(value, serverNamePattern))
+        throw std::runtime_error("Error: Invalid server name");
     server.serverName = value;
 }
 void Config::setPort(ServerConfig& server, std::string const & value)
@@ -202,18 +208,32 @@ void Config::setPort(ServerConfig& server, std::string const & value)
     const std::regex port_pattern("^[0-9]+$");
     if (!std::regex_match(value, port_pattern))
         throw std::runtime_error("Error: Invalid port number");
+    if (std::stoi(value) < 0 || std::stoi(value) > 65535)
+        throw std::runtime_error("Error: Port number out of range");
     server.port = std::stoi(value);
 }
 void Config::setErrorPages(ServerConfig& server, std::string const & value)
 {
+    if (value.empty())
+        throw std::runtime_error("Error: Error code not found");
     std::stringstream ss(value);
     std::string error;
     std::getline(ss, error, ' ');
+    const std::regex error_pattern("^[0-9]+$");
+    if (!std::regex_match(error, error_pattern))
+        throw std::runtime_error("Error: Invalid error code");
     int error_code = std::stoi(error);
+    if (server.errorPages.find(error_code) != server.errorPages.end())
+        throw std::runtime_error("Error: Error code already set");
     std::getline(ss, error, ' ');
-    server.errorPages[error_code] = error;
-}
+    if (error.empty())
+        throw std::runtime_error("Error: Error page path not found");
+    //std::filesystem::path path(error);
 
+    if (server.errorPagesInternal.find(error_code) != server.errorPagesInternal.end())
+        server.errorPages[error_code] = error;
+}
+// client body size limit is set in bytes, kilobytes, megabytes
 void Config::setClientBodySizeLimit(ServerConfig& server, std::string const & value)
 {
     if (!server.clientBodySizeLimit.empty())
@@ -290,9 +310,19 @@ void Config::setCgi(RouteConfig& route, std::string const & value)
     }
 }
 
+bool Config::callGetLine(std::stringstream& configFile)
+{
+    //handle unexpected EOF
+    if (!std::getline(configFile, _line))
+        return false;
+    _line = Utility::trimCommentsAndWhitespaces(_line);
+    _lineNumber++;
+    return true;
+}
+
 void Config::printServerConfig()
 {
-    std::cout << "Printing server config" << std::endl;
+    LOG_DEBUG("Printing server config");
     int serverCount = 1;
     for (const auto& server_pair : _servers)
     {

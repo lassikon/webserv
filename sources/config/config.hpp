@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:16 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/21 19:58:44 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/22 13:05:43 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,10 @@
 #include <unordered_map>
 #include <functional>
 #include <regex>
+#include <filesystem>
+
 #include "../utils/utility.hpp"
+#include <Logger.hpp>
 
 struct RouteConfig
 {
@@ -41,6 +44,15 @@ struct ServerConfig
     std::string                     ipAddress;
     std::string                     serverName;
     int                             port;
+	std::map<int, std::string>      errorPagesInternal = {{200, "/pages/200.html"}, // ok
+									{400, "/pages/400.html"}, // bad request
+									{413, "/pages/413.html"}, // request entity too large
+									{413, "/pages/413.html"}, // request entity too large
+									{404, "/pages/404.html"}, // not found
+									{405, "/pages/405.html"}, // method not allowed
+									{500, "/pages/500.html"}, // internal server error
+									{501, "/pages/501.html"}}; // not implemented
+									
     std::map<int, std::string>      errorPages;
     std::string                     clientBodySizeLimit;
     std::vector<RouteConfig>        routes;
@@ -53,6 +65,7 @@ class Config
 		std::ifstream						_configFile;
 		std::string     					_line;
 		std::stack<std::string>				_blockStack;
+		int									_lineNumber = 0;
     public:
         Config(std::string configPath);
         ~Config();
@@ -65,6 +78,9 @@ class Config
         void    parseRouteBlock(ServerConfig& serverConfig ,std::stringstream& configFile);
 		void	populateRoute(RouteConfig& routeConfig, std::size_t & pos);
 		void	addServerToMap(ServerConfig& serverConfig);
+
+		// helper function
+		bool	callGetLine(std::stringstream& configFile);
 		
 		// server struct setters
 		static void	setIP(ServerConfig& server, std::string const & value);
