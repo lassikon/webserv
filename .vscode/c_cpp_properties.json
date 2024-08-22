@@ -1,0 +1,18 @@
+{
+    "configurations": [
+      {
+        "name": "mine",
+        "includePath": [
+          "${workspaceFolder}/sources",
+          "${workspaceFolder}/sources/utils",
+		  "${workspaceFolder}/sources/network"
+        ],
+        "defines": [],
+        "compilerPath": "/usr/bin/gcc",
+        "cStandard": "${default}",
+        "cppStandard": "${default}",
+        "intelliSenseMode": "${default}"
+      }
+    ],
+    "version": 4
+  }

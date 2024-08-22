@@ -5,3 +5,4 @@ webserv
 **/*.log
 **/*.txt
 **/*.sh
+**/.vscode/settings.json
