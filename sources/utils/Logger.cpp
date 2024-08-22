@@ -1,7 +1,9 @@
 #include <Logger.hpp>
 
-Logger::Logger(void)
-    : currentLevel(logLevel::Trace), currentOutput(logOutput::Both) {
+Logger::Logger(void) {
+  currentLevel = logLevel::Trace;
+  currentOutput = logOutput::Both;
+  currentDetail = logDetail::All;
   if (currentOutput != logOutput::ConsoleOnly)
     createLogFile();
 }
@@ -21,6 +23,7 @@ void Logger::closeLogFile(void) {
 
 void Logger::setLogLevel(logLevel newLevel) { currentLevel = newLevel; }
 void Logger::setLogOutput(logOutput newOutput) { currentOutput = newOutput; }
+void Logger::setLogDetail(logDetail newDetail) { currentDetail = newDetail; }
 
 std::string Logger::levelToString(logLevel Level) const {
   switch (Level) {
