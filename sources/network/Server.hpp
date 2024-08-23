@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <vector>
 
 #define PORT "3490"
 #define BACKLOG 10

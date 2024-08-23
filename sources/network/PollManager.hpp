@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Server.hpp>
+#include <vector>
 
 class PollManager {
  private:
