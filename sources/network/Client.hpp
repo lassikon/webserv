@@ -11,6 +11,6 @@ class Client {
   ~Client(void);
   bool operator==(const Client& other);
   bool receiveData(void);
-  int getFD(void);
-  void setFD(int fd);
+  int getFd(void);
+  void setFd(int fd);
 };

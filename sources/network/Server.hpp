@@ -22,7 +22,7 @@ class PollManager;
 class Server {
  private:
   std::string port;
-  int sockFD;
+  int sockFd;
   std::vector<Client> clients;
 
  public:
@@ -33,6 +33,6 @@ class Server {
  private:
   void setup(void);
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& PollManager, int clientFD);
+  void handleClient(PollManager& PollManager, int clientFd);
   void cleanup(void);
 };

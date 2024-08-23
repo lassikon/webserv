@@ -1,21 +1,20 @@
 #include "PollManager.hpp"
 
-PollManager::PollManager(void) { pollFDs.reserve(MAX_CLIENTS); }
+PollManager::PollManager(void) { pollFds.reserve(MAX_CLIENTS); }
 
 PollManager::~PollManager(void) {}
 
-void PollManager::addFD(int fd, short events) {
-  struct pollfd pFD = {fd, events, 0};
-  pollFDs.push_back(pFD);
+void PollManager::addFd(int fd, short events) {
+  struct pollfd pFd = {fd, events, 0};
+  pollFds.push_back(pFd);
 }
 
-void PollManager::removeFD(int fd) {
-  pollFDs.erase(
-      std::remove_if(pollFDs.begin(), pollFDs.end(), [fd](pollfd& pfd) { return pfd.fd == fd; }),
-      pollFDs.end());
-  LOG_INFO("connection closed for client fd ", fd);
+void PollManager::removeFd(int fd) {
+  pollFds.erase(
+      std::remove_if(pollFds.begin(), pollFds.end(), [fd](pollfd& pfd) { return pfd.fd == fd; }),
+      pollFds.end());
 }
 
-int PollManager::pollFDsCount(void) { return poll(pollFDs.data(), pollFDs.size(), -1); }
+int PollManager::pollFdsCount(void) { return poll(pollFds.data(), pollFds.size(), -1); }
 
-std::vector<struct pollfd>& PollManager::getPollFDs() { return pollFDs; }
+std::vector<struct pollfd>& PollManager::getPollFds() { return pollFds; }

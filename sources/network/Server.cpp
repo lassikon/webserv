@@ -1,6 +1,6 @@
 #include <Server.hpp>
 
-Server::Server(const std::string& port) : port(port), sockFD(-1) {}
+Server::Server(const std::string& port) : port(port), sockFd(-1) {}
 
 Server::~Server(void) {}
 
@@ -10,17 +10,17 @@ void Server::run(void) {
   // TODO: signal handling
 
   PollManager pollManager;
-  pollManager.addFD(sockFD, POLLIN);
+  pollManager.addFd(sockFd, POLLIN);
 
   while (true) {
-    if (pollManager.pollFDsCount() == -1) {
+    if (pollManager.pollFdsCount() == -1) {
       // error handling here
       break;
     }
 
-    for (auto& pfd : pollManager.getPollFDs()) {
+    for (auto& pfd : pollManager.getPollFds()) {
       if (pfd.revents & POLLIN) {
-        if (pfd.fd == sockFD) {
+        if (pfd.fd == sockFd) {
           acceptConnection(pollManager);
         } else {
           handleClient(pollManager, pfd.fd);
@@ -42,28 +42,28 @@ void Server::setup(void) {
   hints.ai_flags = AI_PASSIVE;
 
   getaddrinfo(NULL, PORT, &hints, &res);
-  sockFD = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  bind(sockFD, res->ai_addr, res->ai_addrlen);
-  listen(sockFD, BACKLOG);
+  sockFd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  bind(sockFd, res->ai_addr, res->ai_addrlen);
+  listen(sockFd, BACKLOG);
   freeaddrinfo(res);
 }
 
 void Server::acceptConnection(PollManager& pollManager) {
   struct sockaddr_storage their_addr {};
   socklen_t addr_size = sizeof(their_addr);
-  int newFD = accept(sockFD, (struct sockaddr*)&their_addr, &addr_size);
+  int newFD = accept(sockFd, (struct sockaddr*)&their_addr, &addr_size);
 
   if (newFD != -1) {
     clients.emplace_back(newFD);
-    pollManager.addFD(newFD, POLLIN);
+    pollManager.addFd(newFD, POLLIN);
     LOG_INFO("accepted client fd ", newFD);
   }
 }
 
-void Server::handleClient(PollManager& pollManager, int clientFD) {
+void Server::handleClient(PollManager& pollManager, int clientFd) {
   Client* client = nullptr;
   for (Client& c : clients) {
-    if (c.getFD() == clientFD) {
+    if (c.getFd() == clientFd) {
       client = &c;
       break;
     }
@@ -71,7 +71,8 @@ void Server::handleClient(PollManager& pollManager, int clientFD) {
 
   if (client) {
     if (!client->receiveData()) {
-      pollManager.removeFD(client->getFD());
+      pollManager.removeFd(clientFd);
+      LOG_INFO("connection closed for client fd ", clientFd);
       auto it = std::find(clients.begin(), clients.end(), *client);
       if (it != clients.end()) {
         clients.erase(it);
@@ -80,4 +81,4 @@ void Server::handleClient(PollManager& pollManager, int clientFD) {
   }
 }
 
-void Server::cleanup(void) { close(sockFD); }
+void Server::cleanup(void) { close(sockFd); }

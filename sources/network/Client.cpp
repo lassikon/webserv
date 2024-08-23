@@ -21,6 +21,6 @@ bool Client::receiveData(void) {
   return true;
 }
 
-int Client::getFD(void) { return fd; }
+int Client::getFd(void) { return fd; }
 
-void Client::setFD(int fd) { this->fd = fd; }
+void Client::setFd(int fd) { this->fd = fd; }
