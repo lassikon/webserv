@@ -7,7 +7,7 @@ class Client {
   int fd;
 
  public:
-  Client(int socketFD);
+  Client(int socketFd);
   ~Client(void);
   bool operator==(const Client& other);
   bool receiveData(void);

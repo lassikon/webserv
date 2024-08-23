@@ -61,24 +61,36 @@ void Server::acceptConnection(PollManager& pollManager) {
 }
 
 void Server::handleClient(PollManager& pollManager, int clientFd) {
-  Client* client = nullptr;
-  for (Client& c : clients) {
-    if (c.getFd() == clientFd) {
-      client = &c;
-      break;
-    }
-  }
-
-  if (client) {
-    if (!client->receiveData()) {
-      pollManager.removeFd(clientFd);
+  auto it = std::find_if(clients.begin(), clients.end(),
+                         [clientFd](Client& c) { return c.getFd() == clientFd; });
+  if (it != clients.end()) {
+    if (!it->receiveData()) {
       LOG_INFO("connection closed for client fd ", clientFd);
-      auto it = std::find(clients.begin(), clients.end(), *client);
-      if (it != clients.end()) {
-        clients.erase(it);
-      }
+      pollManager.removeFd(it->getFd());
+      clients.erase(it);
     }
   }
 }
+
+// void Server::handleClient(PollManager& pollManager, int clientFd) {
+//   Client* client = nullptr;
+//   for (Client& c : clients) {
+//     if (c.getFd() == clientFd) {
+//       client = &c;
+//       break;
+//     }
+//   }
+
+//   if (client) {
+//     if (!client->receiveData()) {
+//       pollManager.removeFd(clientFd);
+//       LOG_INFO("connection closed for client fd ", clientFd);
+//       auto it = std::find(clients.begin(), clients.end(), *client);
+//       if (it != clients.end()) {
+//         clients.erase(it);
+//       }
+//     }
+//   }
+// }
 
 void Server::cleanup(void) { close(sockFd); }

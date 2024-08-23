@@ -1,6 +1,6 @@
 #include <Client.hpp>
 
-Client::Client(int socket_fd) : fd(socket_fd) {}
+Client::Client(int socketFd) : fd(socketFd) {}
 
 Client::~Client(void) { close(fd); }
 
@@ -8,10 +8,11 @@ bool Client::operator==(const Client& other) { return fd == other.fd; }
 
 bool Client::receiveData(void) {
   char buf[1024];
+  memset(buf, 0, sizeof(buf));
   int nbytes = recv(fd, buf, sizeof(buf), 0);
   if (nbytes <= 0) {
-    if (nbytes == 0 || (errno != EWOULDBLOCK && errno != EAGAIN)) {
-      return false;  // Connection closed or error
+    if (nbytes == 0) {  //|| (errno != EWOULDBLOCK && errno != EAGAIN)) {
+      return false;     // Connection closed or error
     }
   } else {
     LOG_INFO("receiving data from client fd ", fd, ", buffer: ", buf);

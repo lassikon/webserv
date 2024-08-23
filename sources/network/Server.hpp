@@ -33,6 +33,6 @@ class Server {
  private:
   void setup(void);
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& PollManager, int clientFd);
+  void handleClient(PollManager& PollManager, int clientF);
   void cleanup(void);
 };
