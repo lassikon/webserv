@@ -1,4 +1,7 @@
 webserv
 **/*build
 **/*.deps
+**/dump*
 **/*.log
+**/*.txt
+**/*.sh

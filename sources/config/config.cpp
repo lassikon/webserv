@@ -6,18 +6,18 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:39 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/22 13:58:13 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/24 08:27:02 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "config.hpp"
 
+int Config::_lineNumber = 0;
 Config::Config(std::string configPath)
 {
-    LOG_DEBUG("Config constructor");
     _configFile.open(configPath);
     if (_configFile.fail())
-        throw std::runtime_error("Error: Could not open config file");
+        throw std::runtime_error("Parse: Could not open file at line " + std::to_string(_lineNumber));
     std::stringstream configFileBuffer;
     configFileBuffer << _configFile.rdbuf();
     parseConfigFile(configFileBuffer);
@@ -52,10 +52,16 @@ void Config::parseConfigFile(std::stringstream& configFile)
             _blockStack.push("[server]");
             parseServerBlock(configFile);
             if (!_blockStack.empty() && _blockStack.top() == "[server]")
-                throw std::runtime_error("Error: unclosed server block");
+            {
+                LOG_WARNING("Parse: Unclosed server block, ",_line, " at line ", _lineNumber);
+                _blockStack.pop();
+                configFile.clear();
+                configFile.seekg(_pos);
+            }
         }
         else
-            throw std::runtime_error("Error: no server block header found, " + _line);
+            LOG_WARNING("Parse: Invalid block, ", _line, " at line ", _lineNumber);
+        _pos = configFile.tellg();
     }
 }
 
@@ -72,13 +78,18 @@ void Config::parseServerBlock(std::stringstream& configFile)
         if (delimiter_pos != std::string::npos)
             populateServer(serverConfig, delimiter_pos);
         else if (_line.compare("[server]") == 0)
-            return;
+			return;
         else if (_line.compare("[route]") == 0) 
         {
             _blockStack.push("[route]");
             parseRouteBlock(serverConfig, configFile);
-            if (!_blockStack.empty() && _blockStack.top() == "[route]")
-                throw std::runtime_error("Error: unclosed route block");
+            if (!_blockStack.empty() && (_blockStack.top() == "[route]"))
+            {
+                LOG_WARNING("Parse: Unclosed route block, ", _line, " at line ", _lineNumber);
+                _blockStack.pop();
+                configFile.clear();
+                configFile.seekg(_pos);
+            }
         }
         else if (_line.compare("[/server]") == 0 && (!_blockStack.empty() && _blockStack.top() == "[server]"))
         {
@@ -87,7 +98,8 @@ void Config::parseServerBlock(std::stringstream& configFile)
             return;
         }
         else
-            throw std::runtime_error("Error: Invalid line in server block, " + _line);
+            LOG_WARNING("Parse: Invalid directive, ", _line, " in server block at line ", _lineNumber);
+        _pos = configFile.tellg();
     }
 }
 
@@ -113,7 +125,8 @@ void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& conf
             return;
         }
         else
-            throw std::runtime_error("Error: Invalid line in route block, " + _line);
+            LOG_WARNING("Parse: Invalid directive, ", _line, " in route block at line ", _lineNumber);
+        _pos = configFile.tellg();
     }
 }
 // populate server struct
@@ -134,11 +147,11 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t & pos)
     if (it_key != serverStructMap.end())
     {   
         if (value.empty())
-            throw std::runtime_error("Error: Value not found for key " + key);
+            LOG_WARNING("Parse: Invalid value, ", _line, " at line ", _lineNumber);
         it_key->second(serverConfig, value);
     }
     else
-        throw std::runtime_error("Error: Invalid key in server block, " + key);
+        LOG_WARNING("Parse: Invalid key, ", _line, " at line ", _lineNumber);
 }
 
 // populate route struct
@@ -162,11 +175,11 @@ void Config::populateRoute(RouteConfig& routeConfig, std::size_t & pos)
     if (it_key != routeStructMap.end())
     {
         if (value.empty())
-            throw std::runtime_error("Error: Value not found for key " + key);
+            LOG_WARNING("Parse: Invalid value, ", _line, " at line ", _lineNumber);
         it_key->second(routeConfig, value);
     }
     else
-        throw std::runtime_error("Error: Invalid key in route block, " + key);
+        LOG_WARNING("Parse: Invalid key, ", _line, " at line ", _lineNumber);
 }
 // NGINX uses ip:port first, server_name second and default server last
 void Config::addServerToMap(ServerConfig& serverConfig)
@@ -177,7 +190,7 @@ void Config::addServerToMap(ServerConfig& serverConfig)
     else
         hostName = serverConfig.serverName;
     if (_servers.find(hostName) != _servers.end())
-        throw std::runtime_error("Error: Server already exists");
+        LOG_WARNING("Parse: Duplicate server, ", hostName, " at line ", _lineNumber);
     _servers[hostName] = serverConfig;
 }
 
@@ -185,68 +198,65 @@ void Config::addServerToMap(ServerConfig& serverConfig)
 void Config::setIP(ServerConfig& server, std::string const & value)
 {
     if (!server.ipAddress.empty())
-        throw std::runtime_error("Error: IP already set");
+        LOG_WARNING("Parse: IP already set, updating IP with line ", _lineNumber);
     const std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
     if (!std::regex_match(value, ipPattern))
-        throw std::runtime_error("Error: Invalid IP address");
+        LOG_WARNING("Parse: Invalid IP, ", value, " at line ", _lineNumber);
     server.ipAddress = value;
 }
 void Config::setServerName(ServerConfig& server, std::string const & value)
 {
     if (!server.serverName.empty())
-        throw std::runtime_error("Error: Server name already set");
- 
+        LOG_WARNING("Parse: Server name already set, updating server name with line ", _lineNumber);
     const std::regex serverNamePattern("^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
     if (!std::regex_match(value, serverNamePattern))
-        throw std::runtime_error("Error: Invalid server name");
+        LOG_WARNING("Parse: Invalid server name, ", value, " at line ", _lineNumber);
     server.serverName = value;
 }
 void Config::setPort(ServerConfig& server, std::string const & value)
 {
     if (server.port != 0)
-        throw std::runtime_error("Error: Port already set");
+        LOG_WARNING("Parse: Port already set, updating port with line ", _lineNumber);
     const std::regex port_pattern("^[0-9]+$");
     if (!std::regex_match(value, port_pattern))
-        throw std::runtime_error("Error: Invalid port number");
+        LOG_WARNING("Parse: Invalid port, ", value, " at line ", _lineNumber);
     if (std::stoi(value) < 0 || std::stoi(value) > 65535)
-        throw std::runtime_error("Error: Port number out of range");
+        LOG_WARNING("Parse: Invalid port range, ", value, " at line ", _lineNumber);
     server.port = std::stoi(value);
 }
 void Config::setErrorPages(ServerConfig& server, std::string const & value)
 {
     if (value.empty())
-        throw std::runtime_error("Error: Error code not found");
+        LOG_WARNING("Parse: Error page path not found, at line ", _lineNumber);
     std::stringstream ss(value);
     std::string error;
     std::getline(ss, error, ' ');
     const std::regex error_pattern("^[0-9]+$");
     if (!std::regex_match(error, error_pattern))
-        throw std::runtime_error("Error: Invalid error code");
+        LOG_WARNING("Parse: Invalid error code, ", error, " at line ", _lineNumber);
     int error_code = std::stoi(error);
-    if (server.errorPages.find(error_code) != server.errorPages.end())
-        throw std::runtime_error("Error: Error code already set");
+    if (server.errorPagesInternal.find(error_code) == server.errorPagesInternal.end())
+        LOG_WARNING("Parse: Error code not found, ", error, " at line ", _lineNumber);
     std::getline(ss, error, ' ');
     if (error.empty())
-        throw std::runtime_error("Error: Error page path not found");
+        LOG_WARNING("Parse: Error page path not found, at line ", _lineNumber);
     //std::filesystem::path path(error);
 
-    if (server.errorPagesInternal.find(error_code) != server.errorPagesInternal.end())
-        server.errorPages[error_code] = error;
+    server.errorPages[error_code] = error;
 }
 // client body size limit is set in bytes, kilobytes, megabytes
 void Config::setClientBodySizeLimit(ServerConfig& server, std::string const & value)
 {
     if (!server.clientBodySizeLimit.empty())
-        throw std::runtime_error("Error: Client body size limit already set");
+        LOG_WARNING("Parse: Client body size limit already set, updating client body size limit with line ", _lineNumber);
     server.clientBodySizeLimit = value;
 }
 
 // route struct setters
-
 void Config::setLocation(RouteConfig& route, std::string const & value)
 {
     if (!route.location.empty())
-        throw std::runtime_error("Error: Location already set");
+        LOG_WARNING("Parse: Location already set, updating location with line ", _lineNumber);
     route.location = value;
 }
 
@@ -257,6 +267,13 @@ void Config::setMethods(RouteConfig& route, std::string const & value)
     while (std::getline(ss, method, ','))
     {
         method = Utility::trimCommentsAndWhitespaces(method);
+        if (method.empty())
+            LOG_WARNING("Parse: Invalid method, ", method, " at line ", _lineNumber);
+        if (method != "GET" && method != "POST" && method != "DELETE")
+        {
+            LOG_WARNING("Parse: Invalid method, ", method, " at line ", _lineNumber);
+            continue;
+        }
         route.methods.push_back(method);
     }
 }
@@ -264,7 +281,7 @@ void Config::setMethods(RouteConfig& route, std::string const & value)
 void Config::setRoot(RouteConfig& route, std::string const & value)
 {
     if (!route.root.empty())
-        throw std::runtime_error("Error: Root already set");
+        LOG_WARNING("Parse: Root already set, updating root with line ", _lineNumber);
     route.root = value;
 }
 
@@ -275,27 +292,27 @@ void Config::setDirectoryListing(RouteConfig& route, std::string const & value)
     else if (value == "off")
         route.directoryListing = false;
     else
-        throw std::runtime_error("Error: Invalid value for directory listing");
+        LOG_WARNING("Parse: Invalid directory listing, ", value, " at line ", _lineNumber);
 }
 
 void Config::setDefaultFile(RouteConfig& route, std::string const & value)
 {
     if (!route.defaultFile.empty())
-        throw std::runtime_error("Error: Default file already set");
+        LOG_WARNING("Parse: Default file already set, updating default file with line ", _lineNumber);
     route.defaultFile = value;
 }
 
 void Config::setUploadPath(RouteConfig& route, std::string const & value)
 {
     if (!route.uploadPath.empty())
-        throw std::runtime_error("Error: Upload path already set");
+        LOG_WARNING("Parse: Upload path already set, updating upload path with line ", _lineNumber);
     route.uploadPath = value;
 }
 
 void Config::setRedirect(RouteConfig& route, std::string const & value)
 {
     if (!route.redirect.empty())
-        throw std::runtime_error("Error: Redirect already set");
+        LOG_WARNING("Parse: Redirect already set, updating redirect with line ", _lineNumber);
     route.redirect = value;
 }
 
@@ -318,6 +335,11 @@ bool Config::callGetLine(std::stringstream& configFile)
     _line = Utility::trimCommentsAndWhitespaces(_line);
     _lineNumber++;
     return true;
+}
+
+int Config::getLineNumber() const
+{
+    return _lineNumber;
 }
 
 void Config::printServerConfig()

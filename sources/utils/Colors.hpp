@@ -1,5 +1,4 @@
-#ifndef COLORS_HPP
-#define COLORS_HPP
+#pragma once
 
 #define RESET "\033[0m"
 
@@ -20,5 +19,3 @@
 #define BOLDMAGENTA "\033[1m\033[35m"
 #define BOLDCYAN "\033[1m\033[36m"
 #define BOLDWHITE "\033[1m\033[37m"
-
-#endif

@@ -1,0 +1,84 @@
+
+- **`socket`**: Creates an endpoint for communication, returning a socket file descriptor.
+- **`bind`**: Associates a socket with a specific local address and port.
+- **`connect`**: Initiates a connection on a socket to a remote server.
+- **`listen`**: Marks a socket as a passive socket that will accept incoming connection requests.
+- **`accept`**: Accepts a connection on a listening socket, returning a new socket for the communication.
+- **`send`**: Sends data through a connected socket.
+- **`recv`**: Receives data from a connected socket.
+- **`socketpair`**: Creates a pair of connected, indistinguishable sockets for inter-process communication.
+- **`getaddrinfo`**: Resolves a hostname and service to one or more socket addresses.
+- **`getsockname`**: Retrieves the current address to which the socket is bound.
+- **`getprotobyname`**: Retrieves protocol information (like TCP or UDP) based on its name.
+- **`poll`**: Waits for one or more file descriptors to become ready for some class of I/O operation.
+
+
+ORDER OF OPERATIONS
+getaddrinfo(); // gives linked list of addrinfo structs
+socket(); // creates a socket using parameters from one addrinfo struct, returns an fd
+bind(); // associates the socket fd with IP and port from the addrinfo struct
+listen(); // marks socket as passive, so it will work for accept
+poll(); // to loop through fds, selecting active client sockets for accept()
+accept(); // accepts a connection on a listening socket, returns a new socket fd for communicating with the client
+send()/recv();
+
+
+
+struct addrinfo {
+  int     ai_flags;          // AI_PASSIVE, AI_CANONNAME, ...
+  int     ai_family;         // AF_xxx
+  int     ai_socktype;       // SOCK_xxx
+  int     ai_protocol;       // 0 (auto) or IPPROTO_TCP, IPPROTO_UDP 
+
+  socklen_t  ai_addrlen;     // length of ai_addr
+  char   *ai_canonname;      // canonical name for nodename
+  struct sockaddr  *ai_addr; // binary address
+  struct addrinfo  *ai_next; // next structure in linked list
+};
+
+memset(&hints, 0, sizeof hints);
+hints.ai_family = AF_UNSPEC;  // use IPv4 or IPv6, whichever
+hints.ai_socktype = SOCK_STREAM;
+hints.ai_flags = AI_PASSIVE;     // fill in my IP for me
+
+GETADDRINFO()
+int getaddrinfo(const char *node,     // host name or IP to connect to
+        const char *service,          // "http" or port number, NULL will return socked addresses without a specific port
+        const struct addrinfo *hints, // optional(?) to specify criteria for the type of addresses returned
+        struct addrinfo **res);       // points to a linked list of addrinfos containing the resolved addresses
+returns 0 on success and fills **res, if non-zero use gai_strerror for error message
+
+SOCKET()
+int socket(int domain,  // res->ai_family, PF_INET for IPv4, PF_INET6 for IPv6
+        int type,       // res->ai_socktype, SOCK_STREAM for reliable TCP sockets (send(), recv())
+        int protocol);  // res->ai_protocol, (can be set to 0 when using SOCK_STREAM)
+returns socket descriptor, or -1 on error
+
+BIND()
+int bind(int sockfd,                // socket fd
+        struct sockaddr *my_addr,   // res->ai_addr, for IP and port
+        int addrlen);               // res->ai_addrlen
+returns 0 on success, or -1 on error
+
+LISTEN()
+int listen(int sockfd,  // socket fd
+        int backlog);   // incoming connections queue size default 20(?)
+returns 0 on success, or -1 on error
+
+POLL()
+struct pollfd {
+    int fd;         // the socket descriptor
+    short events;   // bitmap of events we're interested in
+    short revents;  // when poll() returns, bitmap of events that occurred
+};
+
+int poll(struct pollfd *ufds, // array of struct pollfd's
+        unsigned int nfds,    // size of the array
+        int timeout);         // milliseconds
+returns number of fds that have had event occur on them, or -1 on error
+
+ACCEPT()
+int accept(int sockfd,
+        struct sockaddr *addr,
+        socklen_t *addrlen);
+returns new socket fd, or -1 on error
