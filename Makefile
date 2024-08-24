@@ -32,7 +32,8 @@ MAKEFLAGS  += -j4 --no-print-directory
 MODULES := utils
 
 SOURCES := main \
-           Logger
+           Logger \
+		   Exception
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
