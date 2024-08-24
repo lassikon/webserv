@@ -4,14 +4,14 @@ Exception::Exception(void) {}
 
 Exception::~Exception(void) {}
 
-std::string Exception::errCodeToString(const ErrorCode &e) noexcept {
-  switch (e) {
+std::string Exception::errCodeToString(const ErrorCode &errCode) noexcept {
+  switch (errCode) {
   case ErrorCode::ArgCount:
-    return "Usage: ./webserv OR ./webserv ./<path>/<config>";
+    return ERR_MSG_USAGE;
   case ErrorCode::ConfigFile:
-    return "Could not open config";
+    return ERR_MSG_CONFIG;
   case ErrorCode::NoServer:
-    return "Could not run any server";
+    return ERR_MSG_NOSERV;
   default:
     return "Unexpected runtime error";
   }

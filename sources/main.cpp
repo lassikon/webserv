@@ -1,13 +1,12 @@
 #include <Exception.hpp>
-#include <stdexcept>
+#include <Logger.hpp>
 
 class Test {
 public:
   void callChecker(int argc) { func2(argc); };
   void checkArgCount(int argc) {
     if (argc)
-      /* throw std::runtime_error("runtime_error"); */
-      throw ErrorCode::ArgCount;
+      throw Exception();
   }
 
 private:

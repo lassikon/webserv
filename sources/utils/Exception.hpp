@@ -9,12 +9,21 @@
 
 #include <Logger.hpp>
 
-enum class ErrorCode { ArgCount, ConfigFile, NoServer };
+#define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
+#define ERR_MSG_NOSERV "Could not load any server from config file: "
+#define ERR_MSG_CONFIG "Could not access config: "
+
+enum class ErrorCode {
+  NoError,
+  ArgCount = 134,
+  ConfigFile,
+  NoServer
+}; // last errno = 133
 
 class Exception : public std::exception {
 protected:
   const char *errMsg;
-  int errCode;
+  ErrorCode errCode;
 
 public:
   Exception(void);
@@ -38,8 +47,8 @@ private:
       LOG_ERROR(errCodeToString(e));
     } catch (std::runtime_error &e) {
       LOG_ERROR(e.what());
-    } catch (exception &e) {
-      LOG_ERROR("Exception Occured: ", e.what());
+    } catch (std::exception &e) {
+      LOG_ERROR(e.what());
     } catch (...) {
       LOG_FATAL("Unexpected Error");
     }
