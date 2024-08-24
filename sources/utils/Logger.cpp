@@ -3,7 +3,7 @@
 Logger::Logger(void) {
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
-  enabledDetail[(int)logDetail::TimeStamp] = false;
+  enabledDetail[(int)logDetail::TimeStamp] = true;
   enabledDetail[(int)logDetail::SourceFile] = true;
   enabledDetail[(int)logDetail::LineNumber] = true;
   if (currentOutput != logOutput::ConsoleOnly)

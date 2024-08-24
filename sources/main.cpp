@@ -3,14 +3,14 @@
 
 class Test {
 public:
-  void callChecker(int argc) { func2(argc); };
+  void callChecker(int argc) { privateFn(argc); };
   void checkArgCount(int argc) {
     if (argc)
-      throw Exception();
+      throw Exception("error");
   }
 
 private:
-  void func2(int argc) {
+  void privateFn(int argc) {
     Exception::tryCatch(&Test::checkArgCount, this, argc);
   }
 };
@@ -21,5 +21,6 @@ int main(int argc, char **argv) {
   Test t;
   t.callChecker(argc);
   Exception::tryCatch(&Test::checkArgCount, &t, argc);
+  /* LOG_INFO("Info from", 36.0f, "asdfasdf", 42); */
   return 0;
 }

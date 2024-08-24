@@ -13,12 +13,7 @@
 #define ERR_MSG_NOSERV "Could not load any server from config file: "
 #define ERR_MSG_CONFIG "Could not access config: "
 
-enum class ErrorCode {
-  NoError,
-  ArgCount = 134,
-  ConfigFile,
-  NoServer
-}; // last errno = 133
+enum class ErrorCode { NoError, ArgCount = 134, ConfigFile, NoServer };
 
 class Exception : public std::exception {
 protected:
@@ -27,6 +22,7 @@ protected:
 
 public:
   Exception(void);
+  Exception(const char *errMsg);
   Exception(const Exception &other) = delete;
   Exception &operator=(const Exception &other) = delete;
   ~Exception(void);

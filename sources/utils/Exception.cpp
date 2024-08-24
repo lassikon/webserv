@@ -2,6 +2,8 @@
 
 Exception::Exception(void) {}
 
+Exception::Exception(const char *errMsg) : errMsg(errMsg) {}
+
 Exception::~Exception(void) {}
 
 std::string Exception::errCodeToString(const ErrorCode &errCode) noexcept {

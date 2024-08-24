@@ -52,13 +52,9 @@ private:
       logEntry << "[" << getTimeStamp() << "]";
     if (enabledDetail[(int)logDetail::SourceFile])
       logEntry << "[" << SrcFile;
-    if (enabledDetail[(int)logDetail::LineNumber]) {
+    if (enabledDetail[(int)logDetail::LineNumber])
       logEntry << ":" << LineNbr << "]";
-    } else {
-      logEntry << "]";
-    }
-    logEntry << " ";
-    (logEntry << ... << args);
+    ([&] { logEntry << " " << args; }(), ...);
     if (currentOutput != logOutput::FileOnly)
       consoleStream << logEntry.str() << RESET << std::endl;
     if (currentOutput != logOutput::ConsoleOnly && logFile.is_open())
