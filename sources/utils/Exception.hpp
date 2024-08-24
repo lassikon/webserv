@@ -12,6 +12,10 @@
 enum class ErrorCode { ArgCount, ConfigFile, NoServer };
 
 class Exception : public std::exception {
+protected:
+  const char *errMsg;
+  int errCode;
+
 public:
   Exception(void);
   Exception(const Exception &other) = delete;
@@ -19,7 +23,7 @@ public:
   ~Exception(void);
 
 private:
-  std::string errCodeToString(ErrorCode errcode) noexcept;
+  std::string errCodeToString(const ErrorCode &e) noexcept;
   static Exception &newTryCatch(void) {
     static Exception wrapper;
     return wrapper;
@@ -30,12 +34,12 @@ private:
   auto wrapper(Func fn, Cref ref, Args &&...args) {
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
-    } catch (ErrorCode &e) {
+    } catch (const ErrorCode &e) {
       LOG_ERROR(errCodeToString(e));
     } catch (std::runtime_error &e) {
       LOG_ERROR(e.what());
     } catch (exception &e) {
-      LOG_ERROR(e.what());
+      LOG_ERROR("Exception Occured: ", e.what());
     } catch (...) {
       LOG_FATAL("Unexpected Error");
     }

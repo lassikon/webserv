@@ -13,7 +13,7 @@ Logger::Logger(void) {
 Logger::~Logger(void) { closeLogFile(); }
 
 void Logger::createLogFile(void) {
-  logFile.open(fileName, std::fstream::out);
+  logFile.open(fileName, std::ios_base::app);
   if (logFile.fail())
     LOG_WARN("Could not create log: ", fileName, ": ", strerror(errno));
 }
