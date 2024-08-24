@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <ctime>
+#include <cerrno>
 #include <fstream>
 #include <iostream>
 #include <sstream>

@@ -1,11 +1,23 @@
+#include <ErrorHandler.hpp>
 #include <Logger.hpp>
 
-int main() {
-  LOG_TRACE("Hello ", 123);
-  LOG_DEBUG("Hello ", 123);
-  LOG_INFO("Hello ", 123);
-  LOG_WARN("Hello ", 123);
-  LOG_ERROR("Hello ", 123);
-  LOG_FATAL("Hello ", 123);
+class TestClass : public ErrorHandler {
+
+  /* public: */
+  /*   static void test(int argc) { throw ServerException::ArgCount; } */
+};
+
+static void test(int argc) {
+  if (argc) {
+    throw ServerException::ArgCount;
+  }
+}
+
+int main(int argc, char **argv) {
+  (void)argv;
+  ErrorHandler e;
+  /* TestClass::test(argc); */
+  /* TestClass::safeCall(test(argc)); */
+  ErrorHandler::safeCall(&test, argc);
   return 0;
 }

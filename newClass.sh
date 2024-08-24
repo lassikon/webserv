@@ -16,7 +16,7 @@ echo "  ~$1(void);" >> $1.hpp
 echo "};" >> $1.hpp
 echo >> $1.hpp
 
-echo "#include \"$1.hpp\"" > $1.cpp
+echo "#include <$1.hpp>" > $1.cpp
 echo >> $1.cpp
 
 echo "$1::$1(void) {}" >> $1.cpp

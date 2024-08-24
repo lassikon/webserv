@@ -15,7 +15,7 @@ Logger::~Logger(void) { closeLogFile(); }
 void Logger::createLogFile(void) {
   logFile.open(fileName, std::fstream::out);
   if (logFile.fail())
-    std::cerr << fileName << ": " << strerror(errno) << std::endl;
+    LOG_WARN("Could not create log: ", fileName, ": ", strerror(errno));
 }
 
 void Logger::closeLogFile(void) {
@@ -27,7 +27,6 @@ std::string Logger::getTimeStamp(void) const {
   time_t now = time(0);
   tm *timeInfo = localtime(&now);
   char timeStamp[20];
-  strftime(timeStamp, sizeof(timeStamp),
-    "%Y-%m-%d %H:%M:%S", timeInfo);
+  strftime(timeStamp, sizeof(timeStamp), "%Y-%m-%d %H:%M:%S", timeInfo);
   return timeStamp;
 }
