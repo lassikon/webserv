@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:16 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/24 08:11:17 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/24 12:06:18 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,16 +44,16 @@ struct ServerConfig
     std::string                     ipAddress;
     std::string                     serverName;
     int                             port;
-	std::map<int, std::string>      errorPagesInternal = {{200, "/pages/200.html"}, // ok
-									{400, "/pages/400.html"}, // bad request
-									{413, "/pages/413.html"}, // request entity too large
-									{413, "/pages/413.html"}, // request entity too large
-									{404, "/pages/404.html"}, // not found
-									{405, "/pages/405.html"}, // method not allowed
-									{500, "/pages/500.html"}, // internal server error
-									{501, "/pages/501.html"}}; // not implemented
+	std::map<int, std::string>      pagesDefault = {{200, "/pagesDefault/200.html"}, // ok
+									{400, "/pagesDefault/400.html"}, // bad request
+									{413, "/pagesDefault/413.html"}, // request entity too large
+									{413, "/pagesDefault/413.html"}, // request entity too large
+									{404, "/pagesDefault/404.html"}, // not found
+									{405, "/pagesDefault/405.html"}, // method not allowed
+									{500, "/pagesDefault/500.html"}, // internal server error
+									{501, "/pagesDefault/501.html"}}; // not implemented
 									
-    std::map<int, std::string>      errorPages;
+    std::map<int, std::string>      pagesCustom;
     std::string                     clientBodySizeLimit;
     std::vector<RouteConfig>        routes;
 };
@@ -105,6 +105,6 @@ class Config
 
         // get server config
         int getLineNumber() const;
-		
-        std::vector<ServerConfig> const & getServers() const;
+        static std::filesystem::path & getExePath(std::filesystem::path & path);
+        std::map<std::string, ServerConfig> & getServers();
 };

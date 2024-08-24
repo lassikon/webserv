@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:39 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/24 08:27:02 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/24 12:08:47 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,7 +148,8 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t & pos)
     {   
         if (value.empty())
             LOG_WARNING("Parse: Invalid value, ", _line, " at line ", _lineNumber);
-        it_key->second(serverConfig, value);
+        else
+            it_key->second(serverConfig, value);
     }
     else
         LOG_WARNING("Parse: Invalid key, ", _line, " at line ", _lineNumber);
@@ -176,7 +177,8 @@ void Config::populateRoute(RouteConfig& routeConfig, std::size_t & pos)
     {
         if (value.empty())
             LOG_WARNING("Parse: Invalid value, ", _line, " at line ", _lineNumber);
-        it_key->second(routeConfig, value);
+        else
+            it_key->second(routeConfig, value);
     }
     else
         LOG_WARNING("Parse: Invalid key, ", _line, " at line ", _lineNumber);
@@ -190,66 +192,80 @@ void Config::addServerToMap(ServerConfig& serverConfig)
     else
         hostName = serverConfig.serverName;
     if (_servers.find(hostName) != _servers.end())
-        LOG_WARNING("Parse: Duplicate server, ", hostName, " at line ", _lineNumber);
-    _servers[hostName] = serverConfig;
+        LOG_WARNING("Parse: Duplicate server, ", hostName, " at line ", _lineNumber, " replacing...");
+    else
+        _servers[hostName] = serverConfig;
 }
 
 // server struct setters
 void Config::setIP(ServerConfig& server, std::string const & value)
 {
+    const std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
     if (!server.ipAddress.empty())
         LOG_WARNING("Parse: IP already set, updating IP with line ", _lineNumber);
-    const std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
-    if (!std::regex_match(value, ipPattern))
+    else if (!std::regex_match(value, ipPattern))
         LOG_WARNING("Parse: Invalid IP, ", value, " at line ", _lineNumber);
-    server.ipAddress = value;
+    else
+        server.ipAddress = value;
 }
 void Config::setServerName(ServerConfig& server, std::string const & value)
 {
+    const std::regex serverNamePattern("^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
     if (!server.serverName.empty())
         LOG_WARNING("Parse: Server name already set, updating server name with line ", _lineNumber);
-    const std::regex serverNamePattern("^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
-    if (!std::regex_match(value, serverNamePattern))
+    else if (!std::regex_match(value, serverNamePattern))
         LOG_WARNING("Parse: Invalid server name, ", value, " at line ", _lineNumber);
-    server.serverName = value;
+    else
+        server.serverName = value;
 }
 void Config::setPort(ServerConfig& server, std::string const & value)
 {
+    const std::regex port_pattern("^[0-9]+$");
     if (server.port != 0)
         LOG_WARNING("Parse: Port already set, updating port with line ", _lineNumber);
-    const std::regex port_pattern("^[0-9]+$");
-    if (!std::regex_match(value, port_pattern))
+    else if (!std::regex_match(value, port_pattern))
         LOG_WARNING("Parse: Invalid port, ", value, " at line ", _lineNumber);
-    if (std::stoi(value) < 0 || std::stoi(value) > 65535)
+    else if (std::stoi(value) < 0 || std::stoi(value) > 65535)
         LOG_WARNING("Parse: Invalid port range, ", value, " at line ", _lineNumber);
-    server.port = std::stoi(value);
+    else
+        server.port = std::stoi(value);
 }
 void Config::setErrorPages(ServerConfig& server, std::string const & value)
 {
     if (value.empty())
+    {
         LOG_WARNING("Parse: Error page path not found, at line ", _lineNumber);
+        return;
+    }
     std::stringstream ss(value);
     std::string error;
     std::getline(ss, error, ' ');
     const std::regex error_pattern("^[0-9]+$");
     if (!std::regex_match(error, error_pattern))
+    {
         LOG_WARNING("Parse: Invalid error code, ", error, " at line ", _lineNumber);
+        return;
+    }
     int error_code = std::stoi(error);
-    if (server.errorPagesInternal.find(error_code) == server.errorPagesInternal.end())
-        LOG_WARNING("Parse: Error code not found, ", error, " at line ", _lineNumber);
     std::getline(ss, error, ' ');
-    if (error.empty())
-        LOG_WARNING("Parse: Error page path not found, at line ", _lineNumber);
-    //std::filesystem::path path(error);
-
-    server.errorPages[error_code] = error;
+    std::filesystem::path exePath;
+    exePath = getExePath(exePath);
+    std::filesystem::path errorPath = exePath.append(error);
+    if (!std::filesystem::exists(errorPath))
+        LOG_WARNING("Parse: Error page path not found, ", error, " at line ", _lineNumber);
+    else
+        server.pagesCustom[error_code] = error;
 }
-// client body size limit is set in bytes, kilobytes, megabytes
+// client body size limit is set in bytes, kilobytes k,K, megabytes m,M, gigabytes g,G
 void Config::setClientBodySizeLimit(ServerConfig& server, std::string const & value)
 {
+    const std::regex size_pattern("^[0-9]+[kKmMgG]?$");
     if (!server.clientBodySizeLimit.empty())
         LOG_WARNING("Parse: Client body size limit already set, updating client body size limit with line ", _lineNumber);
-    server.clientBodySizeLimit = value;
+    else if (!std::regex_match(value, size_pattern))
+        LOG_WARNING("Parse: Invalid client body size limit, ", value, " at line ", _lineNumber);
+    else
+        server.clientBodySizeLimit = value;
 }
 
 // route struct setters
@@ -269,12 +285,13 @@ void Config::setMethods(RouteConfig& route, std::string const & value)
         method = Utility::trimCommentsAndWhitespaces(method);
         if (method.empty())
             LOG_WARNING("Parse: Invalid method, ", method, " at line ", _lineNumber);
-        if (method != "GET" && method != "POST" && method != "DELETE")
+        else if (method != "GET" && method != "POST" && method != "DELETE")
         {
             LOG_WARNING("Parse: Invalid method, ", method, " at line ", _lineNumber);
             continue;
         }
-        route.methods.push_back(method);
+        else 
+            route.methods.push_back(method);
     }
 }
 
@@ -299,14 +316,21 @@ void Config::setDefaultFile(RouteConfig& route, std::string const & value)
 {
     if (!route.defaultFile.empty())
         LOG_WARNING("Parse: Default file already set, updating default file with line ", _lineNumber);
-    route.defaultFile = value;
+    else
+        route.defaultFile = value;
 }
 
 void Config::setUploadPath(RouteConfig& route, std::string const & value)
 {
+    std::filesystem::path exePath;
+    exePath = getExePath(exePath);
+    std::filesystem::path uploadPath = exePath.append(value);
     if (!route.uploadPath.empty())
         LOG_WARNING("Parse: Upload path already set, updating upload path with line ", _lineNumber);
-    route.uploadPath = value;
+    else if (!std::filesystem::exists(uploadPath))
+        LOG_WARNING("Parse: Upload path not found, ", value, " at line ", _lineNumber);
+    else
+        route.uploadPath = value;
 }
 
 void Config::setRedirect(RouteConfig& route, std::string const & value)
@@ -337,9 +361,24 @@ bool Config::callGetLine(std::stringstream& configFile)
     return true;
 }
 
+std::filesystem::path & Config::getExePath(std::filesystem::path & path)
+{
+    std::filesystem::path currentPath = std::filesystem::current_path();
+    std::filesystem::path exePath = currentPath / "webserv";
+    if (!std::filesystem::exists(exePath))
+        LOG_ERROR("Parse: Could not find executable at ", exePath);
+    path = std::filesystem::canonical(exePath).parent_path().string();
+    return (path);
+}
+
 int Config::getLineNumber() const
 {
     return _lineNumber;
+}
+
+std::map<std::string, ServerConfig> & Config::getServers()
+{
+    return _servers;
 }
 
 void Config::printServerConfig()
@@ -354,7 +393,7 @@ void Config::printServerConfig()
         std::cout << "Server port: " << server.port << std::endl;
         std::cout << "Server name: " << server.serverName << std::endl;
         std::cout << "Server error pages: ";
-        for (const auto& error : server.errorPages)
+        for (const auto& error : server.pagesCustom)
         {
             std::cout << std::endl << "  " << error.first << "  path: " << error.second;
         }
