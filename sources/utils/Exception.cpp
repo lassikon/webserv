@@ -4,7 +4,7 @@ Exception::Exception(void) {}
 
 Exception::~Exception(void) {}
 
-std::string errCodeToString(ErrorCode errcode) noexcept {
+std::string Exception::errCodeToString(ErrorCode errcode) noexcept {
   switch (errcode) {
   case ErrorCode::ArgCount:
     return "Usage: ./webserv OR ./webserv ./<path>/<config>";
