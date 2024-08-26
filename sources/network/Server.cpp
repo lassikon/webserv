@@ -56,7 +56,7 @@ void Server::acceptConnection(PollManager& pollManager) {
   if (newFD != -1) {
     clients.emplace_back(newFD);
     pollManager.addFd(newFD, POLLIN);
-    LOG_TRACE("accepted client fd ", newFD);
+    LOG_TRACE("accepted client fd", newFD);
   }
 }
 
@@ -65,7 +65,7 @@ void Server::handleClient(PollManager& pollManager, int clientFd) {
                          [clientFd](Client& c) { return c.getFd() == clientFd; });
   if (it != clients.end()) {
     if (!it->receiveData()) {
-      LOG_TRACE("connection closed for client fd ", clientFd);
+      LOG_TRACE("connection closed for client fd", clientFd);
       pollManager.removeFd(it->getFd());
       clients.erase(it);
     }
