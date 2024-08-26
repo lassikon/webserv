@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:16 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/26 10:08:25 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/26 11:44:38 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,14 @@
 
 #include "utility.hpp"
 #include <Logger.hpp>
+
+/*
+** Config class
+** configuration file can have one or multiple server blocks that starts with 
+** [server] block header and ends with [/server] to close the block
+** each server block can have one or multiple route blocks that starts with 
+** [route] and ends with [/route] to close the block
+*/
 
 struct RouteConfig
 {
@@ -75,10 +83,10 @@ class Config
 
         void  parseConfigFile(std::stringstream& configFile);
         void  parseServerBlock(std::stringstream& configFile);
-		    void  populateServer(ServerConfig& serverConfig, std::size_t & pos);
+		void  populateServer(ServerConfig& serverConfig, std::size_t & pos);
         void  parseRouteBlock(ServerConfig& serverConfig ,std::stringstream& configFile);
-		    void	populateRoute(RouteConfig& routeConfig, std::size_t & pos);
-		    void	addServerToMap(ServerConfig& serverConfig);
+		void    populateRoute(RouteConfig& routeConfig, std::size_t & pos);
+		void	addServerToMap(ServerConfig& serverConfig);
 
         // helper function
         bool	callGetLine(std::stringstream& configFile);
