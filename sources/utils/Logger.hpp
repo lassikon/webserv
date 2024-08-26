@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cerrno>
 #include <cstring>
 #include <ctime>
 #include <fstream>
@@ -50,11 +51,10 @@ private:
     if (enabledDetail[(int)logDetail::TimeStamp])
       logEntry << "[" << getTimeStamp() << "]";
     if (enabledDetail[(int)logDetail::SourceFile])
-      logEntry << "[" << SrcFile << "]";
+      logEntry << "[" << SrcFile;
     if (enabledDetail[(int)logDetail::LineNumber])
-      logEntry << "[line:" << LineNbr << "]";
-    logEntry << " ";
-    (logEntry << ... << args);
+      logEntry << ":" << LineNbr << "]";
+    ([&] { logEntry << " " << args; }(), ...);
     if (currentOutput != logOutput::FileOnly)
       consoleStream << logEntry.str() << RESET << std::endl;
     if (currentOutput != logOutput::ConsoleOnly && logFile.is_open())
