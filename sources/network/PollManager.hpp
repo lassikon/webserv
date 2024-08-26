@@ -3,6 +3,8 @@
 #include <Server.hpp>
 #include <vector>
 
+#define TIMEOUT 10000
+
 class PollManager {
  private:
   std::vector<struct pollfd> pollFds;

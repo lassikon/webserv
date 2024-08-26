@@ -15,6 +15,6 @@ void PollManager::removeFd(int fd) {
       pollFds.end());
 }
 
-int PollManager::pollFdsCount(void) { return poll(pollFds.data(), pollFds.size(), -1); }
+int PollManager::pollFdsCount(void) { return poll(pollFds.data(), pollFds.size(), TIMEOUT); }
 
 std::vector<struct pollfd>& PollManager::getPollFds() { return pollFds; }
