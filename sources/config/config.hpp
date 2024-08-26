@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:16 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/24 12:06:18 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/26 10:08:25 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,4 +107,5 @@ class Config
         int getLineNumber() const;
         static std::filesystem::path & getExePath(std::filesystem::path & path);
         std::map<std::string, ServerConfig> & getServers();
+        void validateServer(std::map<std::string, ServerConfig> & servers);
 };

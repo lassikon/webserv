@@ -35,7 +35,8 @@ MODULES := utils \
 SOURCES := main \
            Logger \
 		   config \
-		   utility
+		   utility \
+		   Exception
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
