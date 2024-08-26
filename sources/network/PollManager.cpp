@@ -1,8 +1,11 @@
 #include "PollManager.hpp"
 
-PollManager::PollManager(void) { pollFds.reserve(MAX_CLIENTS); }
+PollManager::PollManager(void) {
+  LOG_DEBUG("PollManager constructor called");
+  pollFds.reserve(MAX_CLIENTS);
+}
 
-PollManager::~PollManager(void) {}
+PollManager::~PollManager(void) { LOG_DEBUG("PollManager destructor called"); }
 
 void PollManager::addFd(int fd, short events) {
   struct pollfd pFd = {fd, events, 0};

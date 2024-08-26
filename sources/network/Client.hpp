@@ -9,8 +9,8 @@ class Client {
  public:
   Client(int socketFd);
   ~Client(void);
-  bool operator==(const Client& other);
+  bool operator==(const Client& other) const;
   bool receiveData(void);
-  int getFd(void);
+  int getFd(void) const;
   void setFd(int fd);
 };

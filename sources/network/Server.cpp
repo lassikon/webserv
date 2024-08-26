@@ -1,8 +1,10 @@
 #include <Server.hpp>
 
-Server::Server(const std::string& port) : port(port), sockFd(-1) {}
+Server::Server(const std::string& port) : port(port), sockFd(-1) {
+  LOG_DEBUG("Server constructor called");
+}
 
-Server::~Server(void) {}
+Server::~Server(void) { LOG_DEBUG("Server destructor called"); }
 
 void Server::run(void) {
   setup();
@@ -56,7 +58,7 @@ void Server::acceptConnection(PollManager& pollManager) {
   if (newFD != -1) {
     clients.emplace_back(newFD);
     pollManager.addFd(newFD, POLLIN);
-    LOG_TRACE("accepted client fd", newFD);
+    LOG_TRACE("Accepted client fd", newFD);
   }
 }
 
@@ -65,7 +67,7 @@ void Server::handleClient(PollManager& pollManager, int clientFd) {
                          [clientFd](Client& c) { return c.getFd() == clientFd; });
   if (it != clients.end()) {
     if (!it->receiveData()) {
-      LOG_TRACE("connection closed for client fd", clientFd);
+      LOG_TRACE("Connection closed for client fd", clientFd);
       pollManager.removeFd(it->getFd());
       clients.erase(it);
     }
