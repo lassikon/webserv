@@ -1,8 +1,20 @@
 #pragma once
 
-#include <Server.hpp>
+#include <netdb.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <algorithm>
+#include <cstring>
+#include <iostream>
+#include <vector>
+
+
 #include <map>
 #include <Utility.hpp>
+#include <Logger.hpp>
+
+enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING_DONE };
 
 struct HttpReq {
   std::string method;
@@ -12,18 +24,19 @@ struct HttpReq {
   std::string body;
   bool transferEncodingChunked;
 };
-
 class Client {
  private:
   int fd;
   HttpReq req;
+  ClientState state;
 
  public:
   Client(int socketFd);
   ~Client(void);
+
   bool operator==(const Client& other) const;
   bool receiveData(void);
-  int getFd(void) const;
+  int getFd(void) const { return fd; }
   void setFd(int fd);
 
   // request
@@ -33,4 +46,6 @@ class Client {
   void parseBody(HttpReq& req, std::istringstream& iBuf);
   void handleRequest(HttpReq& req);
   void sendResponse(HttpReq& req);
+	private:
+	void cleanupClient(void);
 };

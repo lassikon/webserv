@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:39 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/27 13:09:46 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/27 17:25:42 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -364,6 +364,7 @@ void Config::setCgi(RouteConfig& route, std::string const& value) {
 bool Config::callGetLine(std::stringstream& configFile) {
   // handle unexpected EOF
   if (!std::getline(configFile, _line)) return false;
+	_line = Utility::trimComments(_line);
   _line = Utility::trimWhitespaces(_line);
   _lineNumber++;
   return true;

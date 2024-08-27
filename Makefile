@@ -39,8 +39,9 @@ SOURCES := main \
 		   Utility \
 		   Server \
 		   Client \
+			 Socket \
 			PollManager \
-		   Exception
+		   Exception \
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
