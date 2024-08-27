@@ -1,14 +1,13 @@
 #pragma once
 
 #include <cerrno>
-#include <chrono>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 #include <string>
 
+#include <Utility.hpp>
 #include <Colors.hpp>
 
 enum class logLevel { Trace, Debug, Info, Warn, Error, Fatal };
@@ -34,8 +33,6 @@ public:
 private:
   void createLogFile(void);
   void closeLogFile(void);
-
-  std::string getTimeStamp(void) const;
   static Logger &newLogInstance(void) {
     static Logger logger;
     return logger;
@@ -50,7 +47,7 @@ private:
     std::ostringstream logEntry;
     logEntry << LvlColor << "[" << LvlTitle << "]";
     if (enabledDetail[(int)logDetail::TimeStamp])
-      logEntry << "[" << getTimeStamp() << "]";
+      logEntry << "[" << Utility::getDateTimeStamp() << "]";
     if (enabledDetail[(int)logDetail::SourceFile])
       logEntry << "[" << SrcFile;
     if (enabledDetail[(int)logDetail::LineNumber])

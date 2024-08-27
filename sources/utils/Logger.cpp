@@ -23,11 +23,3 @@ void Logger::closeLogFile(void) {
   if (logFile.is_open())
     logFile.close();
 }
-
-std::string Logger::getTimeStamp(void) const {
-  auto now = std::chrono::system_clock::now();
-  auto tt = std::chrono::system_clock::to_time_t(now);
-  std::ostringstream ss;
-  ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
-  return ss.str();
-}

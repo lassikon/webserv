@@ -30,7 +30,7 @@ private:
   auto wrap(Func fn, Cref ref, Args &&...args) {
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
-    } catch (...) {}
+    } catch (...) {LOG_INFO("LOLZ");}
   }
 
 public:
