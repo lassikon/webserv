@@ -6,6 +6,5 @@ webserv
 **/*.log
 **/*.txt
 **/*.pdf
-**/*.pdf
 **/*.sh
 .clang-format
