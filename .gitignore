@@ -4,3 +4,4 @@ webserv
 **/dump*
 **/*.log
 **/*.txt
+**/*.pdf

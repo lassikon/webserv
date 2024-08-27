@@ -4,8 +4,9 @@ class Test {
 public:
   void callChecker(int argc) { privateFunc(argc); };
   void checkArgCount(int argc) {
-    if (argc > 1)
+    if (argc)
       THROW_WARN(ERR_MSG_USAGE);
+    std::cout << "This line would execute without throw!" << std::endl;
   }
 
 private:
@@ -19,5 +20,6 @@ int main(int argc, char **argv) {
   Test t;
   t.callChecker(argc);
   Exception::tryCatch(&Test::checkArgCount, &t, argc);
+  std::cout << "This line will get executed, once stack is unwinded!" << std::endl;
   return 0;
 }

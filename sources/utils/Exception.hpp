@@ -6,8 +6,8 @@
 #include <Logger.hpp>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
-#define ERR_MSG_NOSERV "Could not load any server from config file"
-#define ERR_MSG_CONFIG "Could not access config"
+#define ERR_MSG_NOSERVER "Could not load any server from config file:"
+#define ERR_MSG_NOCONFIG "Could not access config:"
 
 enum class ErrorCode { NoError, ArgCount = 134, ConfigFile, NoServer };
 

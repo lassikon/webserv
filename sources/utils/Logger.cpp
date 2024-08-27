@@ -1,3 +1,4 @@
+#include <Exception.hpp>
 #include <Logger.hpp>
 
 Logger::Logger(void) {
@@ -15,7 +16,7 @@ Logger::~Logger(void) { closeLogFile(); }
 void Logger::createLogFile(void) {
   logFile.open(fileName, std::ios_base::app);
   if (logFile.fail())
-    LOG_WARN("Could not create log: ", fileName, ": ", strerror(errno));
+    LOG_WARN(ERR_MSG_NOCONFIG, fileName, ":", strerror(errno));
 }
 
 void Logger::closeLogFile(void) {
@@ -24,9 +25,9 @@ void Logger::closeLogFile(void) {
 }
 
 std::string Logger::getTimeStamp(void) const {
-  time_t now = time(0);
-  tm *timeInfo = localtime(&now);
-  char timeStamp[20];
-  strftime(timeStamp, sizeof(timeStamp), "%Y-%m-%d %H:%M:%S", timeInfo);
-  return timeStamp;
+  auto now = std::chrono::system_clock::now();
+  auto tt = std::chrono::system_clock::to_time_t(now);
+  std::ostringstream ss;
+  ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
+  return ss.str();
 }
