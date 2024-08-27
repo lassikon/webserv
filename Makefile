@@ -30,12 +30,16 @@ MAKEFLAGS  += -j4 --no-print-directory
 # **************************************************************************** #
 
 MODULES := utils \
-		   config 
+		   config \
+		   network 
 
 SOURCES := main \
            Logger \
-		   config \
-		   utility \
+		   Config \
+		   Utility \
+		   Server \
+		   Client \
+			PollManager \
 		   Exception
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))

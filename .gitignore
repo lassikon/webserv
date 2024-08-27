@@ -4,3 +4,6 @@ webserv
 **/dump*
 **/*.log
 **/*.txt
+**/*.sh
+.vscode/settings.json
+.clang-format
