@@ -36,6 +36,7 @@ SOURCES := main \
            Logger \
 		   Server \
 		   Client \
+			 Socket \
 			 PollManager \
 		   Exception
 

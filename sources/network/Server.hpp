@@ -8,32 +8,28 @@
 #include <Client.hpp>
 #include <Logger.hpp>
 #include <PollManager.hpp>
+#include <Socket.hpp>
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <vector>
 
 #define PORT "3490"
-#define BACKLOG 10
-#define MAX_CLIENTS 100
-
-class Client;
-class PollManager;
 
 class Server {
  private:
+  Socket socket;
   std::string port;
-  int sockFd;
   std::vector<Client> clients;
 
  public:
-  Server(const std::string& port);
+  Server(std::string port);
   ~Server(void);
-  void run(void);
+
+  // void setupServer(std::string port);
+  void runServer(void);
 
  private:
-  void setup(void);
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& PollManager, int clientF);
-  void cleanup(void);
+  void handleClient(PollManager& pollManager, int clientFd);
 };
