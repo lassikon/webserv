@@ -26,7 +26,19 @@ bool Client::receiveData(void) {
   } else {
     LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
     // Echo data back to the client
-    if (send(fd, buf, nbytes, 0) == -1) {
+
+    std::string content = "<html><body><h1>Hello, World!</h1></body></html>";
+
+    std::ostringstream oss;
+    oss << "HTTP/1.1 200 OK\r\n";
+    oss << "Cache-Control: no-cache, private\r\n";
+    oss << "Content-Type: text/html\r\n";
+    oss << "Content-Length: " << content.size() << "\r\n";
+    oss << "\r\n";
+    oss << content;
+    std::string response = oss.str();
+
+    if (send(fd, response.c_str(), response.size() + 1, 0) == -1) {
       LOG_ERROR("Send() failed with fd:", fd);
       // throw exception
     }

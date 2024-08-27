@@ -22,5 +22,4 @@ int main(int argc, char **argv) {
   t.callChecker(argc);
   Exception::tryCatch(&Test::checkArgCount, &t, argc);
   std::cout << "This line will get executed, once stack is unwinded!" << std::endl;
-  return 0;
 }
