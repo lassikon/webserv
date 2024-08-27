@@ -26,7 +26,6 @@ class Server {
   Server(std::string port);
   ~Server(void);
 
-  // void setupServer(std::string port);
   void runServer(void);
 
  private:
