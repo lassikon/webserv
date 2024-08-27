@@ -7,4 +7,5 @@ webserv
 **/*.txt
 **/*.pdf
 **/*.sh
+**/*main.cpp
 .clang-format
