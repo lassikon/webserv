@@ -1,13 +1,16 @@
 #pragma once
 
+#include <Server.hpp>
+
 class Client {
-private:
-  const float example = 42;
+ private:
+  int fd;
 
-public:
-  Client(void);
-  Client(const Client &other);
-  Client &operator=(const Client &other);
+ public:
+  Client(int socketFd);
   ~Client(void);
+  bool operator==(const Client& other) const;
+  bool receiveData(void);
+  int getFd(void) const;
+  void setFd(int fd);
 };
-

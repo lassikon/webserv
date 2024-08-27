@@ -1,7 +1,11 @@
 webserv
 **/*build
 **/*.deps
+**/*.vscode
 **/dump*
 **/*.log
 **/*.txt
 **/*.pdf
+**/*.pdf
+**/*.sh
+.clang-format

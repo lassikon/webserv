@@ -1,4 +1,5 @@
 #include <Exception.hpp>
+#include <Server.hpp>
 
 class Test {
 public:
