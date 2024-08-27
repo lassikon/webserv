@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utility.hpp                                        :+:      :+:    :+:   */
+/*   Utility.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/20 10:36:26 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/27 09:38:14 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/27 13:08:04 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,5 +18,6 @@
 class Utility
 {
     public:
-        static std::string trimCommentsAndWhitespaces(std::string & line);
+        static std::string trimWhitespaces(std::string & line);
+        static std::string trimComments(std::string & line);
 };

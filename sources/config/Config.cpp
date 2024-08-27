@@ -6,7 +6,7 @@
 /*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/19 15:38:39 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/27 09:51:52 by janraub          ###   ########.fr       */
+/*   Updated: 2024/08/27 13:09:46 by janraub          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,9 +133,11 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
           {"client_body_size_limit", setClientBodySizeLimit},
       };
   std::string key = _line.substr(0, pos);
-  key = Utility::trimCommentsAndWhitespaces(key);
+  key = Utility::trimComments(key);
+  key = Utility::trimWhitespaces(key);
   std::string value = _line.substr(pos + 1);
-  value = Utility::trimCommentsAndWhitespaces(value);
+  value = Utility::trimComments(value);
+  value = Utility::trimWhitespaces(value);
   auto it_key = serverStructMap.find(key);
   if (it_key != serverStructMap.end()) {
     if (value.empty())
@@ -159,9 +161,11 @@ void Config::populateRoute(RouteConfig& routeConfig, std::size_t& pos) {
                         {"redirect", setRedirect},
                         {"cgi", setCgi}};
   std::string key = _line.substr(0, pos);
-  key = Utility::trimCommentsAndWhitespaces(key);
+  key = Utility::trimComments(key);
+	key = Utility::trimWhitespaces(key);
   std::string value = _line.substr(pos + 1);
-  value = Utility::trimCommentsAndWhitespaces(value);
+  value = Utility::trimComments(value);
+	value = Utility::trimWhitespaces(value);
   auto it_key = routeStructMap.find(key);
   if (it_key != routeStructMap.end()) {
     if (value.empty())
@@ -273,7 +277,7 @@ void Config::setMethods(RouteConfig& route, std::string const& value) {
   std::stringstream ss(value);
   std::string method;
   while (std::getline(ss, method, ',')) {
-    method = Utility::trimCommentsAndWhitespaces(method);
+    method = Utility::trimWhitespaces(method);
     if (method.empty())
       LOG_WARN("Parse: Invalid method, ", method, " at line ", _lineNumber);
     else if (method != "GET" && method != "POST" && method != "DELETE") {
@@ -352,7 +356,7 @@ void Config::setCgi(RouteConfig& route, std::string const& value) {
   std::stringstream ss(value);
   std::string cgi;
   while (std::getline(ss, cgi, ',')) {
-    cgi = Utility::trimCommentsAndWhitespaces(cgi);
+    cgi = Utility::trimWhitespaces(cgi);
     route.cgi.push_back(cgi);
   }
 }
@@ -360,7 +364,7 @@ void Config::setCgi(RouteConfig& route, std::string const& value) {
 bool Config::callGetLine(std::stringstream& configFile) {
   // handle unexpected EOF
   if (!std::getline(configFile, _line)) return false;
-  _line = Utility::trimCommentsAndWhitespaces(_line);
+  _line = Utility::trimWhitespaces(_line);
   _lineNumber++;
   return true;
 }
