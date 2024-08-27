@@ -30,10 +30,11 @@ MAKEFLAGS  += -j4 --no-print-directory
 # **************************************************************************** #
 
 MODULES := utils \
-					network
-
+					network \
+		   config
 SOURCES := main \
-           Logger \
+           utility \
+		   config \
 		   Server \
 		   Client \
 			 Socket \
