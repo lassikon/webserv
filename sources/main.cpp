@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
   } else {
     Config config(void);
   }
+  LOG_INFO("Logging...");
   return g_ExitStatus;
 }
 

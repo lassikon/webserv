@@ -43,7 +43,7 @@ private:
 private:
   template <typename... Args>
   void create(logLevel LogLvl, const char *LvlTitle, const char *LvlColor,
-              std::ostream &consoleStream, int LineNbr, const char *SrcFile, Args... args) {
+              std::ostream &consoleStream, int LineNbr, const char *SrcFile, Args &&... args) {
     if (LogLvl < currentLevel)
       return;
     std::ostringstream logEntry;
@@ -64,7 +64,7 @@ private:
 public:
   template <typename... Args>
   static void Log(logLevel LogLvl, const char *LvlTitle, const char *LvlColor,
-                  std::ostream &ConsoleStream, int LineNbr, const char *SrcFile, Args... args) {
+                  std::ostream &ConsoleStream, int LineNbr, const char *SrcFile, Args &&... args) {
     newLogInstance().create(LogLvl, LvlTitle, LvlColor, ConsoleStream, LineNbr, SrcFile, args...);
   }
 };
