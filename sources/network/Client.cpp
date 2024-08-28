@@ -18,35 +18,56 @@ bool Client::receiveData(void) {
   if (nbytes == -1 && errno != EWOULDBLOCK && errno != EAGAIN) {
     LOG_ERROR("Failed to recv() from fd:", fd);
     // throw exception
-    return false;
   } else if (nbytes == 0) {  // Connection closed
     LOG_DEBUG("Connection closed for client fd:", fd);
     return false;
   } else {
-    LOG_DEBUG("Receiving data from client fd", fd, ", buffer:", buf);
+    LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
     // Echo data back to the client
-    std::string bufStr(buf);
-    processRequest(bufStr);
-    /*     std::string content = "<html><body><h1>Hello,
-       World!</h1></body></html>";
-
-        std::ostringstream oss;
-        oss << "HTTP/1.1 200 OK\r\n";
-        oss << "Cache-Control: no-cache, private\r\n";
-        oss << "Content-Type: text/html\r\n";
-        oss << "Content-Length: " << content.size() << "\r\n";
-        oss << "\r\n";
-        oss << content;
-        std::string response = oss.str();
-
-        if (send(fd, response.c_str(), response.size() + 1, 0) == -1) {
-          LOG_ERROR("Send() failed with fd:", fd);
-          // throw exception
-          return false;
-        } */
+    if (send(fd, buf, nbytes, 0) == -1) {
+      LOG_ERROR("Send() failed with fd:", fd);
+      // throw exception
+      return false;
+    }
   }
   return true;
 }
+
+// bool Client::receiveData(void) {
+//   char buf[4096] = {0};
+//   int nbytes = recv(fd, buf, sizeof(buf), 0);
+//   if (nbytes == -1 && errno != EWOULDBLOCK && errno != EAGAIN) {
+//     LOG_ERROR("Failed to recv() from fd:", fd);
+//     // throw exception
+//     return false;
+//   } else if (nbytes == 0) {  // Connection closed
+//     LOG_DEBUG("Connection closed for client fd:", fd);
+//     return false;
+//   } else {
+//     LOG_DEBUG("Receiving data from client fd", fd, ", buffer:", buf);
+//     // Echo data back to the client
+//     std::string bufStr(buf);
+//     processRequest(bufStr);
+//     /*     std::string content = "<html><body><h1>Hello,
+//        World!</h1></body></html>";
+
+//         std::ostringstream oss;
+//         oss << "HTTP/1.1 200 OK\r\n";
+//         oss << "Cache-Control: no-cache, private\r\n";
+//         oss << "Content-Type: text/html\r\n";
+//         oss << "Content-Length: " << content.size() << "\r\n";
+//         oss << "\r\n";
+//         oss << content;
+//         std::string response = oss.str();
+
+//         if (send(fd, response.c_str(), response.size() + 1, 0) == -1) {
+//           LOG_ERROR("Send() failed with fd:", fd);
+//           // throw exception
+//           return false;
+//         } */
+//   }
+//   return true;
+// }
 
 void Client::processRequest(std::string& buf) {
   LOG_DEBUG("Processing request from client fd:", fd);
@@ -60,7 +81,7 @@ void Client::processRequest(std::string& buf) {
     parseHeaders(req, iBuf);
   }
   std::cout << "method: " << req.method << std::endl;
-std::cout << static_cast<int>(state) << std::endl;
+  std::cout << static_cast<int>(state) << std::endl;
   if (req.method == "POST" && state == ClientState::READING_BODY) {
     parseBody(req, iBuf);
   } else if (req.method == "GET" || req.method == "DELETE") {
@@ -181,4 +202,3 @@ void Client::cleanupClient(void) {
     fd = -1;  // Mark as closed
   }
 }
-

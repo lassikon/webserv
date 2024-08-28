@@ -26,9 +26,9 @@ class Server {
   Server(std::string port);
   ~Server(void);
 
-  void runServer(void);
+  int getSocketFd(void) const { return socket.getFd(); }
+  std::string getPort(void) const { return port; }
 
- private:
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd);
 };
