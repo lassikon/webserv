@@ -3,6 +3,7 @@
 Client::Client(int socketFd) : fd(socketFd) {
   LOG_DEBUG("Client constructor called");
   state = ClientState::READING_REQLINE;
+  req.transferEncodingChunked = false;
 }
 
 Client::~Client(void) {
@@ -15,7 +16,7 @@ bool Client::operator==(const Client& other) const { return fd == other.fd; }
 bool Client::receiveData(void) {
   char buf[4096] = {0};
   int nbytes = recv(fd, buf, sizeof(buf), 0);
-  if (nbytes == -1 && errno != EWOULDBLOCK && errno != EAGAIN) {
+  if (nbytes == -1 ) { //&& errno != EWOULDBLOCK && errno != EAGAIN
     LOG_ERROR("Failed to recv() from fd:", fd);
     // throw exception
     return false;
@@ -25,32 +26,14 @@ bool Client::receiveData(void) {
   } else {
     LOG_DEBUG("Receiving data from client fd", fd, ", buffer:", buf);
     // Echo data back to the client
-    std::string bufStr(buf);
+    std::istringstream bufStr(buf);
     processRequest(bufStr);
-    /*     std::string content = "<html><body><h1>Hello,
-       World!</h1></body></html>";
-
-        std::ostringstream oss;
-        oss << "HTTP/1.1 200 OK\r\n";
-        oss << "Cache-Control: no-cache, private\r\n";
-        oss << "Content-Type: text/html\r\n";
-        oss << "Content-Length: " << content.size() << "\r\n";
-        oss << "\r\n";
-        oss << content;
-        std::string response = oss.str();
-
-        if (send(fd, response.c_str(), response.size() + 1, 0) == -1) {
-          LOG_ERROR("Send() failed with fd:", fd);
-          // throw exception
-          return false;
-        } */
   }
   return true;
 }
 
-void Client::processRequest(std::string& buf) {
+void Client::processRequest(std::istringstream& iBuf) {
   LOG_DEBUG("Processing request from client fd:", fd);
-  std::istringstream iBuf(buf);
   if (state == ClientState::READING_REQLINE) {
     std::string requestLine;
     std::getline(iBuf, requestLine);
@@ -59,8 +42,6 @@ void Client::processRequest(std::string& buf) {
   if (state == ClientState::READING_HEADER) {
     parseHeaders(req, iBuf);
   }
-  std::cout << "method: " << req.method << std::endl;
-std::cout << static_cast<int>(state) << std::endl;
   if (req.method == "POST" && state == ClientState::READING_BODY) {
     parseBody(req, iBuf);
   } else if (req.method == "GET" || req.method == "DELETE") {
@@ -82,13 +63,14 @@ void Client::parseRequestLine(HttpReq& req, std::string& requestLine) {
 void Client::parseHeaders(HttpReq& req, std::istringstream& iBuf) {
   LOG_TRACE("Parsing headers");
   std::string header;
-  while (std::getline(iBuf, header) && header != "\r") {
+  while (std::getline(iBuf, header)) {
     std::cout << "header: " << header << std::endl;
-    if (header.find("\r\n\r") != std::string::npos) {
+    if (header.find("\r\n\r") != std::string::npos || header.empty() ||
+        header == "\r") {
       state = ClientState::READING_BODY;
       break;
     }
-    if (header.back() == '\r') {
+    if (header.back() == '\r' && header.size() > 1) {
       header.pop_back();
     }
     auto pos = header.find(':');
@@ -113,12 +95,10 @@ void Client::parseBody(HttpReq& req, std::istringstream& iBuf) {
         chunkSizeHex.pop_back();
       }
       int chunkSize = std::stoi(chunkSizeHex, 0, 16);
-      std::cout << "chunk size: " << chunkSize << std::endl;
       if (chunkSize == 0) {
         state = ClientState::READING_DONE;
         break;
       }
-
       std::vector<char> chunkData(chunkSize);
       iBuf.read(chunkData.data(), chunkSize);
       req.body.append(chunkData.data(), chunkSize);
@@ -143,7 +123,6 @@ void Client::handleRequest(HttpReq& req) {
     for (auto& header : req.headers) {
       LOG_INFO(header.first, ":", header.second);
     }
-    // sendResponse(req);
   } else if (req.method == "POST") {
     LOG_INFO("POST request for path:", req.path);
     LOG_INFO("Request body:", req.body);
@@ -161,6 +140,30 @@ void Client::handleRequest(HttpReq& req) {
   } else {
     LOG_ERROR("Unsupported method:", req.method);
   }
+}
+
+bool Client::sendResponse(void) {
+  LOG_DEBUG("Sending response to client fd:", fd);
+  std::ifstream html("webroot/website0/index.html");
+  std::stringstream contentBuf;
+  contentBuf << html.rdbuf();
+  std::string content = contentBuf.str();
+
+  std::ostringstream oss;
+  oss << "HTTP/1.1 200 OK\r\n";
+  oss << "Cache-Control: no-cache, private\r\n";
+  oss << "Content-Type: text/html\r\n";
+  oss << "Content-Length: " << content.size() << "\r\n";
+  oss << "\r\n";
+  oss << content;
+  std::string response = oss.str();
+
+  if (send(fd, response.c_str(), response.size() + 1, 0) == -1) {
+    LOG_ERROR("Send() failed with fd:", fd);
+    // throw exception
+    return false;
+  }
+  return true;
 }
 
 void Client::setFd(int newFd) {
@@ -181,4 +184,3 @@ void Client::cleanupClient(void) {
     fd = -1;  // Mark as closed
   }
 }
-

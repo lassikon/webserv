@@ -31,4 +31,5 @@ class Server {
  private:
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd);
+  void handleResponse(PollManager& pollManager, int clientFd);
 };

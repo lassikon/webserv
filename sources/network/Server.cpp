@@ -11,7 +11,7 @@ Server::~Server(void) { LOG_DEBUG("Server destructor called"); }
 
 void Server::runServer(void) {
   PollManager pollManager;
-  pollManager.addFd(socket.getFd(), POLLIN);
+  pollManager.addFd(socket.getFd(), POLLIN | POLLOUT);
 
   while (true) {
     if (pollManager.pollFdsCount() == -1) {
@@ -20,11 +20,13 @@ void Server::runServer(void) {
       break;
     }
     for (auto& pollFd : pollManager.getPollFds()) {
-      if (pollFd.revents & POLLIN) {
+      if (pollFd.revents & (POLLIN | POLLOUT)) {
         if (pollFd.fd == socket.getFd()) {
           acceptConnection(pollManager);
-        } else {
+        } else if (pollFd.revents & POLLIN) {
           handleClient(pollManager, pollFd.fd);
+        } else if (pollFd.revents & POLLOUT) {
+          handleResponse(pollManager, pollFd.fd);
         }
       }
     }
@@ -40,7 +42,7 @@ void Server::acceptConnection(PollManager& pollManager) {
     return;
   } else {
     clients.emplace_back(newFd);
-    pollManager.addFd(newFd, POLLIN);
+    pollManager.addFd(newFd, POLLIN | POLLOUT);
   }
 }
 
@@ -52,8 +54,21 @@ void Server::handleClient(PollManager& pollManager, int clientFd) {
     // throw exception
     return;
   }
-
   if (!it->receiveData()) {  // connection closed or error
+    pollManager.removeFd(clientFd);
+    clients.erase(it);
+  }
+}
+
+void Server::handleResponse(PollManager& pollManager, int clientFd) {
+  auto it = std::find_if(clients.begin(), clients.end(),
+                         [clientFd](Client& client) { return client.getFd() == clientFd; });
+  if (it == clients.end()) {
+    LOG_ERROR("Client not found in clients list");
+    // throw exception
+    return;
+  }
+  if (!it->sendResponse()) {  // connection closed or error
     pollManager.removeFd(clientFd);
     clients.erase(it);
   }

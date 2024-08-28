@@ -24,6 +24,7 @@ struct HttpReq {
   std::string body;
   bool transferEncodingChunked;
 };
+
 class Client {
  private:
   int fd;
@@ -40,12 +41,14 @@ class Client {
   void setFd(int fd);
 
   // request
-  void processRequest(std::string& buf);
+  void processRequest(std::istringstream& iBuf);
   void parseRequestLine(HttpReq& req, std::string& requestLine);
   void parseHeaders(HttpReq& req, std::istringstream& iBuf);
   void parseBody(HttpReq& req, std::istringstream& iBuf);
   void handleRequest(HttpReq& req);
-  void sendResponse(HttpReq& req);
+
+  // response
+  bool sendResponse(void);
 	private:
 	void cleanupClient(void);
 };
