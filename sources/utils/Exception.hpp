@@ -41,11 +41,11 @@ private:
       ss << "Runtime Error: " << e.what();
     } catch (const std::bad_alloc &e) {
       ss << "Memory Error: " << e.what();
-    }catch (const std::bad_exception &e) {
+    } catch (const std::bad_exception &e) {
       ss << "Unexpected Error: " << e.what();
-    }catch (const std::exception &e) {
+    } catch (const std::exception &e) {
       if ((std::string)e.what() != "std::exception")
-        ss << "Standard Exception: " << e.what();
+        ss << "Exception occured: " << e.what();
     }
     if (!ss.str().empty())
       LOG_FATAL(ss.str());
@@ -56,9 +56,20 @@ public:
   static auto tryCatch(Func fn, Cref ref, Args &&...args) {
     newTryCatch().create(fn, ref, args...);
   }
+
+#define STRERROR Exception::expandErrno()
+  static inline std::string expandErrno(void) noexcept {
+    std::ostringstream ss;
+    if (!errno) {
+      ss << "";
+    } else {
+      ss << "[errno:" << errno << "] " << strerror(errno);
+    }
+    return ss.str();
+  }
 };
 
-#define THROW(errCode, ...)                                                    \
-  LOG_FATAL(__VA_ARGS__);                                                      \
-  g_ExitStatus = (int)errCode;                                                 \
+#define THROW(errCode, ...)    \
+  LOG_FATAL(__VA_ARGS__);      \
+  g_ExitStatus = (int)errCode; \
   throw Exception();
