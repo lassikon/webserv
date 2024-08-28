@@ -39,6 +39,7 @@ SOURCES := main \
            PollManager \
            Config \
            Utility \
+           Signal \
            Logger \
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))

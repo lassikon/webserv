@@ -3,6 +3,9 @@
 #include <Global.hpp>
 #include <Logger.hpp>
 #include <Server.hpp>
+#include <Signal.hpp>
+
+#include <unistd.h>
 
 int g_SignalReceived;
 int g_ExitStatus;
@@ -16,30 +19,22 @@ int main(int argc, char **argv) {
   } else {
     Config config(void);
   }
-  LOG_INFO("Logging...");
+  Signal::TrackSignals();
+  while (true) {
+    sleep(3);
+    LOG_INFO("Logging...");
+  }
   return g_ExitStatus;
 }
-
-/* class Test { */
-/* public: */
-/*   void checkArgCount(int argc) { */
-/*     (void)argc; */
-/*     std::string a = std::string("abc").substr(10); */
-/*     std::string fileName = "does_not_exist.txt"; */
-/*     std::ifstream f(fileName); */
-/*     if (!f) */
-/*       THROW(Error::Config, ERR_MSG_NOFILE, fileName, STRERROR); */
-/*     LOG_INFO("This line would execute without throw!"); */
-/*   } */
-/* }; */
-
-/* int main(int argc, char **argv) { */
-/*   Exception::tryCatch(&Config::Parse, &config); */
-/*   if (!config.getAvailableServers) { */
-/*     LOG_WARN(ERR_MSG_NOSERVER, config.getFileName); */
-/*     return (int)Error::Config; */
-/*   } */
-/*   Server server(config.getServerConfigs); */
-/*   Exception::tryCatch(&Server::Run, &server); */
-/*   return g_ExitStatus: */
-/* } */
+/*
+  Exception::tryCatch(&Config::parseConfigFile, &config);
+  if (config.getServers.empty()) {
+  LOG_WARN(ERR_MSG_NOSERVER, config.getFileName);
+  return (int)Error::Config;
+  }
+*/
+/*
+  Server server(config.getServers);
+  Exception::tryCatch(&Server::Run, &server);
+  return g_ExitStatus:
+*/

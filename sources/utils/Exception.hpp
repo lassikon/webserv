@@ -69,7 +69,7 @@ public:
   }
 };
 
-#define THROW(errCode, ...)    \
-  LOG_FATAL(__VA_ARGS__);      \
-  g_ExitStatus = (int)errCode; \
+#define THROW(errCode, ...)                                                    \
+  LOG_FATAL(__VA_ARGS__);                                                      \
+  g_ExitStatus = (int)errCode;                                                 \
   throw Exception();
