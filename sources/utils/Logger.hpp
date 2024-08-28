@@ -35,6 +35,8 @@ private:
   void closeLogFile(void);
   void setLogDetails(bool time, bool file, bool line);
   void setLogDetail(int index, bool value);
+
+private:
   static inline Logger &newLogInstance(void) noexcept {
     static Logger logger;
     return logger;
