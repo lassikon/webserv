@@ -4,9 +4,7 @@
 Logger::Logger(void) {
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
-  enabledDetail[(int)logDetail::TimeStamp] = true;
-  enabledDetail[(int)logDetail::SourceFile] = true;
-  enabledDetail[(int)logDetail::LineNumber] = true;
+  setLogDetails(true, true, true);
   if (currentOutput != logOutput::ConsoleOnly)
     createLogFile();
 }
@@ -16,10 +14,20 @@ Logger::~Logger(void) { closeLogFile(); }
 void Logger::createLogFile(void) {
   logFile.open(fileName, std::ios_base::app);
   if (logFile.fail())
-    LOG_WARN(ERR_MSG_NOCONFIG, fileName, ":", strerror(errno));
+    LOG_WARN(ERR_MSG_NOFILE, fileName, ":", strerror(errno));
 }
 
 void Logger::closeLogFile(void) {
   if (logFile.is_open())
     logFile.close();
+}
+
+void Logger::setLogDetails(bool time, bool file, bool line) {
+  setLogDetail((int)logDetail::Time, time);
+  setLogDetail((int)logDetail::File, file);
+  setLogDetail((int)logDetail::Line, line);
+}
+
+void Logger::setLogDetail(int index, bool value) {
+  enabledDetail[index] = value;
 }

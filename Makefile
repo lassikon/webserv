@@ -39,7 +39,6 @@ SOURCES := main \
            PollManager \
            Config \
            Utility \
-           Exception \
            Logger \
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))

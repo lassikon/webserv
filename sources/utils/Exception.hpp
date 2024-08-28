@@ -1,53 +1,64 @@
 #pragma once
 
+#include <cerrno>
+#include <cstring>
 #include <exception>
+#include <sstream>
+#include <string>
 #include <utility>
 
+#include <Global.hpp>
 #include <Logger.hpp>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
-#define ERR_MSG_NOSERVER "Could not load any server from config file:"
-#define ERR_MSG_NOCONFIG "Could not access config:"
+#define ERR_MSG_NOSERVER "No valid server config found:"
+#define ERR_MSG_NOFILE "Could not access file:"
 
-enum class ErrorCode { NoError, ArgCount = 134, ConfigFile, NoServer };
+enum class Error { NoError, Args, Config, Server };
 
 class Exception : public std::exception {
 public:
-  Exception(void);
+  Exception(void) noexcept {};
   Exception(const Exception &other) = delete;
   Exception &operator=(const Exception &other) = delete;
-  ~Exception(void);
+  ~Exception(void) noexcept {};
 
 private:
-  std::string errCodeToString(const ErrorCode &e) noexcept;
-  static Exception &newTryCatch(void) {
+  static inline Exception &newTryCatch(void) noexcept {
     static Exception wrapper;
     return wrapper;
   }
 
 private:
   template <typename Func, typename Cref, typename... Args>
-  auto wrap(Func fn, Cref ref, Args &&...args) {
+  auto create(Func fn, Cref ref, Args &&...args) {
+    std::ostringstream ss;
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
-    } catch (...) {LOG_INFO("LOLZ");}
+    } catch (const std::logic_error &e) {
+      ss << "Logic Error: " << e.what();
+    } catch (const std::runtime_error &e) {
+      ss << "Runtime Error: " << e.what();
+    } catch (const std::bad_alloc &e) {
+      ss << "Memory Error: " << e.what();
+    }catch (const std::bad_exception &e) {
+      ss << "Unexpected Error: " << e.what();
+    }catch (const std::exception &e) {
+      if ((std::string)e.what() != "std::exception")
+        ss << "Standard Exception: " << e.what();
+    }
+    if (!ss.str().empty())
+      LOG_FATAL(ss.str());
   }
 
 public:
   template <typename Func, typename Cref, typename... Args>
   static auto tryCatch(Func fn, Cref ref, Args &&...args) {
-    newTryCatch().wrap(fn, ref, args...);
+    newTryCatch().create(fn, ref, args...);
   }
 };
 
-#define THROW_WARN(errMsg)                                                     \
-  LOG_WARN(errMsg);                                                            \
-  throw Exception();
-
-#define THROW_ERROR(errMsg)                                                    \
-  LOG_ERROR(errMsg);                                                           \
-  throw Exception();
-
-#define THROW_FATAL(errMsg)                                                    \
-  LOG_FATAL(errMsg);                                                           \
+#define THROW(errCode, ...)                                                    \
+  LOG_FATAL(__VA_ARGS__);                                                      \
+  g_ExitStatus = (int)errCode;                                                 \
   throw Exception();

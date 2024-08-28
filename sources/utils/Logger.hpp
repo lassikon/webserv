@@ -7,8 +7,8 @@
 #include <sstream>
 #include <string>
 
-#include <Utility.hpp>
 #include <Colors.hpp>
+#include <Utility.hpp>
 
 enum class logLevel { Trace, Debug, Info, Warn, Error, Fatal };
 
@@ -17,7 +17,7 @@ private:
   const char *fileName = "webserv.log";
   std::ofstream logFile;
 
-  enum class logDetail { TimeStamp, SourceFile, LineNumber };
+  enum class logDetail { Time, File, Line };
   enum class logOutput { ConsoleOnly, FileOnly, Both };
 
   logLevel currentLevel;
@@ -33,7 +33,9 @@ public:
 private:
   void createLogFile(void);
   void closeLogFile(void);
-  static Logger &newLogInstance(void) {
+  void setLogDetails(bool time, bool file, bool line);
+  void setLogDetail(int index, bool value);
+  static inline Logger &newLogInstance(void) noexcept {
     static Logger logger;
     return logger;
   }
@@ -46,11 +48,11 @@ private:
       return;
     std::ostringstream logEntry;
     logEntry << LvlColor << "[" << LvlTitle << "]";
-    if (enabledDetail[(int)logDetail::TimeStamp])
+    if (enabledDetail[(int)logDetail::Time])
       logEntry << "[" << Utility::getDateTimeStamp() << "]";
-    if (enabledDetail[(int)logDetail::SourceFile])
+    if (enabledDetail[(int)logDetail::File])
       logEntry << "[" << SrcFile;
-    if (enabledDetail[(int)logDetail::LineNumber])
+    if (enabledDetail[(int)logDetail::Line])
       logEntry << ":" << LineNbr << "]";
     ([&] { logEntry << " " << args; }(), ...);
     if (currentOutput != logOutput::FileOnly)
