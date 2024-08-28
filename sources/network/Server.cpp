@@ -13,12 +13,10 @@ void Server::runServer(void) {
   PollManager pollManager;
   pollManager.addFd(socket.getFd(), POLLIN);
 
-  while (true) {
-    if (pollManager.pollFdsCount() == -1) {
-      LOG_ERROR("Failed to poll");
-      // throw exception
-      break;
-    }
+  if (pollManager.pollFdsCount() == -1) {
+    LOG_ERROR("Failed to poll");
+    // throw exception
+  } else {
     for (auto& pollFd : pollManager.getPollFds()) {
       if (pollFd.revents & POLLIN) {
         if (pollFd.fd == socket.getFd()) {

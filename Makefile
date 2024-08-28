@@ -41,6 +41,7 @@ SOURCES := main \
 		   Client \
 			 Socket \
 			PollManager \
+			ServersManager \
 		   Exception \
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
