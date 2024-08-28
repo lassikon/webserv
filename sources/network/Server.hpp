@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #define PORT "3490"
@@ -20,7 +21,7 @@ class Server {
  private:
   Socket socket;
   std::string port;
-  std::vector<Client> clients;
+  std::vector<std::shared_ptr<Client>> clients;
 
  public:
   Server(std::string port);
@@ -31,4 +32,5 @@ class Server {
 
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd);
+  bool isClientFd(int fd) const;
 };

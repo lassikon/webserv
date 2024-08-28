@@ -38,12 +38,21 @@ void ServersManager::runServers(void) {
 
 void ServersManager::serverLoop(PollManager& pollManager) {
   for (auto& pollFd : pollManager.getPollFds()) {
+    // if (pollFd.revents & (POLLERR || POLLHUP || POLLNVAL)) {
+    //   LOG_ERROR("Error:", pollFd.revents, "on fd:", pollFd.fd);
+    //   pollManager.removeFd(pollFd.fd);
+    //   continue;
+    // }
     if (pollFd.revents & POLLIN) {
       for (auto& server : servers) {
-        if (pollFd.fd == server.getSocketFd()) {
+        if (pollFd.fd ==
+            server.getSocketFd()) {  // It's a listening socket, accept a new connection
           server.acceptConnection(pollManager);
-        } else {
+          break;
+        } else if (server.isClientFd(
+                       pollFd.fd)) {  // It's a client socket, handle client communication
           server.handleClient(pollManager, pollFd.fd);
+          break;
         }
       }
     }
