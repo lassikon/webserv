@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
     Config config;
     config.printServerConfig();
     Server server(PORT);
-    server.run();
+    server.runServer();
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
     return EXIT_FAILURE;
