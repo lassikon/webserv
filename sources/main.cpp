@@ -1,19 +1,20 @@
-#include <Config.hpp>
 #include <Server.hpp>
+
+#include <Config.hpp>
 #define PORT "3490"
+
+// TESTING: run "nc localhost 3490" in another
+// terminal (or multiple terminals to simulate multiple clients)
+// and start typing messages
 
 int main(int argc, char** argv) {
   (void)argc;
   (void)argv;
-  try {
-    // Config config(argv[1]);
-    Config config;
-    config.printServerConfig();
-    Server server(PORT);
-    server.run();
-  } catch (const std::exception& e) {
-    std::cerr << e.what() << '\n';
-    return EXIT_FAILURE;
-  }
+  Config config;
+  //Config config(argv[1]);
+  std::shared_ptr<Config> configPtr = std::make_shared<Config>(config);
+  config.printServerConfig();
+  Server server(PORT, configPtr);
+  server.runServer();
   return 0;
 }
