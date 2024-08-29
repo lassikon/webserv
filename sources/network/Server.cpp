@@ -1,10 +1,10 @@
 #include <Server.hpp>
 
-Server::Server(std::string port) : port(port) {
+Server::Server(ServerConfig& serverConfig) {
   LOG_DEBUG("Server constructor called");
+  port = serverConfig.port;
   socket = Socket();
-  // clients.reserve(MAX_CLIENTS);
-  socket.setupSocket(port);
+  socket.setupSocket(serverConfig.port);
 }
 
 Server::~Server(void) { LOG_DEBUG("Server destructor called"); }

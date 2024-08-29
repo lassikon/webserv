@@ -4,18 +4,22 @@ ServersManager::ServersManager(void) { LOG_DEBUG("ServersManager constructor cal
 
 ServersManager::~ServersManager(void) { LOG_DEBUG("ServersManager destructor called"); }
 
+void ServersManager::initServerConfigs(Config& config) {
+  LOG_DEBUG("Initializing servers");
+
+  servers.reserve(config.getServers().size());
+  for (auto& serverConfig : config.getServers()) {
+    LOG_DEBUG("Adding server", serverConfig.first);
+    servers.emplace_back(serverConfig.second);
+  }
+
+  for (auto& server : servers) {
+    LOG_DEBUG("Server port:", server.getPort());
+  }
+}
+
 void ServersManager::runServers(void) {
   LOG_DEBUG("Running servers");
-
-  servers.reserve(3);
-  LOG_DEBUG("Adding server 3490");
-  servers.emplace_back("3490");
-  LOG_DEBUG("Adding server 3491");
-  servers.emplace_back("3491");
-  LOG_DEBUG("Adding server 3492");
-  servers.emplace_back("3492");
-  LOG_DEBUG("servers size:", servers.size());
-
   PollManager pollManager;
   for (auto& server : servers) {
     pollManager.addFd(server.getSocketFd(), POLLIN);

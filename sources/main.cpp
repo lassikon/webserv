@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
     Config config;
     config.printServerConfig();
     ServersManager serversManager;
+    serversManager.initServerConfigs(config);
     serversManager.runServers();
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';

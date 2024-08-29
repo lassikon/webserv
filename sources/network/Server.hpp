@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <Client.hpp>
+#include <Config.hpp>
 #include <Logger.hpp>
 #include <PollManager.hpp>
 #include <Socket.hpp>
@@ -15,20 +16,19 @@
 #include <memory>
 #include <vector>
 
-#define PORT "3490"
-
 class Server {
  private:
   Socket socket;
-  std::string port;
+  int port;
   std::vector<std::shared_ptr<Client>> clients;
 
  public:
-  Server(std::string port);
+  Server(ServerConfig& serverConfig);
   ~Server(void);
 
   int getSocketFd(void) const { return socket.getFd(); }
-  std::string getPort(void) const { return port; }
+  int getPort(void) const { return port; }
+  // void setPort(int port) { this->port = port; }
 
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd);
