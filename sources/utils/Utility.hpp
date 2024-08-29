@@ -4,12 +4,13 @@
 
 #include <chrono>
 #include <iomanip>
-#include <iostream>
+#include <sstream>
 #include <string>
 
 class Utility {
 public:
-  static std::string trimCommentsAndWhitespaces(std::string &line);
+  static std::string trimWhitespaces(std::string &line);
+  static std::string trimComments(std::string &line);
   static std::string getDateTimeStamp(void);
   static int statusOk(void) noexcept;
 };

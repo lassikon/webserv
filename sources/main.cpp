@@ -17,16 +17,18 @@ int main(int argc, char **argv) {
   } else {
     Config config(void);
   }
+  Signal::trackSignals();
   return g_ExitStatus;
 }
 /*
-Signal::trackSignals();
-while (Utility::statusOk()) {
-	LOG_INFO("Logging...");
-	sleep(1);
-}
+  // Signal testing...
+  while (Utility::statusOk()) {
+    LOG_INFO("Logging...");
+    sleep(1);
+  }
 */
 /*
+  // Janrau's config block
   Exception::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers.empty()) {
   LOG_WARN(ERR_MSG_NOSERVER, config.getFileName);
@@ -34,6 +36,7 @@ while (Utility::statusOk()) {
   }
 */
 /*
+  // Lassi's server block
   Server server(config.getServers);
   Exception::tryCatch(&Server::Run, &server);
   return g_ExitStatus:

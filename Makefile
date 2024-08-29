@@ -34,9 +34,10 @@ MODULES := network \
            utils
 
 SOURCES := main \
-           Server \
            Client \
            PollManager \
+           Server \
+           Socket \
            Config \
            Utility \
            Signal \

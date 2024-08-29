@@ -9,7 +9,7 @@
 #include <sstream>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
-#define ERR_MSG_NOSERVER "No valid server config found:"
+#define ERR_MSG_NOSERVER "No valid server found in:"
 #define ERR_MSG_NOFILE "Could not access file:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
 

@@ -1,9 +1,15 @@
 #pragma once
 
-#include <Server.hpp>
+// #include <Server.hpp>
+#include <poll.h>
+
+#include <Client.hpp>
+#include <Logger.hpp>
+#include <algorithm>
 #include <vector>
 
-#define TIMEOUT 10000
+#define TIMEOUT -1
+#define MAX_CLIENTS 100
 
 class PollManager {
  private:
@@ -12,6 +18,7 @@ class PollManager {
  public:
   PollManager(void);
   ~PollManager(void);
+
   void addFd(int fd, short events);
   void removeFd(int fd);
   int pollFdsCount(void);
