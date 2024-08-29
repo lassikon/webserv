@@ -12,9 +12,9 @@ Logger::Logger(void) {
 Logger::~Logger(void) { closeLogFile(); }
 
 void Logger::createLogFile(void) {
-  logFile.open(fileName, std::ios_base::app);
+  logFile.open(fileName);
   if (logFile.fail())
-    LOG_WARN(ERR_MSG_NOFILE, fileName, ":", strerror(errno));
+    LOG_WARN(ERR_MSG_NOFILE, fileName, STRERROR);
 }
 
 void Logger::closeLogFile(void) {

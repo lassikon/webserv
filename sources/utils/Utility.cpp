@@ -20,3 +20,5 @@ std::string Utility::getDateTimeStamp(void) {
   ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
   return ss.str();
 }
+
+int Utility::statusOk(void) noexcept { return !g_ExitStatus; }

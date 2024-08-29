@@ -4,11 +4,9 @@
 #include <Logger.hpp>
 #include <Server.hpp>
 #include <Signal.hpp>
+#include <Utility.hpp>
 
-#include <unistd.h>
-
-int g_SignalReceived;
-int g_ExitStatus;
+std::atomic<int> g_ExitStatus;
 
 int main(int argc, char **argv) {
   if (argc > 2) {
@@ -19,13 +17,15 @@ int main(int argc, char **argv) {
   } else {
     Config config(void);
   }
-  Signal::TrackSignals();
-  while (true) {
-    sleep(3);
-    LOG_INFO("Logging...");
-  }
   return g_ExitStatus;
 }
+/*
+Signal::TrackSignals();
+while (Utility::statusOk()) {
+	LOG_INFO("Logging...");
+	sleep(1);
+}
+*/
 /*
   Exception::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers.empty()) {

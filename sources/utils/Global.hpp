@@ -1,2 +1,3 @@
-extern int g_SignalReceived;
-extern int g_ExitStatus;
+#include <atomic>
+
+extern std::atomic<int> g_ExitStatus;

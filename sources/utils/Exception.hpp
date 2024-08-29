@@ -1,27 +1,21 @@
 #pragma once
 
+#include <Global.hpp>
+#include <Logger.hpp>
+
 #include <cerrno>
 #include <cstring>
 #include <exception>
 #include <sstream>
-#include <string>
-#include <utility>
-
-#include <Global.hpp>
-#include <Logger.hpp>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
 #define ERR_MSG_NOSERVER "No valid server config found:"
 #define ERR_MSG_NOFILE "Could not access file:"
+#define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
-enum class Error { NoError, Args, Config, Server };
+enum class Error { NoError, Args, Config, Server, Signal = 128 };
 
 class Exception : public std::exception {
-public:
-  Exception(void) noexcept {};
-  Exception(const Exception &other) = delete;
-  Exception &operator=(const Exception &other) = delete;
-  ~Exception(void) noexcept {};
 
 private:
   static inline Exception &newTryCatch(void) noexcept {
@@ -69,7 +63,7 @@ public:
   }
 };
 
-#define THROW(errCode, ...)                                                    \
-  LOG_FATAL(__VA_ARGS__);                                                      \
-  g_ExitStatus = (int)errCode;                                                 \
+#define THROW(errCode, ...)    \
+  LOG_FATAL(__VA_ARGS__);      \
+  g_ExitStatus = (int)errCode; \
   throw Exception();

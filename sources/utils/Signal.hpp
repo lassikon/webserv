@@ -1,20 +1,23 @@
 #pragma once
 
+#include <Exception.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
 
 #include <csignal>
+#include <string>
+#include <unordered_map>
 
 class Signal {
-public:
-  Signal(void){};
-  Signal(const Signal &other) = delete;
-  Signal &operator=(const Signal &other) = delete;
-  ~Signal(void){};
+private:
+  std::unordered_map<int, std::string> signals;
 
 public:
-  static void TrackSignals(void) noexcept;
+  Signal(void);
 
 private:
   static inline void signalHandler(int sigNum) noexcept;
+
+public:
+  static void TrackSignals(void) noexcept;
 };

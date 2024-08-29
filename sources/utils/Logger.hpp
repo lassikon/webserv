@@ -1,33 +1,26 @@
 #pragma once
 
-#include <cerrno>
-#include <cstring>
+#include <Colors.hpp>
+#include <Utility.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string>
-
-#include <Colors.hpp>
-#include <Utility.hpp>
 
 enum class logLevel { Trace, Debug, Info, Warn, Error, Fatal };
 
 class Logger {
 private:
+  enum class logOutput { ConsoleOnly, FileOnly, Both };
+  enum class logDetail { Time, File, Line };
   const char *fileName = "webserv.log";
   std::ofstream logFile;
-
-  enum class logDetail { Time, File, Line };
-  enum class logOutput { ConsoleOnly, FileOnly, Both };
-
-  logLevel currentLevel;
   logOutput currentOutput;
+  logLevel currentLevel;
   bool enabledDetail[3];
 
 public:
   Logger(void);
-  Logger(const Logger &) = delete;
-  Logger &operator=(const Logger &) = delete;
   ~Logger(void);
 
 private:
