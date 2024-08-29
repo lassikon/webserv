@@ -6,11 +6,11 @@ int main(int argc, char** argv) {
   (void)argc;
   (void)argv;
   try {
-    // Config config(argv[1]);
-    Config config;
+    // Config config;
+    Config config(argv[1]);
     config.printServerConfig();
     ServersManager serversManager;
-    serversManager.initServerConfigs(config);
+    serversManager.configServers(config);
     serversManager.runServers();
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';

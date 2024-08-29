@@ -28,9 +28,9 @@ class Server {
 
   int getSocketFd(void) const { return socket.getFd(); }
   int getPort(void) const { return port; }
-  // void setPort(int port) { this->port = port; }
 
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd);
   bool isClientFd(int fd) const;
+  void handleResponse(PollManager& pollManager, int clientFd);
 };

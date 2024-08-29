@@ -18,7 +18,7 @@ class ServersManager {
   ~ServersManager(void);
 
   void runServers(void);
-  void initServerConfigs(Config& config);
+  void configServers(Config& config);
 
  private:
   void serverLoop(PollManager& pollManager);

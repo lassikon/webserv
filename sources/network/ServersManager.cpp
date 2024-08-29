@@ -4,15 +4,13 @@ ServersManager::ServersManager(void) { LOG_DEBUG("ServersManager constructor cal
 
 ServersManager::~ServersManager(void) { LOG_DEBUG("ServersManager destructor called"); }
 
-void ServersManager::initServerConfigs(Config& config) {
+void ServersManager::configServers(Config& config) {
   LOG_DEBUG("Initializing servers");
-
   servers.reserve(config.getServers().size());
   for (auto& serverConfig : config.getServers()) {
     LOG_DEBUG("Adding server", serverConfig.first);
     servers.emplace_back(serverConfig.second);
   }
-
   for (auto& server : servers) {
     LOG_DEBUG("Server port:", server.getPort());
   }
