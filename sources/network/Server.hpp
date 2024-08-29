@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <Config.hpp>
 
@@ -21,16 +22,16 @@ class Server {
  private:
   Socket socket;
   std::string port;
-  std::vector<Client> clients;
-  std::shared_ptr<Config> config;
+  std::vector<std::shared_ptr<Client>> clients;
 
  public:
-  Server(std::string port, std::shared_ptr<Config> config);
+  Server(std::string port);
   ~Server(void);
 
-  void runServer(void);
+  int getSocketFd(void) const { return socket.getFd(); }
+  std::string getPort(void) const { return port; }
 
- private:
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd, short revents);
+  bool isClientFd(int fd) const;
 };

@@ -1,10 +1,11 @@
 #include <Client.hpp>
 
-Client::Client(int socketFd) : fd(socketFd) {
+Client::Client(int socketFd)
+    : fd(socketFd) {
   LOG_DEBUG("Client constructor called");
   state = ClientState::READING_REQLINE;
-/*   req.setConfig(config);
-  res.setConfig(config); */
+  /*   req.setConfig(config);
+    res.setConfig(config); */
 }
 
 Client::~Client(void) {
@@ -34,12 +35,11 @@ bool Client::receiveData(void) {
   if (nbytes == -1) {  //&& errno != EWOULDBLOCK && errno != EAGAIN
     LOG_ERROR("Failed to recv() from fd:", fd);
     // throw exception
-    return false;
   } else if (nbytes == 0) {  // Connection closed
     LOG_DEBUG("Connection closed for client fd:", fd);
     return false;
   } else {
-    LOG_DEBUG("Receiving data from client fd", fd, ", buffer:", buf);
+    LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
     // Echo data back to the client
     std::istringstream bufStr(buf);
     processRequest(bufStr);
@@ -95,10 +95,10 @@ void Client::handleRequest(void) {
 }
 
 bool Client::sendResponse(void) {
-/* 
-  std::ifstream file("filename", std::ios::binary);
-std::vector<char> content((std::istreambuf_iterator<char>(file)),
-                           std::istreambuf_iterator<char>()); */
+  /*
+    std::ifstream file("filename", std::ios::binary);
+  std::vector<char> content((std::istreambuf_iterator<char>(file)),
+                             std::istreambuf_iterator<char>()); */
   LOG_DEBUG("Sending response to client fd:", fd);
   std::ifstream html("webroot/website0/index.html");
   std::stringstream contentBuf;

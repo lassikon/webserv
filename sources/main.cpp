@@ -1,6 +1,5 @@
-#include <Server.hpp>
-
 #include <Config.hpp>
+#include <ServersManager.hpp>
 #define PORT "3490"
 
 // TESTING: run "nc localhost 3490" in another
@@ -10,11 +9,15 @@
 int main(int argc, char** argv) {
   (void)argc;
   (void)argv;
-  Config config;
-  //Config config(argv[1]);
-  std::shared_ptr<Config> configPtr = std::make_shared<Config>(config);
-  config.printServerConfig();
-  Server server(PORT, configPtr);
-  server.runServer();
+  try {
+    // Config config(argv[1]);
+    Config config;
+    config.printServerConfig();
+    ServersManager serversManager;
+    serversManager.runServers();
+  } catch (const std::exception& e) {
+    std::cerr << e.what() << '\n';
+    return EXIT_FAILURE;
+  }
   return 0;
 }

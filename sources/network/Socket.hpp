@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fcntl.h>
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>
@@ -22,5 +23,8 @@ class Socket {
 
   int getFd(void) const { return sockFd; }
   void setupSocket(std::string port);
+
+ private:
   void cleanupSocket(void);
+  void setNonBlocking(void);
 };
