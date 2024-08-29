@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
   return g_ExitStatus;
 }
 /*
-Signal::TrackSignals();
+Signal::trackSignals();
 while (Utility::statusOk()) {
 	LOG_INFO("Logging...");
 	sleep(1);

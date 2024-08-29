@@ -16,8 +16,9 @@ public:
   Signal(void);
 
 private:
-  static inline void signalHandler(int sigNum) noexcept;
+  static void signalHandler(int sigNum) noexcept;
+  static inline std::string sigNumToString(int sigNum);
 
 public:
-  static void TrackSignals(void) noexcept;
+  static void trackSignals(void) noexcept;
 };
