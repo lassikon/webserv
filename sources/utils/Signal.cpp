@@ -1,23 +1,20 @@
 #include <Signal.hpp>
-#include <csignal>
-#include <utility>
 
-Signal::Signal(void) {
-  signals.insert(std::make_pair(SIGINT, "Crtl + C"));
-  signals.insert(std::make_pair(SIGQUIT, "Crtl + \\"));
-}
+SIGMAP Signal::sigmap;
 
-std::string Signal::sigNumToString(int sigNum) {
-  (void)sigNum;
-  return "Crtl + ?";
+void Signal::createSigMap(void) noexcept {
+  sigmap.insert(std::make_pair(SIGINT, "Crtl + C"));
+  sigmap.insert(std::make_pair(SIGQUIT, "Crtl + \\"));
 }
 
 void Signal::signalHandler(int sigNum) noexcept {
-  LOG_INFO(ERR_MSG_SIGNAL, sigNum);
+  std::cout << std::endl;
+  LOG_INFO(ERR_MSG_SIGNAL, sigNum, sigmap.at(sigNum));
   g_ExitStatus = (int)Error::Signal + sigNum;
 }
 
 void Signal::trackSignals(void) noexcept {
   signal(SIGINT, signalHandler);
   signal(SIGQUIT, signalHandler);
+  createSigMap();
 }

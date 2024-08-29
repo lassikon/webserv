@@ -18,6 +18,10 @@ int main(int argc, char **argv) {
     Config config(void);
   }
   Signal::trackSignals();
+  while (Utility::statusOk()) {
+    LOG_INFO("Logging...");
+    sleep(1);
+  }
   return g_ExitStatus;
 }
 /*
