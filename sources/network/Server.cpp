@@ -1,6 +1,7 @@
 #include <Server.hpp>
 
-Server::Server(std::string port) : port(port) {
+Server::Server(std::string port, std::shared_ptr<Config> config)
+    : port(port), config(config) {
   LOG_DEBUG("Server constructor called");
   socket = Socket();
   clients.reserve(MAX_CLIENTS);
@@ -24,9 +25,7 @@ void Server::runServer(void) {
         if (pollFd.fd == socket.getFd()) {
           acceptConnection(pollManager);
         } else if (pollFd.revents & POLLIN) {
-          handleClient(pollManager, pollFd.fd);
-        } else if (pollFd.revents & POLLOUT) {
-          handleResponse(pollManager, pollFd.fd);
+          handleClient(pollManager, pollFd.fd, pollFd.revents);
         }
       }
     }
@@ -46,29 +45,18 @@ void Server::acceptConnection(PollManager& pollManager) {
   }
 }
 
-void Server::handleClient(PollManager& pollManager, int clientFd) {
-  auto it = std::find_if(clients.begin(), clients.end(),
-                         [clientFd](Client& client) { return client.getFd() == clientFd; });
+void Server::handleClient(PollManager& pollManager, int clientFd,
+                          short revents) {
+  auto it = std::find_if(
+      clients.begin(), clients.end(),
+      [clientFd](Client& client) { return client.getFd() == clientFd; });
+ // it->setConfig(config);
   if (it == clients.end()) {
     LOG_ERROR("Client not found in clients list");
     // throw exception
     return;
   }
-  if (!it->receiveData()) {  // connection closed or error
-    pollManager.removeFd(clientFd);
-    clients.erase(it);
-  }
-}
-
-void Server::handleResponse(PollManager& pollManager, int clientFd) {
-  auto it = std::find_if(clients.begin(), clients.end(),
-                         [clientFd](Client& client) { return client.getFd() == clientFd; });
-  if (it == clients.end()) {
-    LOG_ERROR("Client not found in clients list");
-    // throw exception
-    return;
-  }
-  if (!it->sendResponse()) {  // connection closed or error
+  if (!it->handlePollEvents(revents)) {  // connection closed or error
     pollManager.removeFd(clientFd);
     clients.erase(it);
   }

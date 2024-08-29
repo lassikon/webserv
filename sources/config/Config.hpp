@@ -39,12 +39,22 @@ struct ServerConfig {
   int port;
   std::map<int, std::string> pagesDefault = {
       {200, "/pagesDefault/200.html"},   // ok
+      {204, "pagesDefault/204.html"},   // no content
+      {301, "/pagesDefault/301.html"},   // moved permanently
+      {302, "/pagesDefault/302.html"},   // found
+      {303, "/pagesDefault/303.html"},   // see other
+      {307, "/pagesDefault/307.html"},   // temporary redirect
+      {308, "/pagesDefault/308.html"},   // permanent redirect
       {400, "/pagesDefault/400.html"},   // bad request
-      {413, "/pagesDefault/413.html"},   // request entity too large
-      {413, "/pagesDefault/413.html"},   // request entity too large
+      {401, "/pagesDefault/401.html"},   // unauthorized
+      {403, "/pagesDefault/403.html"},   // forbidden
       {404, "/pagesDefault/404.html"},   // not found
       {405, "/pagesDefault/405.html"},   // method not allowed
+      {408, "/pagesDefault/408.html"},   // request timeout
+      {413, "/pagesDefault/413.html"},   // request entity too large
+      {415, "/pagesDefault/415.html"},   // unsupported media type
       {500, "/pagesDefault/500.html"},   // internal server error
+      {505, "/pagesDefault/505.html"},   // http version not supported
       {501, "/pagesDefault/501.html"}};  // not implemented
 
   std::map<int, std::string> pagesCustom;

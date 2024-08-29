@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <Config.hpp>
 
 #define PORT "3490"
 
@@ -21,15 +22,15 @@ class Server {
   Socket socket;
   std::string port;
   std::vector<Client> clients;
+  std::shared_ptr<Config> config;
 
  public:
-  Server(std::string port);
+  Server(std::string port, std::shared_ptr<Config> config);
   ~Server(void);
 
   void runServer(void);
 
  private:
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& pollManager, int clientFd);
-  void handleResponse(PollManager& pollManager, int clientFd);
+  void handleClient(PollManager& pollManager, int clientFd, short revents);
 };
