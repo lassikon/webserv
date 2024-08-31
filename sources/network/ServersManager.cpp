@@ -4,21 +4,23 @@ ServersManager::ServersManager(void) { LOG_DEBUG("ServersManager constructor cal
 
 ServersManager::~ServersManager(void) { LOG_DEBUG("ServersManager destructor called"); }
 
+void ServersManager::configServers(Config& config) {
+  LOG_DEBUG("Initializing servers");
+  servers.reserve(config.getServers().size());
+  for (auto& serverConfig : config.getServers()) {
+    LOG_DEBUG("Adding server", serverConfig.first);
+    servers.emplace_back(serverConfig.second);
+  }
+  for (auto& server : servers) {
+    LOG_DEBUG("Server port:", server.getPort());
+  }
+}
+
 void ServersManager::runServers(void) {
   LOG_DEBUG("Running servers");
-
-  servers.reserve(3);
-  LOG_DEBUG("Adding server 3490");
-  servers.emplace_back("3490");
-  LOG_DEBUG("Adding server 3491");
-  servers.emplace_back("3491");
-  LOG_DEBUG("Adding server 3492");
-  servers.emplace_back("3492");
-  LOG_DEBUG("servers size:", servers.size());
-
   PollManager pollManager;
   for (auto& server : servers) {
-    pollManager.addFd(server.getSocketFd(), POLLIN);
+    pollManager.addFd(server.getSocketFd(), POLLIN | POLLOUT);
     LOG_DEBUG("Added server fd:", server.getSocketFd(), "port:", server.getPort(), "to pollFds");
   }
   while (true) {
@@ -43,7 +45,7 @@ void ServersManager::serverLoop(PollManager& pollManager) {
     //   pollManager.removeFd(pollFd.fd);
     //   continue;
     // }
-    if (pollFd.revents & POLLIN) {
+    if (pollFd.revents & (POLLIN | POLLOUT)) {
       for (auto& server : servers) {
         if (pollFd.fd ==
             server.getSocketFd()) {  // It's a listening socket, accept a new connection

@@ -2,6 +2,7 @@
 
 #include <poll.h>
 
+#include <Config.hpp>
 #include <PollManager.hpp>
 #include <Server.hpp>
 #include <string>
@@ -17,6 +18,7 @@ class ServersManager {
   ~ServersManager(void);
 
   void runServers(void);
+  void configServers(Config& config);
 
  private:
   void serverLoop(PollManager& pollManager);

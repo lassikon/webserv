@@ -38,15 +38,13 @@ SOURCES := main \
 		   Config \
 		   Utility \
 		   Server \
-		   Request \
+		   ServersManager \
 		   Client \
+		   Request \
 		   Response \
-		   ResourceManager \
+		   ProcessTree \
 		   Socket \
 		   PollManager \
-			 Socket \
-			PollManager \
-			ServersManager \
 		   Exception \
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))

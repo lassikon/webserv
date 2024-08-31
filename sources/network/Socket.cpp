@@ -7,7 +7,7 @@ Socket::~Socket(void) {
   cleanupSocket();
 }
 
-void Socket::setupSocket(std::string port) {
+void Socket::setupSocket(int port) {
   struct addrinfo hints, *res;
 
   memset(&hints, 0, sizeof hints);
@@ -15,7 +15,7 @@ void Socket::setupSocket(std::string port) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  if (getaddrinfo(NULL, port.c_str(), &hints, &res) != 0) {
+  if (getaddrinfo(NULL, std::to_string(port).c_str(), &hints, &res) != 0) {
     LOG_ERROR("Failed to get address info");
     // gai_strerror()
     // throw exception

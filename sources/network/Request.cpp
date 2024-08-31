@@ -4,7 +4,7 @@
 void Request::parseRequestLine(Client* client, std::string& requestLine) {
   LOG_TRACE("Parsing request line");
   std::istringstream iss(requestLine);
-  iss >> method >> path >> version;
+  iss >> method >> reqURI >> version;
   client->setState(ClientState::READING_HEADER);
 }
 
@@ -36,6 +36,7 @@ void Request::parseHeaders(Client* client, std::istringstream& iBuf) {
 
 void Request::parseBody(Client* client, std::istringstream& iBuf) {
   if (method != "POST") {
+    client->setState(ClientState::READING_DONE);
     return;
   }
   if (transferEncodingChunked) {

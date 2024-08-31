@@ -27,7 +27,7 @@ struct RouteConfig {
   std::vector<std::string> methods;
   std::string root;
   bool directoryListing;
-  std::string defaultFile;
+  std::vector<std::string> defaultFile;
   std::string uploadPath;
   std::string redirect;
   std::vector<std::string> cgi;
@@ -90,29 +90,29 @@ class Config {
   bool callGetLine(std::stringstream& configFile);
 
   // server struct setters
-  static void setIP(ServerConfig& server, std::string const& value);
-  static void setServerName(ServerConfig& server, std::string const& value);
-  static void setPort(ServerConfig& server, std::string const& value);
-  static void setErrorPages(ServerConfig& server, std::string const& value);
+  static void setIP(ServerConfig& server, std::string & value);
+  static void setServerName(ServerConfig& server, std::string & value);
+  static void setPort(ServerConfig& server, std::string & value);
+  static void setErrorPages(ServerConfig& server, std::string & value);
   static void setClientBodySizeLimit(ServerConfig& server,
-                                     std::string const& value);
+                                     std::string & value);
 
   // route struct setters
-  static void setLocation(RouteConfig& route, std::string const& value);
-  static void setMethods(RouteConfig& route, std::string const& value);
-  static void setRoot(RouteConfig& route, std::string const& value);
-  static void setDirectoryListing(RouteConfig& route, std::string const& value);
-  static void setDefaultFile(RouteConfig& route, std::string const& value);
-  static void setUploadPath(RouteConfig& route, std::string const& value);
-  static void setRedirect(RouteConfig& route, std::string const& value);
-  static void setCgi(RouteConfig& route, std::string const& value);
+  static void setLocation(RouteConfig& route, std::string & value);
+  static void setMethods(RouteConfig& route, std::string & value);
+  static void setRoot(RouteConfig& route, std::string & value);
+  static void setDirectoryListing(RouteConfig& route, std::string & value);
+  static void setDefaultFile(RouteConfig& route, std::string & value);
+  static void setUploadPath(RouteConfig& route, std::string & value);
+  static void setRedirect(RouteConfig& route, std::string & value);
+  static void setCgi(RouteConfig& route, std::string & value);
 
   // print server config
   void printServerConfig();
 
   // get server config
   int getLineNumber() const;
-  static std::filesystem::path& getExePath(std::filesystem::path& path);
+ // static std::filesystem::path& getExePath(std::filesystem::path& path);
   std::map<std::string, ServerConfig>& getServers();
   void validateServer(std::map<std::string, ServerConfig>& servers);
 };

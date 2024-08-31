@@ -1,11 +1,9 @@
 #include <Client.hpp>
 
-Client::Client(int socketFd)
-    : fd(socketFd) {
+Client::Client(int socketFd, ServerConfig& serverConfig)
+    : fd(socketFd), serverConfig(serverConfig), res(serverConfig) {
   LOG_DEBUG("Client constructor called");
   state = ClientState::READING_REQLINE;
-  /*   req.setConfig(config);
-    res.setConfig(config); */
 }
 
 Client::~Client(void) {
@@ -40,7 +38,6 @@ bool Client::receiveData(void) {
     return false;
   } else {
     LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
-    // Echo data back to the client
     std::istringstream bufStr(buf);
     processRequest(bufStr);
   }
@@ -69,21 +66,21 @@ void Client::processRequest(std::istringstream& iBuf) {
 void Client::handleRequest(void) {
   LOG_TRACE("Handling request from client fd:", fd);
   if (req.getMethod() == "GET") {
-    LOG_INFO("GET request for path:", req.getPath());
+    LOG_INFO("GET request for path:", req.getReqURI());
     LOG_INFO("Request body:", req.getBody());
     LOG_INFO("Request headers:");
     for (auto& header : req.getHeaders()) {
       LOG_INFO(header.first, ":", header.second);
     }
   } else if (req.getMethod() == "POST") {
-    LOG_INFO("POST request for path:", req.getPath());
+    LOG_INFO("POST request for path:", req.getReqURI());
     LOG_INFO("Request body:", req.getBody());
     LOG_INFO("Request headers:");
     for (auto& header : req.getHeaders()) {
       LOG_INFO(header.first, ":", header.second);
     }
   } else if (req.getMethod() == "DELETE") {
-    LOG_INFO("DELETE request for path:", req.getPath());
+    LOG_INFO("DELETE request for path:", req.getReqURI());
     LOG_INFO("Request body:", req.getBody());
     LOG_INFO("Request headers:");
     for (auto& header : req.getHeaders()) {
@@ -95,11 +92,9 @@ void Client::handleRequest(void) {
 }
 
 bool Client::sendResponse(void) {
-  /*
-    std::ifstream file("filename", std::ios::binary);
-  std::vector<char> content((std::istreambuf_iterator<char>(file)),
-                             std::istreambuf_iterator<char>()); */
   LOG_DEBUG("Sending response to client fd:", fd);
+  res.run(this, req.getReqURI());
+ /*  LOG_DEBUG("Sending response to client fd:", fd);
   std::ifstream html("webroot/website0/index.html");
   std::stringstream contentBuf;
   contentBuf << html.rdbuf();
@@ -118,7 +113,7 @@ bool Client::sendResponse(void) {
     LOG_ERROR("Send() failed with fd:", fd);
     // throw exception
     return false;
-  }
+  } */
   return true;
 }
 

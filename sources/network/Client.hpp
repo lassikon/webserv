@@ -5,19 +5,16 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <Config.hpp>
+#include <Logger.hpp>
+#include <Request.hpp>
+#include <Response.hpp>
+#include <Utility.hpp>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <unordered_set>
 #include <vector>
-
-#include <Config.hpp>
-#include <Logger.hpp>
-#include <Utility.hpp>
-#include <Request.hpp>
-#include <Response.hpp>
-#include <ResourceManager.hpp>
-
 
 enum struct ClientState {
   READING_REQLINE,
@@ -29,14 +26,14 @@ enum struct ClientState {
 class Client {
  private:
   int fd;
+  ServerConfig serverConfig;
   ClientState state;
   Request req;
   Response res;
-  ResourceManager resourceManager;
-  std::shared_ptr<Config> config;
+  // ResourceManager resourceManager;
 
  public:
-  Client(int socketFd);
+  Client(int socketFd, ServerConfig& serverConfig);
   ~Client(void);
 
   bool operator==(const Client& other) const;
@@ -46,13 +43,14 @@ class Client {
   void handleRequest(void);
   bool sendResponse(void);
 
-  //getters and setters
+  // getters and setters
   int getFd(void) const { return fd; }
+  Request& getReq(void) { return req; }
   void setFd(int fd);
+
 
   ClientState getState(void) const { return state; }
   void setState(ClientState state) { this->state = state; }
-  void setConfig(std::shared_ptr<Config> config) { this->config = config; }
 
  private:
   void cleanupClient(void);
