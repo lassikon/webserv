@@ -1,15 +1,18 @@
 #include <Exception.hpp>
 #include <Logger.hpp>
 
-Logger::Logger(void) {
+Logger::Logger(void) { loadDefaults(); }
+
+Logger::~Logger(void) { closeLogFile(); }
+
+void Logger::loadDefaults(void) {
+
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
   setLogDetails(true, true, true);
   if (currentOutput != logOutput::ConsoleOnly)
     createLogFile();
 }
-
-Logger::~Logger(void) { closeLogFile(); }
 
 void Logger::createLogFile(void) {
   logFile.open(fileName);

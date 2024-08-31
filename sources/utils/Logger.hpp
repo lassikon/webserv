@@ -24,6 +24,7 @@ public:
   ~Logger(void);
 
 private:
+  void loadDefaults(void);
   void createLogFile(void);
   void closeLogFile(void);
   void setLogDetails(bool time, bool file, bool line);
