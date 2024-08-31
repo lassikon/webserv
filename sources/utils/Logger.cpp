@@ -15,7 +15,7 @@ void Logger::loadDefaults(void) {
 }
 
 void Logger::createLogFile(void) {
-  logFile.open(fileName);
+  logFile.open(fileName, std::ios_base::app);
   if (logFile.fail())
     LOG_WARN(ERR_MSG_NOFILE, fileName, STRERROR);
 }
