@@ -6,7 +6,7 @@
 #include <Signal.hpp>
 #include <Utility.hpp>
 
-std::atomic<int> g_ExitStatus;
+sig_atomic_t g_ExitStatus;
 
 int main(int argc, char **argv) {
   if (argc > 2) {

@@ -1,3 +1,3 @@
-#include <atomic>
+#include <csignal>
 
-extern std::atomic<int> g_ExitStatus;
+extern sig_atomic_t g_ExitStatus;
