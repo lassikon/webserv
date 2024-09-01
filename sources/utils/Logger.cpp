@@ -6,7 +6,6 @@ Logger::Logger(void) { loadDefaults(); }
 Logger::~Logger(void) { closeLogFile(); }
 
 void Logger::loadDefaults(void) {
-
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
   setLogDetails(true, true, true);
