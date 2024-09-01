@@ -1,21 +1,23 @@
+#include <Exception.hpp>
 #include <Logger.hpp>
 
-Logger::Logger(void) {
+Logger::Logger(void) { loadDefaults(); }
+
+Logger::~Logger(void) { closeLogFile(); }
+
+void Logger::loadDefaults(void) {
+
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
-  enabledDetail[(int)logDetail::TimeStamp] = false;
-  enabledDetail[(int)logDetail::SourceFile] = false;
-  enabledDetail[(int)logDetail::LineNumber] = true;
+  setLogDetails(true, true, true);
   if (currentOutput != logOutput::ConsoleOnly)
     createLogFile();
 }
 
-Logger::~Logger(void) { closeLogFile(); }
-
 void Logger::createLogFile(void) {
   logFile.open(fileName, std::ios_base::app);
   if (logFile.fail())
-    LOG_WARN("Could not create log: ", fileName, ": ", strerror(errno));
+    LOG_WARN(ERR_MSG_NOFILE, fileName, STRERROR);
 }
 
 void Logger::closeLogFile(void) {
@@ -23,10 +25,12 @@ void Logger::closeLogFile(void) {
     logFile.close();
 }
 
-std::string Logger::getTimeStamp(void) const {
-  time_t now = time(0);
-  tm *timeInfo = localtime(&now);
-  char timeStamp[20];
-  strftime(timeStamp, sizeof(timeStamp), "%Y-%m-%d %H:%M:%S", timeInfo);
-  return timeStamp;
+void Logger::setLogDetails(bool time, bool file, bool line) {
+  setLogDetail((int)logDetail::Time, time);
+  setLogDetail((int)logDetail::File, file);
+  setLogDetail((int)logDetail::Line, line);
+}
+
+void Logger::setLogDetail(int index, bool value) {
+  enabledDetail[index] = value;
 }

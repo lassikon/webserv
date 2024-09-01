@@ -1,53 +1,69 @@
 #pragma once
 
-#include <exception>
-#include <utility>
-
+#include <Global.hpp>
 #include <Logger.hpp>
 
-#define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
-#define ERR_MSG_NOSERV "Could not load any server from config file"
-#define ERR_MSG_CONFIG "Could not access config"
+#include <cerrno>
+#include <cstring>
+#include <exception>
+#include <sstream>
 
-enum class ErrorCode { NoError, ArgCount = 134, ConfigFile, NoServer };
+#define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
+#define ERR_MSG_NOSERVER "No valid server found in:"
+#define ERR_MSG_NOFILE "Could not access file:"
+#define ERR_MSG_SIGNAL "Server interrupted by signal:"
+
+enum class Error { NoError, Args, Config, Server, Signal = 128 };
 
 class Exception : public std::exception {
-public:
-  Exception(void);
-  Exception(const Exception &other) = delete;
-  Exception &operator=(const Exception &other) = delete;
-  ~Exception(void);
 
 private:
-  std::string errCodeToString(const ErrorCode &e) noexcept;
-  static Exception &newTryCatch(void) {
+  static inline Exception &newTryCatch(void) noexcept {
     static Exception wrapper;
     return wrapper;
   }
 
 private:
   template <typename Func, typename Cref, typename... Args>
-  auto wrap(Func fn, Cref ref, Args &&...args) {
+  auto create(Func fn, Cref ref, Args &&...args) {
+    std::ostringstream ss;
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
-    } catch (...) {}
+    } catch (const std::logic_error &e) {
+      ss << "Logic Error: " << e.what();
+    } catch (const std::runtime_error &e) {
+      ss << "Runtime Error: " << e.what();
+    } catch (const std::bad_alloc &e) {
+      ss << "Memory Error: " << e.what();
+    } catch (const std::bad_exception &e) {
+      ss << "Unexpected Error: " << e.what();
+    } catch (const std::exception &e) {
+      if ((std::string)e.what() != "std::exception")
+        ss << "Exception occured: " << e.what();
+    }
+    if (!ss.str().empty())
+      LOG_FATAL(ss.str());
   }
 
 public:
   template <typename Func, typename Cref, typename... Args>
   static auto tryCatch(Func fn, Cref ref, Args &&...args) {
-    newTryCatch().wrap(fn, ref, args...);
+    newTryCatch().create(fn, ref, args...);
+  }
+
+#define STRERROR Exception::expandErrno()
+  static inline std::string expandErrno(void) noexcept {
+    std::ostringstream ss;
+    if (!errno) {
+      ss << "";
+    } else {
+      ss << "[errno:" << errno << "] " << strerror(errno);
+    }
+    return ss.str();
   }
 };
 
-#define THROW_WARN(errMsg)                                                     \
-  LOG_WARN(errMsg);                                                            \
-  throw Exception();
-
-#define THROW_ERROR(errMsg)                                                    \
-  LOG_ERROR(errMsg);                                                           \
-  throw Exception();
-
-#define THROW_FATAL(errMsg)                                                    \
-  LOG_FATAL(errMsg);                                                           \
+#define THROW(errCode, ...)    \
+  LOG_FATAL(__VA_ARGS__);      \
+  g_ExitStatus = (int)errCode; \
   throw Exception();

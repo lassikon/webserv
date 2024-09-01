@@ -29,23 +29,23 @@ MAKEFLAGS  += -j4 --no-print-directory
 #    SOURCES
 # **************************************************************************** #
 
-MODULES := utils \
-		   config \
-		   network 
+MODULES := network \
+           config \
+           utils
 
 SOURCES := main \
-           Logger \
-		   Config \
-		   Utility \
-		   Server \
+           Config \
 		   ServersManager \
-		   Client \
+           PollManager \
+           Server \
+           Socket \
+           Client \
 		   Request \
 		   Response \
 		   ProcessTree \
-		   Socket \
-		   PollManager \
-		   Exception \
+           Utility \
+           Signal \
+           Logger
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))

@@ -1,10 +1,10 @@
 webserv
 **/*build
 **/*.deps
+**/*.vscode
 **/dump*
 **/*.log
 **/*.txt
+**/*.pdf
 **/*.sh
-**/*main.cpp
-.vscode/settings.json
 .clang-format

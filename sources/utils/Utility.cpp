@@ -28,7 +28,7 @@ std::string Utility::trimComments(std::string& line) {
 std::vector<char> Utility::readFile(std::string& path) {
   std::ifstream file(path, std::ios::binary | std::ios::in);
   if (!file.is_open()) {
-    LOG_ERROR("Failed to open file:", path);
+    //LOG_ERROR("Failed to open file:", path);
     return std::vector<char>();
   }
   std::vector<char> content((std::istreambuf_iterator<char>(file)),
@@ -36,11 +36,12 @@ std::vector<char> Utility::readFile(std::string& path) {
   file.close();
   return content;
 }
+
 std::filesystem::path Utility::getExePath(std::filesystem::path& path) {
   std::filesystem::path currentPath = std::filesystem::current_path();
   std::filesystem::path exePath = currentPath / "webserv";
   if (!std::filesystem::exists(exePath)) {
-    LOG_ERROR("Parse: Could not find executable at ", exePath);
+   // LOG_ERROR("Parse: Could not find executable at ", exePath);
     return (path);
   }
   path = std::filesystem::canonical(exePath).parent_path();
@@ -54,3 +55,13 @@ std::string Utility::getMimeType(std::string& extension) {
   }
   return "application/octet-stream";
 }
+
+std::string Utility::getDateTimeStamp(void) {
+  auto now = std::chrono::system_clock::now();
+  auto tt = std::chrono::system_clock::to_time_t(now);
+  std::ostringstream ss;
+  ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
+  return ss.str();
+}
+
+int Utility::statusOk(void) noexcept { return !g_ExitStatus; }

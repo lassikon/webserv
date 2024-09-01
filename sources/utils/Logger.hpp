@@ -1,41 +1,37 @@
 #pragma once
 
-#include <cerrno>
-#include <cstring>
-#include <ctime>
+#include <Colors.hpp>
+#include <Utility.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string>
-
-#include <Colors.hpp>
 
 enum class logLevel { Trace, Debug, Info, Warn, Error, Fatal };
 
 class Logger {
 private:
+  enum class logOutput { ConsoleOnly, FileOnly, Both };
+  enum class logDetail { Time, File, Line };
   const char *fileName = "webserv.log";
   std::ofstream logFile;
-
-  enum class logDetail { TimeStamp, SourceFile, LineNumber };
-  enum class logOutput { ConsoleOnly, FileOnly, Both };
-
-  logLevel currentLevel;
   logOutput currentOutput;
+  logLevel currentLevel;
   bool enabledDetail[3];
 
 public:
   Logger(void);
-  Logger(const Logger &) = delete;
-  Logger &operator=(const Logger &) = delete;
   ~Logger(void);
 
 private:
+  void loadDefaults(void);
   void createLogFile(void);
   void closeLogFile(void);
+  void setLogDetails(bool time, bool file, bool line);
+  void setLogDetail(int index, bool value);
 
-  std::string getTimeStamp(void) const;
-  static Logger &newLogInstance(void) {
+private:
+  static inline Logger &newLogInstance(void) noexcept {
     static Logger logger;
     return logger;
   }
@@ -43,16 +39,16 @@ private:
 private:
   template <typename... Args>
   void create(logLevel LogLvl, const char *LvlTitle, const char *LvlColor,
-              std::ostream &consoleStream, int LineNbr, const char *SrcFile, Args... args) {
+              std::ostream &consoleStream, int LineNbr, const char *SrcFile, Args &&... args) {
     if (LogLvl < currentLevel)
       return;
     std::ostringstream logEntry;
     logEntry << LvlColor << "[" << LvlTitle << "]";
-    if (enabledDetail[(int)logDetail::TimeStamp])
-      logEntry << "[" << getTimeStamp() << "]";
-    if (enabledDetail[(int)logDetail::SourceFile])
+    if (enabledDetail[(int)logDetail::Time])
+      logEntry << "[" << Utility::getDateTimeStamp() << "]";
+    if (enabledDetail[(int)logDetail::File])
       logEntry << "[" << SrcFile;
-    if (enabledDetail[(int)logDetail::LineNumber])
+    if (enabledDetail[(int)logDetail::Line])
       logEntry << ":" << LineNbr << "]";
     ([&] { logEntry << " " << args; }(), ...);
     if (currentOutput != logOutput::FileOnly)
@@ -64,7 +60,7 @@ private:
 public:
   template <typename... Args>
   static void Log(logLevel LogLvl, const char *LvlTitle, const char *LvlColor,
-                  std::ostream &ConsoleStream, int LineNbr, const char *SrcFile, Args... args) {
+                  std::ostream &ConsoleStream, int LineNbr, const char *SrcFile, Args &&... args) {
     newLogInstance().create(LogLvl, LvlTitle, LvlColor, ConsoleStream, LineNbr, SrcFile, args...);
   }
 };
