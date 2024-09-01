@@ -31,6 +31,7 @@ MAKEFLAGS  += -j4 --no-print-directory
 
 MODULES := network \
            config \
+           cgi \
            utils
 
 SOURCES := main \
@@ -39,6 +40,7 @@ SOURCES := main \
            Server \
            Socket \
            Config \
+           CgiHandler \
            Utility \
            Signal \
            Logger \
