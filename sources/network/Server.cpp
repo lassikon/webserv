@@ -1,35 +1,13 @@
 #include <Server.hpp>
 
-Server::Server(std::string port) : port(port) {
+Server::Server(ServerConfig& serverConfig) : serverConfig(serverConfig) {
   LOG_DEBUG("Server constructor called");
+  port = serverConfig.port;
   socket = Socket();
-  clients.reserve(MAX_CLIENTS);
-  socket.setupSocket(port);
+  socket.setupSocket(serverConfig.port);
 }
 
 Server::~Server(void) { LOG_DEBUG("Server destructor called"); }
-
-void Server::runServer(void) {
-  PollManager pollManager;
-  pollManager.addFd(socket.getFd(), POLLIN);
-
-  while (true) {
-    if (pollManager.pollFdsCount() == -1) {
-      LOG_ERROR("Failed to poll");
-      // throw exception
-      break;
-    }
-    for (auto& pollFd : pollManager.getPollFds()) {
-      if (pollFd.revents & POLLIN) {
-        if (pollFd.fd == socket.getFd()) {
-          acceptConnection(pollManager);
-        } else {
-          handleClient(pollManager, pollFd.fd);
-        }
-      }
-    }
-  }
-}
 
 void Server::acceptConnection(PollManager& pollManager) {
   struct sockaddr_storage theirAddr {};
@@ -39,22 +17,34 @@ void Server::acceptConnection(PollManager& pollManager) {
     LOG_ERROR("Failed to accept client");
     return;
   } else {
-    clients.emplace_back(newFd);
-    pollManager.addFd(newFd, POLLIN);
+    clients.emplace_back(std::make_shared<Client>(newFd, serverConfig));
+    LOG_DEBUG("Accepted new client fd:", newFd);
+    pollManager.addFd(newFd, POLLIN | POLLOUT);
   }
 }
 
-void Server::handleClient(PollManager& pollManager, int clientFd) {
+void Server::handleClient(PollManager& pollManager, int clientFd,
+                          short revents) {
   auto it = std::find_if(clients.begin(), clients.end(),
-                         [clientFd](Client& client) { return client.getFd() == clientFd; });
+                         [clientFd](std::shared_ptr<Client>& client) {
+                           return client->getFd() == clientFd;
+                         });
   if (it == clients.end()) {
-    LOG_ERROR("Client not found in clients list");
-    // throw exception
     return;
   }
-
-  if (!it->receiveData()) {  // connection closed or error
+  if (!(*it)->handlePollEvents(revents)) {  // connection closed or error
+    LOG_DEBUG("handleCLient removing client fd:", clientFd);
     pollManager.removeFd(clientFd);
+    LOG_DEBUG("handleClient erasing client fd:", (*it)->getFd());
     clients.erase(it);
   }
+}
+
+bool Server::isClientFd(int fd) const {
+  for (auto& client : clients) {
+    if ((*client).getFd() == fd) {
+      return true;
+    }
+  }
+  return false;
 }

@@ -35,15 +35,21 @@ MODULES := network \
            utils
 
 SOURCES := main \
-           Client \
-           PollManager \
-           Server \
-           Socket \
+		   Client \
            Config \
-           CgiHandler \
-           Utility \
-           Signal \
-           Logger \
+		   PollManager \
+		   ProcessTree \
+		   Request \
+		   ResourceManager \
+		   Response \
+		   Server \
+		   ServersManager \
+           Socket \
+		   Config \
+		   CgiHandler \
+		   Logger \
+		   Signal \
+           Utility
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))

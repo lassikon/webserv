@@ -4,48 +4,54 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <algorithm>
+
+#include <Config.hpp>
+#include <Logger.hpp>
+#include <Request.hpp>
+#include <Response.hpp>
+#include <Utility.hpp>
 #include <cstring>
 #include <iostream>
+#include <map>
+#include <unordered_set>
 #include <vector>
 
-
-#include <map>
-#include <Utility.hpp>
-#include <Logger.hpp>
-
-enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING_DONE };
-
-struct HttpReq {
-  std::string method;
-  std::string path;
-  std::string version;
-  std::map<std::string, std::string> headers;
-  std::string body;
-  bool transferEncodingChunked;
+enum struct ClientState {
+  READING_REQLINE,
+  READING_HEADER,
+  READING_BODY,
+  READING_DONE
 };
+
 class Client {
  private:
   int fd;
-  HttpReq req;
+  ServerConfig serverConfig;
   ClientState state;
+  Request req;
+  Response res;
+  // ResourceManager resourceManager;
 
  public:
-  Client(int socketFd);
+  Client(int socketFd, ServerConfig& serverConfig);
   ~Client(void);
 
   bool operator==(const Client& other) const;
+  bool handlePollEvents(short revents);
   bool receiveData(void);
+  void processRequest(std::istringstream& iBuf);
+  void handleRequest(void);
+  bool sendResponse(void);
+
+  // getters and setters
   int getFd(void) const { return fd; }
+  Request& getReq(void) { return req; }
   void setFd(int fd);
 
-  // request
-  void processRequest(std::string& buf);
-  void parseRequestLine(HttpReq& req, std::string& requestLine);
-  void parseHeaders(HttpReq& req, std::istringstream& iBuf);
-  void parseBody(HttpReq& req, std::istringstream& iBuf);
-  void handleRequest(HttpReq& req);
-  void sendResponse(HttpReq& req);
-	private:
-	void cleanupClient(void);
+
+  ClientState getState(void) const { return state; }
+  void setState(ClientState state) { this->state = state; }
+
+ private:
+  void cleanupClient(void);
 };

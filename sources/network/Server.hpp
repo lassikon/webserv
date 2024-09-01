@@ -6,29 +6,31 @@
 #include <unistd.h>
 
 #include <Client.hpp>
+#include <Config.hpp>
 #include <Logger.hpp>
 #include <PollManager.hpp>
 #include <Socket.hpp>
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <vector>
-
-#define PORT "3490"
 
 class Server {
  private:
   Socket socket;
-  std::string port;
-  std::vector<Client> clients;
+  int port;
+  std::vector<std::shared_ptr<Client>> clients;
+  ServerConfig& serverConfig;
 
  public:
-  Server(std::string port);
+  Server(ServerConfig& serverConfig);
   ~Server(void);
 
-  void runServer(void);
+  int getSocketFd(void) const { return socket.getFd(); }
+  int getPort(void) const { return port; }
 
- private:
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& pollManager, int clientFd);
+  void handleClient(PollManager& pollManager, int clientFd, short revents);
+  bool isClientFd(int fd) const;
 };

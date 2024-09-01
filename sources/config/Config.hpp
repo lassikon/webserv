@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Config.hpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: janraub <janraub@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/08/19 15:38:16 by janraub           #+#    #+#             */
-/*   Updated: 2024/08/27 09:44:28 by janraub          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #pragma once
 
 #include <Logger.hpp>
@@ -39,7 +27,7 @@ struct RouteConfig {
   std::vector<std::string> methods;
   std::string root;
   bool directoryListing;
-  std::string defaultFile;
+  std::vector<std::string> defaultFile;
   std::string uploadPath;
   std::string redirect;
   std::vector<std::string> cgi;
@@ -51,12 +39,22 @@ struct ServerConfig {
   int port;
   std::map<int, std::string> pagesDefault = {
       {200, "/pagesDefault/200.html"},   // ok
+      {204, "pagesDefault/204.html"},   // no content
+      {301, "/pagesDefault/301.html"},   // moved permanently
+      {302, "/pagesDefault/302.html"},   // found
+      {303, "/pagesDefault/303.html"},   // see other
+      {307, "/pagesDefault/307.html"},   // temporary redirect
+      {308, "/pagesDefault/308.html"},   // permanent redirect
       {400, "/pagesDefault/400.html"},   // bad request
-      {413, "/pagesDefault/413.html"},   // request entity too large
-      {413, "/pagesDefault/413.html"},   // request entity too large
+      {401, "/pagesDefault/401.html"},   // unauthorized
+      {403, "/pagesDefault/403.html"},   // forbidden
       {404, "/pagesDefault/404.html"},   // not found
       {405, "/pagesDefault/405.html"},   // method not allowed
+      {408, "/pagesDefault/408.html"},   // request timeout
+      {413, "/pagesDefault/413.html"},   // request entity too large
+      {415, "/pagesDefault/415.html"},   // unsupported media type
       {500, "/pagesDefault/500.html"},   // internal server error
+      {505, "/pagesDefault/505.html"},   // http version not supported
       {501, "/pagesDefault/501.html"}};  // not implemented
 
   std::map<int, std::string> pagesCustom;
@@ -92,29 +90,29 @@ class Config {
   bool callGetLine(std::stringstream& configFile);
 
   // server struct setters
-  static void setIP(ServerConfig& server, std::string const& value);
-  static void setServerName(ServerConfig& server, std::string const& value);
-  static void setPort(ServerConfig& server, std::string const& value);
-  static void setErrorPages(ServerConfig& server, std::string const& value);
+  static void setIP(ServerConfig& server, std::string & value);
+  static void setServerName(ServerConfig& server, std::string & value);
+  static void setPort(ServerConfig& server, std::string & value);
+  static void setErrorPages(ServerConfig& server, std::string & value);
   static void setClientBodySizeLimit(ServerConfig& server,
-                                     std::string const& value);
+                                     std::string & value);
 
   // route struct setters
-  static void setLocation(RouteConfig& route, std::string const& value);
-  static void setMethods(RouteConfig& route, std::string const& value);
-  static void setRoot(RouteConfig& route, std::string const& value);
-  static void setDirectoryListing(RouteConfig& route, std::string const& value);
-  static void setDefaultFile(RouteConfig& route, std::string const& value);
-  static void setUploadPath(RouteConfig& route, std::string const& value);
-  static void setRedirect(RouteConfig& route, std::string const& value);
-  static void setCgi(RouteConfig& route, std::string const& value);
+  static void setLocation(RouteConfig& route, std::string & value);
+  static void setMethods(RouteConfig& route, std::string & value);
+  static void setRoot(RouteConfig& route, std::string & value);
+  static void setDirectoryListing(RouteConfig& route, std::string & value);
+  static void setDefaultFile(RouteConfig& route, std::string & value);
+  static void setUploadPath(RouteConfig& route, std::string & value);
+  static void setRedirect(RouteConfig& route, std::string & value);
+  static void setCgi(RouteConfig& route, std::string & value);
 
   // print server config
   void printServerConfig();
 
   // get server config
   int getLineNumber() const;
-  static std::filesystem::path& getExePath(std::filesystem::path& path);
+ // static std::filesystem::path& getExePath(std::filesystem::path& path);
   std::map<std::string, ServerConfig>& getServers();
   void validateServer(std::map<std::string, ServerConfig>& servers);
 };
