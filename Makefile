@@ -50,7 +50,6 @@ MODULES := network \
 
 SOURCES := main \
            Client \
-           Config \
            PollManager \
            ProcessTree \
            Request \
