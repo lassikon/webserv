@@ -94,6 +94,8 @@ run: all
 
 leaks: re
 	valgrind $(VLGFLAGS) ./$(NAME)
+	$(SCREENCLEAR)
+	printf "$(V)"
 	cat $(LEAKSLOG)
 
 # **************************************************************************** #
