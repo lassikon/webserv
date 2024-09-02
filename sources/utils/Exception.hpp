@@ -13,7 +13,7 @@
 #define ERR_MSG_NOFILE "Could not access file:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
-enum class Error { NoError, Args, Config, Server, Signal = 128 };
+enum class Error { NoError, Args, Config, Server, Socket, Signal = 128 };
 
 class Exception : public std::exception {
 
