@@ -19,7 +19,7 @@ private:
   int port;
 
 public:
-  Socket();
+  Socket(void);
   ~Socket(void);
 
   int getFd(void) const { return sockFd; }
