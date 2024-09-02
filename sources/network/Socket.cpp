@@ -18,12 +18,12 @@ void Socket::setupSocket(int port) {
   }
   sockFd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
   if (sockFd == -1) {
-    socketError("Failed to create socket");
+    socketError("Failed to create socket:");
   }
   setNonBlocking();
   int opt = 1;
   if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
-    socketError("Failed to set socket options");
+    socketError("Failed to set socket options:");
   }
   LOG_DEBUG("Socket fd:", sockFd);
   if (bind(sockFd, res->ai_addr, res->ai_addrlen) == -1) {
@@ -38,10 +38,10 @@ void Socket::setupSocket(int port) {
 void Socket::setNonBlocking(void) {
   int flags = fcntl(sockFd, F_GETFL, 0);
   if (flags == -1) {
-    socketError("Failed to get socket flags");
+    socketError("Failed to get socket flags:");
   }
   if (fcntl(sockFd, F_SETFL, flags | O_NONBLOCK) == -1) {
-    socketError("Failed to set socket to non-blocking");
+    socketError("Failed to set socket to non-blocking:");
   }
 }
 
