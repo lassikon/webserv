@@ -1,9 +1,9 @@
 #include <Socket.hpp>
 
-Socket::Socket() : sockFd(0) { LOG_DEBUG(Utility::logDebugConstructor(*this)); }
+Socket::Socket() : sockFd(0) { LOG_DEBUG(Utility::getConstructor(*this)); }
 
 Socket::~Socket(void) {
-  LOG_DEBUG(Utility::logDebugDeconstructor(*this));
+  LOG_DEBUG(Utility::getDeconstructor(*this));
   cleanupSocket();
 }
 

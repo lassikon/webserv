@@ -23,7 +23,7 @@ public:
   static std::string getDateTimeStamp(void);
   static int statusOk(void) noexcept;
 
-  template <typename T> static std::string logDebugConstructor(T &object) {
+  template <typename T> static std::string getConstructor(T &object) {
     int start_pos = 0;
     std::string str = typeid(object).name();
     for (int i = 0; !std::isdigit(str[i]); i++) {
@@ -35,7 +35,7 @@ public:
     return (str.substr(start_pos, str.length()) + "constructor called");
   };
 
-  template <typename T> static std::string logDebugDeconstructor(T &object) {
+  template <typename T> static std::string getDeconstructor(T &object) {
     int start_pos = 0;
     std::string str = typeid(object).name();
     for (int i = 0; !std::isdigit(str[i]); i++) {
