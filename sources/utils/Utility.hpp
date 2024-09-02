@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Global.hpp>
+
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -9,6 +10,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 class Utility {
@@ -20,4 +22,28 @@ public:
   static std::string getMimeType(std::string &extension);
   static std::string getDateTimeStamp(void);
   static int statusOk(void) noexcept;
+
+  template <typename T> static std::string logDebugConstructor(T &object) {
+    int start_pos = 0;
+    std::string str = typeid(object).name();
+    for (int i = 0; !std::isdigit(str[i]); i++) {
+      start_pos++;
+    }
+    for (int j = start_pos; std::isdigit(str[j]); j++) {
+      start_pos++;
+    }
+    return (str.substr(start_pos, str.length()) + "constructor called");
+  };
+
+  template <typename T> static std::string logDebugDeconstructor(T &object) {
+    int start_pos = 0;
+    std::string str = typeid(object).name();
+    for (int i = 0; !std::isdigit(str[i]); i++) {
+      start_pos++;
+    }
+    for (int j = start_pos; std::isdigit(str[j]); j++) {
+      start_pos++;
+    }
+    return (str.substr(start_pos, str.length()) + "deconstructor called");
+  };
 };
