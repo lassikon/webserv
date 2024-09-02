@@ -32,7 +32,7 @@ public:
     for (int j = start_pos; std::isdigit(str[j]); j++) {
       start_pos++;
     }
-    return (str.substr(start_pos, str.length()) + "constructor called");
+    return (str.substr(start_pos, str.length()) + " constructor called");
   };
 
   template <typename T> static std::string getDeconstructor(T &object) {
@@ -44,6 +44,6 @@ public:
     for (int j = start_pos; std::isdigit(str[j]); j++) {
       start_pos++;
     }
-    return (str.substr(start_pos, str.length()) + "deconstructor called");
+    return (str.substr(start_pos, str.length()) + " deconstructor called");
   };
 };
