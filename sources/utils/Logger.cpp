@@ -30,6 +30,4 @@ void Logger::setLogDetails(bool time, bool file, bool line) {
   setLogDetail((int)logDetail::Line, line);
 }
 
-void Logger::setLogDetail(int index, bool value) {
-  enabledDetail[index] = value;
-}
+void Logger::setLogDetail(int index, bool value) { enabledDetail[index] = value; }
