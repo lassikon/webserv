@@ -91,11 +91,14 @@ run: all
 	$(SCREENCLEAR)
 	./$(NAME)
 
-leaks: re
+leaks: all
 	valgrind $(VLGFLAGS) ./$(NAME)
+	$(call report_cmd, $(LEAKSLOG))
+
+define report_cmd
 	$(SCREENCLEAR)
-	printf "$(V)"
-	cat $(LEAKSLOG)
+	cat $1 | tail -n +4 | cut --complement -d' ' -f1
+endef
 
 # **************************************************************************** #
 #    BUILD
@@ -103,7 +106,7 @@ leaks: re
 
 $(NAME): $(OBJECTS)
 	$(CC) $(CFLAGS) $^ -o $@
-	printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
+	printf "$(V)$(B)Binary:$(T)$(Y) $@ $(T)\n"
 
 define build_cmd
 $1/%.o: %.cpp | $(BUILDDIR)
@@ -125,7 +128,7 @@ clean:
 	$(call delete_cmd, $(BUILDDIR), $(BUILDLOG))
 
 fclean: clean
-	$(call delete_cmd, $(NAME), $(SERVERLOG) $(LEAKSLOG))
+	$(call delete_cmd, $(NAME), $(SERVERLOG), $(LEAKSLOG))
 
 define delete_cmd
 	printf "$(R)$(B)Delete:$(T)$(Y)$1$2$3$4$5$(T)\n"
