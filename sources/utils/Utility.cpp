@@ -2,9 +2,14 @@
 #include <Utility.hpp>
 
 static std::map<std::string, std::string> mimeTypes = {
-    {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
-    {"png", "image/png"},  {"jpg", "image/jpeg"}, {"jpeg", "image/jpeg"},
-    {"gif", "image/gif"},  {"txt", "text/plain"},
+    {"html", "text/html"},
+    {"css", "text/css"},
+    {"js", "application/javascript"},
+    {"png", "image/png"},
+    {"jpg", "image/jpeg"},
+    {"jpeg", "image/jpeg"},
+    {"gif", "image/gif"},
+    {"txt", "text/plain"},
 };
 
 std::string Utility::trimWhitespaces(std::string &line) {
@@ -30,7 +35,8 @@ std::vector<char> Utility::readFile(std::string &path) {
     LOG_ERROR("Failed to open file:", path);
     return std::vector<char>();
   }
-  std::vector<char> content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  std::vector<char> content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
   file.close();
   return content;
 }
@@ -52,14 +58,6 @@ std::string Utility::getMimeType(std::string &extension) {
     return it->second;
   }
   return "application/octet-stream";
-}
-
-std::string Utility::getDateTimeStamp(void) {
-  auto now = std::chrono::system_clock::now();
-  auto tt = std::chrono::system_clock::to_time_t(now);
-  std::ostringstream ss;
-  ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
-  return ss.str();
 }
 
 int Utility::statusOk(void) noexcept { return !g_ExitStatus; }

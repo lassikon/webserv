@@ -16,15 +16,9 @@
 enum class Error { NoError, Args, Config, Server, Socket, Signal = 128 };
 
 class Exception : public std::exception {
-
-private:
-  static inline Exception &newTryCatch(void) noexcept {
-    static Exception wrapper;
-    return wrapper;
-  }
-
-private:
-  template <typename Func, typename Cref, typename... Args> auto create(Func fn, Cref ref, Args &&...args) {
+public:
+  template <typename Func, typename Cref, typename... Args>
+  static auto tryCatch(Func fn, Cref ref, Args &&...args) {
     std::ostringstream ss;
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
@@ -44,11 +38,6 @@ private:
       LOG_FATAL(ss.str());
   }
 
-public:
-  template <typename Func, typename Cref, typename... Args> static auto tryCatch(Func fn, Cref ref, Args &&...args) {
-    newTryCatch().create(fn, ref, args...);
-  }
-
 #define STRERROR Exception::expandErrno()
   static inline std::string expandErrno(void) noexcept {
     std::ostringstream ss;
@@ -61,7 +50,7 @@ public:
   }
 };
 
-#define THROW(errCode, ...)                                                                                            \
-  LOG_FATAL(__VA_ARGS__);                                                                                              \
-  g_ExitStatus = (int)errCode;                                                                                         \
+#define THROW(errCode, ...)                                                    \
+  LOG_FATAL(__VA_ARGS__);                                                      \
+  g_ExitStatus = (int)errCode;                                                 \
   throw Exception();

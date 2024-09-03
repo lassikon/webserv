@@ -20,22 +20,17 @@ public:
   static std::vector<char> readFile(std::string &path);
   static std::filesystem::path getExePath(std::filesystem::path &path);
   static std::string getMimeType(std::string &extension);
-  static std::string getDateTimeStamp(void);
   static int statusOk(void) noexcept;
 
   template <typename T> static std::string getConstructor(T &object) {
-    int start_pos = 0;
-    std::string str = typeid(object).name();
-    for (int i = 0; !std::isdigit(str[i]); i++) {
-      start_pos++;
-    }
-    for (int j = start_pos; std::isdigit(str[j]); j++) {
-      start_pos++;
-    }
-    return (str.substr(start_pos, str.length()) + " constructor called");
+    return getClassName(object) + " constructor called";
   };
 
   template <typename T> static std::string getDeconstructor(T &object) {
+    return getClassName(object) + " deconstructor called";
+  };
+
+  template <typename T> static std::string getClassName(T &object) {
     int start_pos = 0;
     std::string str = typeid(object).name();
     for (int i = 0; !std::isdigit(str[i]); i++) {
@@ -44,6 +39,6 @@ public:
     for (int j = start_pos; std::isdigit(str[j]); j++) {
       start_pos++;
     }
-    return (str.substr(start_pos, str.length()) + " deconstructor called");
+    return str.substr(start_pos, str.length());
   };
 };
