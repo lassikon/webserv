@@ -1,6 +1,8 @@
 #include <Socket.hpp>
 
-Socket::Socket() : sockFd(0) { LOG_DEBUG(Utility::getConstructor(*this)); }
+Socket::Socket() : sockFd(0) {
+  LOG_DEBUG(Utility::getConstructor(*this));
+}
 
 Socket::~Socket(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
@@ -51,6 +53,6 @@ void Socket::cleanupSocket(void) {
     if (close(sockFd) == -1) {
       socketError("Failed to close fd:", sockFd);
     }
-    sockFd = 0; // Mark as closed
+    sockFd = 0;  // Mark as closed
   }
 }

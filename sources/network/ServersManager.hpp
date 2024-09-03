@@ -22,4 +22,9 @@ class ServersManager {
 
  private:
   void serverLoop(PollManager& pollManager);
+
+  template <typename... Args>
+  void serverError(Args&&... args) {
+    THROW(Error::Server, std::forward<Args>(args)..., STRERROR);
+  }
 };

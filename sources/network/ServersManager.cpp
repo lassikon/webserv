@@ -1,8 +1,12 @@
 #include <ServersManager.hpp>
 
-ServersManager::ServersManager(void) { LOG_DEBUG("ServersManager constructor called"); }
+ServersManager::ServersManager(void) {
+  LOG_DEBUG("ServersManager constructor called");
+}
 
-ServersManager::~ServersManager(void) { LOG_DEBUG("ServersManager destructor called"); }
+ServersManager::~ServersManager(void) {
+  LOG_DEBUG("ServersManager destructor called");
+}
 
 void ServersManager::configServers(Config& config) {
   LOG_DEBUG("Initializing servers");
@@ -26,9 +30,8 @@ void ServersManager::runServers(void) {
   while (true) {
     int pollCount = pollManager.pollFdsCount();
     if (pollCount == -1) {
-      LOG_ERROR("Failed to poll");
-      // throw exception
-      break;
+      serverError("Failed to poll fds:");
+
     } else if (pollCount == 0) {
       LOG_DEBUG("Timeout");
       continue;
