@@ -2,12 +2,10 @@
 #include <Logger.hpp>
 
 Logger::Logger(void) {
-  Utility::getConstructor(*this);
   loadDefaults();
 }
 
 Logger::~Logger(void) {
-  Utility::getDeconstructor(*this);
   closeLogFile();
 }
 

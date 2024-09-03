@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Colors.hpp>
-#include <Utility.hpp>
 
+#include <chrono>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -59,11 +60,7 @@ class Logger {
     if (enabledDetail[(int)logDetail::Line]) {
       logEntry << ":" << lineNumber << "]";
     }
-    (
-        [&] {
-          logEntry << " " << args;
-        }(),
-        ...);
+    ([&] { logEntry << " " << args; }(), ...);
     if (currentOutput != logOutput::FileOnly) {
       consoleStream << logEntry.str() << RESET << std::endl;
     }
@@ -90,8 +87,8 @@ class Logger {
                __VA_ARGS__))
 #define LOG_INFO(...) \
   (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_WARN(...)                                                                   \
-  (Logger::Log(logLevel::Warn, "WARN", YELLOW, std::cout, __FILE__, __func__, __LINE__, \
+#define LOG_WARN(...)                                                                      \
+  (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, __FILE__, __func__, __LINE__, \
                __VA_ARGS__))
 #define LOG_ERROR(...) \
   (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, __FILE__, __func__, __LINE__, __VA_ARGS__))
