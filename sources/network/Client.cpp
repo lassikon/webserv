@@ -59,6 +59,7 @@ void Client::processRequest(std::istringstream& iBuf) {
   }
   if (state == ClientState::READING_DONE) {
     std::cout << "Request received from client fd:" << fd << std::endl;
+    state = ClientState::READING_REQLINE;
     handleRequest();
   }
 }
@@ -94,26 +95,6 @@ void Client::handleRequest(void) {
 bool Client::sendResponse(void) {
   LOG_DEBUG("Sending response to client fd:", fd);
   res.run(this, req.getReqURI());
- /*  LOG_DEBUG("Sending response to client fd:", fd);
-  std::ifstream html("webroot/website0/index.html");
-  std::stringstream contentBuf;
-  contentBuf << html.rdbuf();
-  std::string content = contentBuf.str();
-
-  std::ostringstream oss;
-  oss << "HTTP/1.1 200 OK\r\n";
-  oss << "Cache-Control: no-cache, private\r\n";
-  oss << "Content-Type: text/html\r\n";
-  oss << "Content-Length: " << content.size() << "\r\n";
-  oss << "\r\n";
-  oss << content;
-  std::string response = oss.str();
-
-  if (send(fd, response.c_str(), response.size() + 1, 0) == -1) {
-    LOG_ERROR("Send() failed with fd:", fd);
-    // throw exception
-    return false;
-  } */
   return true;
 }
 

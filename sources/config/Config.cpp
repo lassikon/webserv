@@ -215,6 +215,7 @@ void Config::setPort(ServerConfig& server, std::string & value) {
   else
     server.port = std::stoi(value);
 }
+//relative to cwd
 void Config::setErrorPages(ServerConfig& server, std::string & value) {
   std::stringstream ss(value);
   std::string error;
@@ -276,22 +277,16 @@ void Config::setMethods(RouteConfig& route, std::string & value) {
       route.methods.push_back(method);
   }
 }
-
+//must be an absolute path
 void Config::setRoot(RouteConfig& route, std::string & value) {
-  std::filesystem::path exePath;
-  exePath = Utility::getExePath(exePath);
-  if (value.front() == '/') {
-    value = value.substr(1, value.size());
-  }
-  std::filesystem::path rootPath = exePath / value;
-  if (!std::filesystem::exists(rootPath)) {
+  if (!std::filesystem::exists(value)) {
     LOG_WARN("Parse: Root path not found, ", value, " at line ", _lineNumber);
     return;
   }
   if (!route.root.empty())
     LOG_WARN("Parse: Root already set, updating root with line ", _lineNumber);
   else
-    route.root = rootPath.string();
+    route.root = value;
 }
 
 void Config::setDirectoryListing(RouteConfig& route, std::string & value) {
@@ -317,10 +312,7 @@ void Config::setDefaultFile(RouteConfig& route, std::string & value) {
 }
 
 void Config::setUploadPath(RouteConfig& route, std::string & value) {
-  std::filesystem::path exePath;
-  exePath = Utility::getExePath(exePath);
-  std::filesystem::path uploadPath = exePath.append(value);
-  if (!std::filesystem::exists(uploadPath)) {
+  if (!std::filesystem::exists(value)) {
     LOG_WARN("Parse: Upload path not found, ", value, " at line ", _lineNumber);
     return;
   }
@@ -328,23 +320,16 @@ void Config::setUploadPath(RouteConfig& route, std::string & value) {
     LOG_WARN("Parse: Upload path already set, updating upload path with line ",
              _lineNumber);
   else
-    route.uploadPath = uploadPath.string();
+    route.uploadPath = value;
 }
 // either a path or a redirect url
 void Config::setRedirect(RouteConfig& route, std::string & value) {
   if (value.front() == '/') {
-    std::filesystem::path exePath;
-    exePath = Utility::getExePath(exePath);
-    std::filesystem::path redirectPath = exePath.append(value);
-    if (!std::filesystem::exists(redirectPath)) {
+    if (!std::filesystem::exists(value)) {
       LOG_WARN("Parse: Redirect path not found, ", value, " at line ", _lineNumber);
       return;
     }
-    if (!route.redirect.empty())
-      LOG_WARN("Parse: Redirect already set, updating redirect with line ",
-              _lineNumber);
-    route.redirect = redirectPath.string();
-    return;
+    route.redirect = value;
   }
   if (!route.redirect.empty())
     LOG_WARN("Parse: Redirect already set, updating redirect with line ",
@@ -369,18 +354,6 @@ bool Config::callGetLine(std::stringstream& configFile) {
   _lineNumber++;
   return true;
 }
-
-/* std::filesystem::path& Config::getExePath(std::filesystem::path& path) {
-  std::filesystem::path currentPath = std::filesystem::current_path();
-  std::filesystem::path exePath = currentPath / "webserv";
-  if (!std::filesystem::exists(exePath))
-  {
-    LOG_ERROR("Parse: Could not find executable at ", exePath);
-    return (path);
-  }
-  path = std::filesystem::canonical(exePath).parent_path().string();
-  return (path);
-} */
 
 int Config::getLineNumber() const { return _lineNumber; }
 

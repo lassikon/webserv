@@ -6,7 +6,6 @@ Logger::Logger(void) { loadDefaults(); }
 Logger::~Logger(void) { closeLogFile(); }
 
 void Logger::loadDefaults(void) {
-
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
   setLogDetails(true, true, true);
@@ -31,6 +30,4 @@ void Logger::setLogDetails(bool time, bool file, bool line) {
   setLogDetail((int)logDetail::Line, line);
 }
 
-void Logger::setLogDetail(int index, bool value) {
-  enabledDetail[index] = value;
-}
+void Logger::setLogDetail(int index, bool value) { enabledDetail[index] = value; }

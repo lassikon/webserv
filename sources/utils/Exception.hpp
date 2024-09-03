@@ -24,8 +24,7 @@ private:
   }
 
 private:
-  template <typename Func, typename Cref, typename... Args>
-  auto create(Func fn, Cref ref, Args &&...args) {
+  template <typename Func, typename Cref, typename... Args> auto create(Func fn, Cref ref, Args &&...args) {
     std::ostringstream ss;
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
@@ -46,8 +45,7 @@ private:
   }
 
 public:
-  template <typename Func, typename Cref, typename... Args>
-  static auto tryCatch(Func fn, Cref ref, Args &&...args) {
+  template <typename Func, typename Cref, typename... Args> static auto tryCatch(Func fn, Cref ref, Args &&...args) {
     newTryCatch().create(fn, ref, args...);
   }
 
@@ -63,7 +61,7 @@ public:
   }
 };
 
-#define THROW(errCode, ...)    \
-  LOG_FATAL(__VA_ARGS__);      \
-  g_ExitStatus = (int)errCode; \
+#define THROW(errCode, ...)                                                                                            \
+  LOG_FATAL(__VA_ARGS__);                                                                                              \
+  g_ExitStatus = (int)errCode;                                                                                         \
   throw Exception();
