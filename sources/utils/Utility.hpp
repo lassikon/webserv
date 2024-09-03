@@ -6,7 +6,6 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <sstream>
 #include <string>
 #include <typeinfo>
 #include <vector>
@@ -20,17 +19,17 @@ class Utility {
   static std::string getMimeType(std::string& extension);
   static int statusOk(void) noexcept;
 
-  template <typename T>
+  template <class T>
   static std::string getConstructor(T& object) {
     return getClassName(object) + " constructor called";
   };
 
-  template <typename T>
+  template <class T>
   static std::string getDeconstructor(T& object) {
     return getClassName(object) + " deconstructor called";
   };
 
-  template <typename T>
+  template <class T>
   static std::string getClassName(T& object) {
     int start_pos = 0;
     std::string str = typeid(object).name();
