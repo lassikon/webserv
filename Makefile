@@ -2,11 +2,11 @@
 #    VARIABLES
 # **************************************************************************** #
 
-NAME      := webserv
-BUILDLOG  := build.log
-SERVERLOG := webserv.log
-SOURCEDIR := sources
-BUILDDIR  := build
+NAME        := webserv
+BUILDLOG    := build.log
+SERVERLOG   := webserv.log
+SOURCEDIR   := sources
+BUILDDIR    := build
 
 # **************************************************************************** #
 #    COMMANDS
@@ -19,11 +19,25 @@ SCREENCLEAR := printf "\033c"
 #    COMPILATION
 # **************************************************************************** #
 
-CC         := c++
-CFLAGS     := -g -Wall -Werror -Wextra
-CPPFLAGS   := -c -MMD -MP
-DEBUGFLAGS := -fsanitize=address
-MAKEFLAGS  += -j4 --no-print-directory
+CC          := c++
+CFLAGS      := -g -Wall -Werror -Wextra
+CPPFLAGS    := -c -MMD -MP
+DEBUGFLAGS  := -fsanitize=address
+MAKEFLAGS   += -j8 --no-print-directory
+
+# **************************************************************************** #
+#    VALGRIND
+# **************************************************************************** #
+
+LEAKSLOG    := leaks.log
+VLGFLAGS    := --leak-check=full \
+               --show-leak-kinds=all \
+               --track-origins=yes \
+               --track-fds=yes \
+               --trace-children=yes \
+               --log-file=$(LEAKSLOG) \
+               --verbose \
+               --quiet
 
 # **************************************************************************** #
 #    SOURCES
@@ -35,20 +49,19 @@ MODULES := network \
            utils
 
 SOURCES := main \
-		   Client \
-           Config \
-		   PollManager \
-		   ProcessTree \
-		   Request \
-		   ResourceManager \
-		   Response \
-		   Server \
-		   ServersManager \
+           Client \
+           PollManager \
+           ProcessTree \
+           Request \
+           ResourceManager \
+           Response \
+           Server \
+           ServersManager \
            Socket \
-		   Config \
-		   CgiHandler \
-		   Logger \
-		   Signal \
+           Config \
+           CgiHandler \
+           Logger \
+           Signal \
            Utility
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
@@ -78,13 +91,22 @@ run: all
 	$(SCREENCLEAR)
 	./$(NAME)
 
+leaks: all
+	valgrind $(VLGFLAGS) ./$(NAME)
+	$(call report_cmd, $(LEAKSLOG))
+
+define report_cmd
+	$(SCREENCLEAR)
+	cat $1 | tail -n +4 | cut --complement -d' ' -f1
+endef
+
 # **************************************************************************** #
 #    BUILD
 # **************************************************************************** #
 
 $(NAME): $(OBJECTS)
 	$(CC) $(CFLAGS) $^ -o $@
-	printf "$(V)$(B)Binary:$(T)$(Y) $@\n"
+	printf "$(V)$(B)Binary:$(T)$(Y) $@ $(T)\n"
 
 define build_cmd
 $1/%.o: %.cpp | $(BUILDDIR)
@@ -106,7 +128,7 @@ clean:
 	$(call delete_cmd, $(BUILDDIR), $(BUILDLOG))
 
 fclean: clean
-	$(call delete_cmd, $(NAME), $(SERVERLOG))
+	$(call delete_cmd, $(NAME), $(SERVERLOG), $(LEAKSLOG))
 
 define delete_cmd
 	printf "$(R)$(B)Delete:$(T)$(Y)$1$2$3$4$5$(T)\n"
@@ -142,6 +164,6 @@ $(foreach build, $(BUILDDIR), $(eval $(call build_cmd, $(build))))
 
 .PHONY: all re
 .PHONY: clean fclean
-.PHONY: debug run
+.PHONY: debug leaks run
 
 .SILENT:

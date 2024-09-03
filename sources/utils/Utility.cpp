@@ -7,7 +7,7 @@ static std::map<std::string, std::string> mimeTypes = {
     {"gif", "image/gif"},  {"txt", "text/plain"},
 };
 
-std::string Utility::trimWhitespaces(std::string &line) {
+std::string Utility::trimWhitespaces(std::string& line) {
   size_t pos = line.find_first_not_of(" \t");
   if (pos != std::string::npos)
     line = line.substr(pos);
@@ -17,25 +17,26 @@ std::string Utility::trimWhitespaces(std::string &line) {
   return line;
 }
 
-std::string Utility::trimComments(std::string &line) {
+std::string Utility::trimComments(std::string& line) {
   size_t pos = line.find("#");
   if (pos != std::string::npos)
     line = line.substr(0, pos);
   return line;
 }
 
-std::vector<char> Utility::readFile(std::string &path) {
+std::vector<char> Utility::readFile(std::string& path) {
   std::ifstream file(path, std::ios::binary | std::ios::in);
   if (!file.is_open()) {
     LOG_ERROR("Failed to open file:", path);
     return std::vector<char>();
   }
-  std::vector<char> content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  std::vector<char> content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
   file.close();
   return content;
 }
 
-std::filesystem::path Utility::getExePath(std::filesystem::path &path) {
+std::filesystem::path Utility::getExePath(std::filesystem::path& path) {
   std::filesystem::path currentPath = std::filesystem::current_path();
   std::filesystem::path exePath = currentPath / "webserv";
   if (!std::filesystem::exists(exePath)) {
@@ -46,7 +47,7 @@ std::filesystem::path Utility::getExePath(std::filesystem::path &path) {
   return (path);
 }
 
-std::string Utility::getMimeType(std::string &extension) {
+std::string Utility::getMimeType(std::string& extension) {
   auto it = mimeTypes.find(extension);
   if (it != mimeTypes.end()) {
     return it->second;
@@ -54,12 +55,6 @@ std::string Utility::getMimeType(std::string &extension) {
   return "application/octet-stream";
 }
 
-std::string Utility::getDateTimeStamp(void) {
-  auto now = std::chrono::system_clock::now();
-  auto tt = std::chrono::system_clock::to_time_t(now);
-  std::ostringstream ss;
-  ss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
-  return ss.str();
+int Utility::statusOk(void) noexcept {
+  return !g_ExitStatus;
 }
-
-int Utility::statusOk(void) noexcept { return !g_ExitStatus; }

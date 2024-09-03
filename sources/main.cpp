@@ -7,7 +7,7 @@
 
 sig_atomic_t g_ExitStatus;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
     return (int)Error::Args;

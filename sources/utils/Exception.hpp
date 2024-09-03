@@ -13,30 +13,24 @@
 #define ERR_MSG_NOFILE "Could not access file:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
-enum class Error { NoError, Args, Config, Server, Signal = 128 };
+enum class Error { NoError, Args, Config, Server, Socket, Signal = 128 };
 
 class Exception : public std::exception {
-
-private:
-  static inline Exception &newTryCatch(void) noexcept {
-    static Exception wrapper;
-    return wrapper;
-  }
-
-private:
-  template <typename Func, typename Cref, typename... Args> auto create(Func fn, Cref ref, Args &&...args) {
+ public:
+  template <typename Func, typename Cref, typename... Args>
+  static auto tryCatch(Func fn, Cref ref, Args&&... args) {
     std::ostringstream ss;
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
-    } catch (const std::logic_error &e) {
+    } catch (const std::logic_error& e) {
       ss << "Logic Error: " << e.what();
-    } catch (const std::runtime_error &e) {
+    } catch (const std::runtime_error& e) {
       ss << "Runtime Error: " << e.what();
-    } catch (const std::bad_alloc &e) {
+    } catch (const std::bad_alloc& e) {
       ss << "Memory Error: " << e.what();
-    } catch (const std::bad_exception &e) {
+    } catch (const std::bad_exception& e) {
       ss << "Unexpected Error: " << e.what();
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       if ((std::string)e.what() != "std::exception")
         ss << "Exception occured: " << e.what();
     }
@@ -44,12 +38,6 @@ private:
       LOG_FATAL(ss.str());
   }
 
-public:
-  template <typename Func, typename Cref, typename... Args> static auto tryCatch(Func fn, Cref ref, Args &&...args) {
-    newTryCatch().create(fn, ref, args...);
-  }
-
-#define STRERROR Exception::expandErrno()
   static inline std::string expandErrno(void) noexcept {
     std::ostringstream ss;
     if (!errno) {
@@ -61,7 +49,8 @@ public:
   }
 };
 
-#define THROW(errCode, ...)                                                                                            \
-  LOG_FATAL(__VA_ARGS__);                                                                                              \
-  g_ExitStatus = (int)errCode;                                                                                         \
+#define STRERROR Exception::expandErrno()
+#define THROW(errCode, ...)    \
+  LOG_FATAL(__VA_ARGS__);      \
+  g_ExitStatus = (int)errCode; \
   throw Exception();
