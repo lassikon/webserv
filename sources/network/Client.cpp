@@ -59,7 +59,6 @@ void Client::processRequest(std::istringstream& iBuf) {
   }
   if (state == ClientState::READING_DONE) {
     std::cout << "Request received from client fd:" << fd << std::endl;
-    state = ClientState::READING_REQLINE;
     handleRequest();
   }
 }
@@ -94,7 +93,8 @@ void Client::handleRequest(void) {
 
 bool Client::sendResponse(void) {
   LOG_DEBUG("Sending response to client fd:", fd);
-  res.run(this, req.getReqURI());
+  state = ClientState::READING_REQLINE;
+  res.run(this, req.getReqURI(), req.getMethod());
   return true;
 }
 

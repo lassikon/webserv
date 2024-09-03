@@ -324,13 +324,6 @@ void Config::setUploadPath(RouteConfig& route, std::string & value) {
 }
 // either a path or a redirect url
 void Config::setRedirect(RouteConfig& route, std::string & value) {
-  if (value.front() == '/') {
-    if (!std::filesystem::exists(value)) {
-      LOG_WARN("Parse: Redirect path not found, ", value, " at line ", _lineNumber);
-      return;
-    }
-    route.redirect = value;
-  }
   if (!route.redirect.empty())
     LOG_WARN("Parse: Redirect already set, updating redirect with line ",
              _lineNumber);

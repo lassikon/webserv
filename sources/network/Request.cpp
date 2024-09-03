@@ -5,6 +5,7 @@ void Request::parseRequestLine(Client* client, std::string& requestLine) {
   LOG_TRACE("Parsing request line");
   std::istringstream iss(requestLine);
   iss >> method >> reqURI >> version;
+  LOG_DEBUG("Method:", method, "URI:", reqURI, "Version:", version);
   client->setState(ClientState::READING_HEADER);
 }
 
@@ -12,7 +13,6 @@ void Request::parseHeaders(Client* client, std::istringstream& iBuf) {
   LOG_TRACE("Parsing headers");
   std::string header;
   while (std::getline(iBuf, header)) {
-    std::cout << "header: " << header << std::endl;
     if (header.find("\r\n\r") != std::string::npos || header.empty() ||
         header == "\r") {
       client->setState(ClientState::READING_BODY);
@@ -58,7 +58,7 @@ void Request::parseBody(Client* client, std::istringstream& iBuf) {
     }
   } else {
     LOG_TRACE("Parsing body");
-    if (headers.find("Content-Length") == headers.end()) { // 400 bad request
+    if (headers.find("Content-Length") == headers.end()) {  // 400 bad request
       LOG_ERROR("Content-Length header not found");
       return;
     }

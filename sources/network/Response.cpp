@@ -8,15 +8,79 @@ Response::Response(ServerConfig& serverConfig) : serverConfig(serverConfig) {
 
 Response::~Response() { LOG_TRACE("response destructor called"); }
 
-void Response::run(Client* client, std::string reqURI) {
-  LOG_TRACE("Running response");
-  if (!matchRoute(reqURI))
+void Response::run(Client* client, std::string reqURI, std::string method) {
+  LOG_TRACE("Running response", reqURI);
+  if (!matchRoute(reqURI)) return;
+  if (!isMethodAllowed(method)) return;
+  if (isRedirect(reqURI)) {
+    sendResponse(client->getFd());
     return;
+  }
   searchRequest(reqURI);
   makeResLine();
   makeHeaders(finalPath);
   makeBody();
   sendResponse(client->getFd());
+}
+
+bool Response::matchRoute(std::string reqURI) {
+  LOG_TRACE("Searching for matching route");
+  size_t routeIt;
+  size_t maxMatchingLen = 0;
+  size_t routeIndex = 0;
+  for (routeIt = 0; routeIt < serverConfig.routes.size(); routeIt++) {
+    size_t rLocLen = serverConfig.routes[routeIt].location.length();
+    std::string rLoc = serverConfig.routes[routeIt].location;
+    if (reqURI.compare(0, rLocLen, rLoc) == 0) {
+      if (rLocLen > maxMatchingLen) {
+        maxMatchingLen = rLocLen;
+        routeIndex = routeIt;
+      }
+    }
+  }
+  if (maxMatchingLen == 0) {
+    LOG_WARN("No matching route found", reqURI);
+    serve404Action(reqURI);
+    return false;
+  } else {  // found matching route
+    LOG_DEBUG("Route found: ", serverConfig.routes[routeIndex].location);
+    routeConfig = serverConfig.routes[routeIndex];
+    return true;
+  }
+}
+
+bool Response::isMethodAllowed(std::string method) {
+  LOG_TRACE("Checking if method is allowed");
+  auto it =
+      std::find(routeConfig.methods.begin(), routeConfig.methods.end(), method);
+  if (it == routeConfig.methods.end()) {
+    LOG_WARN("Method not allowed");
+    serve405Action();
+    return false;
+  }
+  return true;
+}
+
+bool Response::isRedirect(std::string reqURI){
+  LOG_TRACE("Checking if redirect");
+  (void)reqURI;
+  std::cout << "redirect: " << routeConfig.redirect << std::endl;
+  if (!routeConfig.redirect.empty()) {
+    LOG_DEBUG("Redirecting to: ", routeConfig.redirect);
+    statusCode = 301;
+    statusMessage = "Moved Permanently";
+    makeResLine();
+    std::ostringstream oBuf;
+    oBuf << "Server: " << serverConfig.serverName << "\r\n";
+    oBuf << "Location: " << routeConfig.redirect << "\r\n";
+    oBuf << "Connection: close\r\n";
+    oBuf << "\r\n";
+    std::string oBufStr = oBuf.str();
+    headers = std::vector<char>(oBufStr.begin(), oBufStr.end());
+    makeBody();
+    return true;
+  }
+  return false;
 }
 
 bool Response::searchRequest(std::string reqURI) {
@@ -35,6 +99,7 @@ bool Response::searchRequest(std::string reqURI) {
   root->process(pathStr);
   return true;
 }
+
 void Response::makeDecisionTree() {
   LOG_TRACE("Making decision tree");
   // terminal nodes / actions
@@ -97,32 +162,6 @@ void Response::makeDecisionTree() {
   root = isPathExist;
 }
 
-bool Response::matchRoute(std::string reqURI) {
-  LOG_TRACE("Searching for matching route");
-  size_t routeIt;
-  size_t maxMatchingLen = 0;
-  size_t routeIndex = 0;
-  for (routeIt = 0; routeIt < serverConfig.routes.size(); routeIt++) {
-    size_t rLocLen = serverConfig.routes[routeIt].location.length();
-    std::string rLoc = serverConfig.routes[routeIt].location;
-    if (reqURI.compare(0, rLocLen, rLoc) == 0) {
-      routeConfig = serverConfig.routes[routeIt];
-      if (rLocLen > maxMatchingLen) {
-        maxMatchingLen = rLocLen;
-        routeIndex = routeIt;
-      }
-    }
-  }
-  if (maxMatchingLen == 0) {
-    LOG_WARN("No matching route found");
-    serve404Action(reqURI);
-    return false;
-  } else {  // found matching route
-    routeConfig = serverConfig.routes[routeIndex];
-    return true;
-  }
-}
-
 void Response::serveDirectoryListingAction(std::string& path) {
   LOG_TRACE("Serving directory listing");
   (void)path;
@@ -175,7 +214,7 @@ void Response::serve404Action(std::string& path) {
   if (path.front() == '/') {
     path = path.substr(1, path.size());
   }
-  std::filesystem::path errorPath = exePath /path;
+  std::filesystem::path errorPath = exePath / path;
   std::string errorPathStr = errorPath.string();
   ibody = Utility::readFile(errorPathStr);
   finalPath = errorPathStr;
@@ -187,6 +226,23 @@ void Response::serve403Action(std::string& path) {
   statusMessage = "Forbidden";
   auto key = serverConfig.pagesDefault.find(403);
   path = key->second;
+  std::filesystem::path exePath;
+  exePath = Utility::getExePath(exePath);
+  if (path.front() == '/') {
+    path = path.substr(1, path.size());
+  }
+  std::filesystem::path errorPath = exePath / path;
+  std::string errorPathStr = errorPath.string();
+  ibody = Utility::readFile(errorPathStr);
+  finalPath = errorPathStr;
+}
+
+void Response::serve405Action(void) {
+  LOG_TRACE("Serving error");
+  statusCode = 405;
+  statusMessage = "Method Not Allowed";
+  auto key = serverConfig.pagesDefault.find(405);
+  std::string path = key->second;
   std::filesystem::path exePath;
   exePath = Utility::getExePath(exePath);
   if (path.front() == '/') {

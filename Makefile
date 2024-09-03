@@ -53,7 +53,6 @@ SOURCES := main \
            PollManager \
            ProcessTree \
            Request \
-           ResourceManager \
            Response \
            Server \
            ServersManager \
