@@ -8,13 +8,13 @@
 #include <csignal>
 
 class Signal {
-private:
+ private:
   static SIGMAP sigmap;
 
-private:
+ private:
   static void signalHandler(int sigNum) noexcept;
   static inline void createSigMap(void) noexcept;
 
-public:
+ public:
   static void trackSignals(void) noexcept;
 };
