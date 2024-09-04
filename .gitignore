@@ -6,3 +6,4 @@ webserv
 **/*.log
 **/*.txt
 **/*.pdf
+**/*.sh
