@@ -19,8 +19,10 @@ class Socket {
   int port;
 
  public:
-  Socket(ServerConfig& serverConfig);
+  Socket(void);
   ~Socket(void);
+
+  Socket(ServerConfig& serverConfig);
 
   int getFd(void) const { return sockFd; }
   void setupSocket(ServerConfig& serverConfig);

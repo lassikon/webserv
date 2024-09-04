@@ -1,5 +1,9 @@
 #include <Socket.hpp>
 
+Socket::Socket(void) {
+  LOG_DEBUG(Utility::getConstructor(*this));
+}
+
 Socket::Socket(ServerConfig& serverConfig) {
   LOG_DEBUG(Utility::getConstructor(*this));
   setupSocket(serverConfig);
