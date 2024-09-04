@@ -1,21 +1,22 @@
 #include <Server.hpp>
 
 Server::Server(ServerConfig& serverConfig) : serverConfig(serverConfig) {
-  LOG_DEBUG("Server constructor called");
+  LOG_DEBUG(Utility::getConstructor(*this));
   port = serverConfig.port;
-  socket = Socket();
-  socket.setupSocket(serverConfig.port);
+  ipAddress = serverConfig.ipAddress;
+  serverName = serverConfig.serverName;
+  socket = Socket(serverConfig);
 }
 
 Server::~Server(void) {
-  LOG_DEBUG("Server destructor called");
+  LOG_DEBUG(Utility::getDeconstructor(*this));
 }
 
 void Server::acceptConnection(PollManager& pollManager) {
   struct sockaddr_storage theirAddr {};
   socklen_t addrSize = sizeof theirAddr;
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
-  newFd = -1;  // testing error handling, remove this line
+  // newFd = -1;  // testing error handling, remove this line
   if (newFd == -1) {
     LOG_WARN("Failed to accept new connection:", STRERROR);
     return;

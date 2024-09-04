@@ -1,14 +1,15 @@
+#include <Config.hpp>
 #include <Exception.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
 #include <ServersManager.hpp>
 #include <Signal.hpp>
 #include <Utility.hpp>
-// #include <Config.hpp>
 
 sig_atomic_t g_ExitStatus;
 
 int main(int argc, char** argv) {
+  Config config;
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
     return (int)Error::Args;
@@ -18,8 +19,8 @@ int main(int argc, char** argv) {
     Config config(void);
   }
   ServersManager serversManager;
-  // serversManager.configServers(config);
-  // serversManager.runServers();
+  serversManager.configServers(config);
+  serversManager.runServers();
   Signal::trackSignals();
   return g_ExitStatus;
 }

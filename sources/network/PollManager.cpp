@@ -1,11 +1,13 @@
 #include "PollManager.hpp"
 
 PollManager::PollManager(void) {
-  LOG_DEBUG("PollManager constructor called");
+  LOG_DEBUG(Utility::getConstructor(*this));
   pollFds.reserve(MAX_CLIENTS);
 }
 
-PollManager::~PollManager(void) { LOG_DEBUG("PollManager destructor called"); }
+PollManager::~PollManager(void) {
+  LOG_DEBUG(Utility::getDeconstructor(*this));
+}
 
 void PollManager::addFd(int fd, short events) {
   struct pollfd pFd = {fd, events, 0};
@@ -25,6 +27,10 @@ void PollManager::removeFd(int fd) {
   }
 }
 
-int PollManager::pollFdsCount(void) { return poll(pollFds.data(), pollFds.size(), TIMEOUT); }
+int PollManager::pollFdsCount(void) {
+  return poll(pollFds.data(), pollFds.size(), TIMEOUT);
+}
 
-std::vector<struct pollfd>& PollManager::getPollFds() { return pollFds; }
+std::vector<struct pollfd>& PollManager::getPollFds() {
+  return pollFds;
+}

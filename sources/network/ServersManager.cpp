@@ -1,11 +1,11 @@
 #include <ServersManager.hpp>
 
 ServersManager::ServersManager(void) {
-  LOG_DEBUG("ServersManager constructor called");
+  LOG_DEBUG(Utility::getConstructor(*this));
 }
 
 ServersManager::~ServersManager(void) {
-  LOG_DEBUG("ServersManager destructor called");
+  LOG_DEBUG(Utility::getDeconstructor(*this));
 }
 
 void ServersManager::configServers(Config& config) {

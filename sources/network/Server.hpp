@@ -20,6 +20,8 @@ class Server {
  private:
   Socket socket;
   int port;
+  std::string ipAddress;
+  std::string serverName;
   std::vector<std::shared_ptr<Client>> clients;
   ServerConfig& serverConfig;
 
