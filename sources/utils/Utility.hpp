@@ -20,17 +20,17 @@ class Utility {
   static int statusOk(void) noexcept;
 
   template <class T>
-  static std::string getConstructor(T& object) {
+  static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";
   };
 
   template <class T>
-  static std::string getDeconstructor(T& object) {
+  static std::string getDeconstructor(const T& object) {
     return getClassName(object) + " deconstructor called";
   };
 
   template <class T>
-  static std::string getClassName(T& object) {
+  static std::string getClassName(const T& object) {
     int start_pos = 0;
     std::string str = typeid(object).name();
     for (int i = 0; !std::isdigit(str[i]); i++) {
