@@ -8,36 +8,11 @@ Response::Response(ServerConfig& serverConfig) : serverConfig(serverConfig) {
 
 Response::~Response() { LOG_TRACE("response destructor called"); }
 
-void Response::run(Client* client, std::string reqURI) {
-  LOG_TRACE("Running response");
-  if (!matchRoute(reqURI))
-    return;
-  searchRequest(reqURI);
-  makeResLine();
-  makeHeaders(finalPath);
-  makeBody();
-  sendResponse(client->getFd());
-}
-
-bool Response::searchRequest(std::string reqURI) {
-  LOG_TRACE("Searching for request");
-  if (reqURI.front() == '/') {
-    if (reqURI.size() > 1) {
-      reqURI = reqURI.substr(1, reqURI.size());
-    } else {
-      reqURI = "";
-    }
-  }
-  std::filesystem::path rootPath = routeConfig.root;
-  std::filesystem::path path = rootPath / reqURI;
-  LOG_DEBUG("Path:", path, "Request URI:", reqURI);
-  std::string pathStr = path.string();
-  root->process(pathStr);
-  return true;
-}
 void Response::makeDecisionTree() {
   LOG_TRACE("Making decision tree");
   // terminal nodes / actions
+  serveRedirect = std::make_shared<ProcessTree>(
+      [this](std::string& path) { this->serveRedirectAction(path); });
   serveDirectoryListing = std::make_shared<ProcessTree>(
       [this](std::string& path) { this->serveDirectoryListingAction(path); });
   serveDefaultFile = std::make_shared<ProcessTree>(
@@ -46,10 +21,12 @@ void Response::makeDecisionTree() {
       [this](std::string& path) { this->serveFileAction(path); });
   serveIndex = std::make_shared<ProcessTree>(
       [this](std::string& path) { this->serveIndexAction(path); });
-  serve404 = std::make_shared<ProcessTree>(
-      [this](std::string& path) { this->serve404Action(path); });
   serve403 = std::make_shared<ProcessTree>(
       [this](std::string& path) { this->serve403Action(path); });
+  serve404 = std::make_shared<ProcessTree>(
+      [this](std::string& path) { this->serve404Action(path); });
+  serve405 = std::make_shared<ProcessTree>(
+      [this](std::string& path) { this->serve405Action(path); });
   // define process tree
 
   isDirectoryListingOn = std::make_shared<ProcessTree>(
@@ -90,14 +67,42 @@ void Response::makeDecisionTree() {
   isPathExist = std::make_shared<ProcessTree>(
       [this](std::string& path) {
         LOG_DEBUG("isPathExist: ", path);
+        path = appendRoot(path);
         return std::filesystem::exists(path);
       },
       isDirectory, serve404);
+  isRedirect = std::make_shared<ProcessTree>(
+      [this](std::string& path) {
+        (void)path;
+        LOG_DEBUG("isRedirect: ", routeConfig.redirect);
+        return !routeConfig.redirect.empty();
+      },
+      serveRedirect, isPathExist);
+  isMethodAllowed = std::make_shared<ProcessTree>(
+      [this](std::string& path) {
+        (void)path;
+        auto it = std::find(routeConfig.methods.begin(),
+                            routeConfig.methods.end(), reqMethod);
+        LOG_DEBUG("isMethodAllowed: ", reqMethod);
+        return it != routeConfig.methods.end();
+      },
+      isRedirect, serve405);
+  isRouteMatch = std::make_shared<ProcessTree>(
+    [this](std::string& path) {
+      return checkIsRouteMatch(path);
+    }, isMethodAllowed, serve404);
 
-  root = isPathExist;
+  root = isRouteMatch;
 }
 
-bool Response::matchRoute(std::string reqURI) {
+void Response::run(std::string reqURI, std::string method) {
+  LOG_TRACE("Running response", reqURI);
+  reqMethod = method;
+  root->process(reqURI);
+  makeResponse();
+}
+
+bool Response::checkIsRouteMatch(std::string reqURI) {
   LOG_TRACE("Searching for matching route");
   size_t routeIt;
   size_t maxMatchingLen = 0;
@@ -106,7 +111,6 @@ bool Response::matchRoute(std::string reqURI) {
     size_t rLocLen = serverConfig.routes[routeIt].location.length();
     std::string rLoc = serverConfig.routes[routeIt].location;
     if (reqURI.compare(0, rLocLen, rLoc) == 0) {
-      routeConfig = serverConfig.routes[routeIt];
       if (rLocLen > maxMatchingLen) {
         maxMatchingLen = rLocLen;
         routeIndex = routeIt;
@@ -115,12 +119,41 @@ bool Response::matchRoute(std::string reqURI) {
   }
   if (maxMatchingLen == 0) {
     LOG_WARN("No matching route found");
-    serve404Action(reqURI);
+    LOG_DEBUG("Request URI:", reqURI);
     return false;
   } else {  // found matching route
+    LOG_DEBUG("Route found: ", serverConfig.routes[routeIndex].location);
     routeConfig = serverConfig.routes[routeIndex];
+    headers["Server"] = serverConfig.serverName;
     return true;
   }
+}
+
+std::string Response::appendRoot(std::string reqURI) {
+  LOG_TRACE("Searching for request");
+  if (reqURI.front() == '/') {
+    if (reqURI.size() > 1) {
+      reqURI = reqURI.substr(1, reqURI.size());
+    } else {
+      reqURI = "";
+    }
+  }
+  std::filesystem::path rootPath = routeConfig.root;
+  std::filesystem::path path = rootPath / reqURI;
+  LOG_DEBUG("Path:", path, "Request URI:", reqURI);
+  std::string pathStr = path.string();
+  return pathStr;
+}
+
+
+void Response::serveRedirectAction(std::string& path){
+  LOG_TRACE("Checking if redirect");
+  (void)path;
+  LOG_DEBUG("Redirecting to: ", routeConfig.redirect);
+  statusCode = 301;
+  statusMessage = "Moved Permanently";
+  headers["Location"] = routeConfig.redirect;
+  headers["Connection"] = "close";
 }
 
 void Response::serveDirectoryListingAction(std::string& path) {
@@ -139,7 +172,11 @@ void Response::serveDefaultFileAction(std::string& path) {
                    });
   path += *it;
   ibody = Utility::readFile(path);
-  finalPath = path;
+  std::string ext = path.substr(path.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
 }
 
 void Response::serveFileAction(std::string& path) {
@@ -147,7 +184,11 @@ void Response::serveFileAction(std::string& path) {
   statusCode = 200;
   statusMessage = "OK";
   ibody = Utility::readFile(path);
-  finalPath = path;
+  std::string ext = path.substr(path.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
 }
 
 void Response::serveIndexAction(std::string& path) {
@@ -161,7 +202,11 @@ void Response::serveIndexAction(std::string& path) {
                    });
   path += *it;
   ibody = Utility::readFile(path);
-  finalPath = path;
+  std::string ext = path.substr(path.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
 }
 
 void Response::serve404Action(std::string& path) {
@@ -175,10 +220,14 @@ void Response::serve404Action(std::string& path) {
   if (path.front() == '/') {
     path = path.substr(1, path.size());
   }
-  std::filesystem::path errorPath = exePath /path;
+  std::filesystem::path errorPath = exePath / path;
   std::string errorPathStr = errorPath.string();
   ibody = Utility::readFile(errorPathStr);
-  finalPath = errorPathStr;
+  std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
 }
 
 void Response::serve403Action(std::string& path) {
@@ -195,41 +244,43 @@ void Response::serve403Action(std::string& path) {
   std::filesystem::path errorPath = exePath / path;
   std::string errorPathStr = errorPath.string();
   ibody = Utility::readFile(errorPathStr);
-  finalPath = errorPathStr;
+  std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
 }
 
-void Response::makeResLine(void) {
-  LOG_TRACE("Making response line");
+void Response::serve405Action(std::string& path) {
+  LOG_TRACE("Serving error");
+  statusCode = 405;
+  statusMessage = "Method Not Allowed";
+  auto key = serverConfig.pagesDefault.find(405);
+  path = key->second;
+  std::filesystem::path exePath;
+  exePath = Utility::getExePath(exePath);
+  if (path.front() == '/') {
+    path = path.substr(1, path.size());
+  }
+  std::filesystem::path errorPath = exePath / path;
+  std::string errorPathStr = errorPath.string();
+  ibody = Utility::readFile(errorPathStr);
+  std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
+}
+
+void Response::makeResponse(void) {
+  LOG_TRACE("Making response");
   std::ostringstream oBuf;
   oBuf << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
-  std::string oBufStr = oBuf.str();
-  responseLine = std::vector<char>(oBufStr.begin(), oBufStr.end());
-}
-
-void Response::makeHeaders(std::string& extension) {
-  LOG_TRACE("Making headers");
-  std::string ext = extension.substr(extension.find_last_of(".") + 1);
-  std::string mimeType = Utility::getMimeType(ext);
-  std::ostringstream oBuf;
-  oBuf << "Server: " << serverConfig.serverName << "\r\n";
-  oBuf << "Content-Type: " << mimeType << "\r\n";
-  oBuf << "Content-Length: " << ibody.size() << "\r\n";
-  oBuf << "Connection: close\r\n";
+  for (auto& [key, value] : headers) {
+    oBuf << key << ": " << value << "\r\n";
+  }
   oBuf << "\r\n";
   std::string oBufStr = oBuf.str();
-  headers = std::vector<char>(oBufStr.begin(), oBufStr.end());
-}
-
-void Response::makeBody(void) {
-  LOG_TRACE("Making body");
-  response = responseLine;
-  response.insert(response.end(), headers.begin(), headers.end());
+  response = std::vector<char>(oBufStr.begin(), oBufStr.end());
   response.insert(response.end(), ibody.begin(), ibody.end());
-}
-
-void Response::sendResponse(int clientFd) {
-  LOG_TRACE("Sending response");
-  if (send(clientFd, response.data(), response.size(), 0) == -1) {
-    LOG_ERROR("Failed to send response");
-  }
 }

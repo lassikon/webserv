@@ -13,6 +13,7 @@ Client::~Client(void) {
 
 bool Client::operator==(const Client& other) const { return fd == other.fd; }
 
+//GET /cgi-bin HTTP/1.1
 bool Client::handlePollEvents(short revents) {
   if (revents & POLLIN) {
     if (!receiveData()) {
@@ -92,28 +93,18 @@ void Client::handleRequest(void) {
 }
 
 bool Client::sendResponse(void) {
-  LOG_DEBUG("Sending response to client fd:", fd);
-  res.run(this, req.getReqURI());
- /*  LOG_DEBUG("Sending response to client fd:", fd);
-  std::ifstream html("webroot/website0/index.html");
-  std::stringstream contentBuf;
-  contentBuf << html.rdbuf();
-  std::string content = contentBuf.str();
-
-  std::ostringstream oss;
-  oss << "HTTP/1.1 200 OK\r\n";
-  oss << "Cache-Control: no-cache, private\r\n";
-  oss << "Content-Type: text/html\r\n";
-  oss << "Content-Length: " << content.size() << "\r\n";
-  oss << "\r\n";
-  oss << content;
-  std::string response = oss.str();
-
-  if (send(fd, response.c_str(), response.size() + 1, 0) == -1) {
-    LOG_ERROR("Send() failed with fd:", fd);
-    // throw exception
+  if (state != ClientState::READING_DONE) {
+    LOG_ERROR("Client state is not READING_DONE", getFd());
     return false;
-  } */
+  }
+  LOG_DEBUG("Sending response to client fd:", fd);
+  res.run(req.getReqURI(), req.getMethod());
+  LOG_TRACE("Sending response");
+  if (send(getFd(), res.getResponse().data(), res.getResponse().size(), 0) == -1) {
+    LOG_ERROR("Failed to send response");
+    return false;
+  }
+  state = ClientState::READING_REQLINE;
   return true;
 }
 
