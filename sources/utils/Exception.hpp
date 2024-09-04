@@ -9,7 +9,8 @@
 #include <sstream>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
-#define ERR_MSG_CONFIG "No valid server config found in:"
+#define ERR_MSG_CONFIG "No valid server config was found in:"
+#define ERR_MSG_SERVER "Failed to configure servers from:"
 
 enum class Error { NoError, Args, Config, Server, Socket, Cgi, Signal = 128 };
 
