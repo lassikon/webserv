@@ -61,7 +61,7 @@ struct ServerConfig {
 
 class Config {
  private:
-  std::map<std::string, ServerConfig> _servers;
+  std::map<std::string, ServerConfig> _servers; // ip:port as key and server config as value
   std::ifstream _configFile;
   std::string _line;
   std::stack<std::string> _blockStack;

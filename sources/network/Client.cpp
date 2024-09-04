@@ -13,6 +13,7 @@ Client::~Client(void) {
 
 bool Client::operator==(const Client& other) const { return fd == other.fd; }
 
+//GET /cgi-bin HTTP/1.1
 bool Client::handlePollEvents(short revents) {
   if (revents & POLLIN) {
     if (!receiveData()) {
@@ -92,9 +93,18 @@ void Client::handleRequest(void) {
 }
 
 bool Client::sendResponse(void) {
+  if (state != ClientState::READING_DONE) {
+    LOG_ERROR("Client state is not READING_DONE", getFd());
+    return false;
+  }
   LOG_DEBUG("Sending response to client fd:", fd);
+  res.run(req.getReqURI(), req.getMethod());
+  LOG_TRACE("Sending response");
+  if (send(getFd(), res.getResponse().data(), res.getResponse().size(), 0) == -1) {
+    LOG_ERROR("Failed to send response");
+    return false;
+  }
   state = ClientState::READING_REQLINE;
-  res.run(this, req.getReqURI(), req.getMethod());
   return true;
 }
 
