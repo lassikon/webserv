@@ -22,8 +22,6 @@ class Socket {
   Socket(void);
   ~Socket(void);
 
-  // Socket(ServerConfig& serverConfig);
-
   int getFd(void) const { return sockFd; }
   void setupSocket(ServerConfig& serverConfig);
 
