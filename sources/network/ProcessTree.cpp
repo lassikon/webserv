@@ -3,21 +3,11 @@
 ProcessTree::ProcessTree(Validate validate,
                          std::shared_ptr<ProcessTree> trueBranch,
                          std::shared_ptr<ProcessTree> falseBranch)
-    : validate(validate), trueBranch(trueBranch), falseBranch(falseBranch) {
-  LOG_TRACE("ProcessTree decision constructor called");
-  if (!trueBranch || !falseBranch) {
-    throw std::invalid_argument("trueBranch and falseBranch must be non-null");
-  }
-  if (validate) {
-    LOG_TRACE("ProcessTree decision constructor with validate");
-  }
-}
+    : validate(validate), trueBranch(trueBranch), falseBranch(falseBranch) {}
 
-ProcessTree::ProcessTree(Action action) : action(action) {
-  LOG_TRACE("ProcessTree serverconstructor called");
-}
+ProcessTree::ProcessTree(Action action) : action(action) {}
 
-ProcessTree::~ProcessTree() { LOG_TRACE("ProcessTree destructor called"); }
+ProcessTree::~ProcessTree() {}
 
 void ProcessTree::process(std::string& path) {
   if (validate) {

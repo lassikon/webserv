@@ -58,6 +58,9 @@ SOURCES := main \
            ServersManager \
            Socket \
            Config \
+           ConfigInitializer \
+           RouteDirectiveSetter \
+           ServerDirectiveSetter \
            CgiHandler \
            Logger \
            Signal \

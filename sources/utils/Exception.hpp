@@ -11,6 +11,7 @@
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
 #define ERR_MSG_NOSERVER "No valid server found in:"
 #define ERR_MSG_NOFILE "Could not access file:"
+#define ERR_MSG_EMPTYFILE "Config file is empty:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
 enum class Error { NoError, Args, Config, Server, Socket, Signal = 128 };
