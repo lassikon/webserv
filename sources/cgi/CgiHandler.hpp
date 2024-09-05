@@ -6,6 +6,7 @@
 #include <Typedef.hpp>
 #include <Utility.hpp>
 
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -20,13 +21,19 @@ class CgiHandler {
  private:
   enum Fd { Read, Write };
 
-  std::string cgi;
-  ENVMAP envp;
-  pid_t pid;
+  std::vector<std::string> envps{};
+  std::vector<std::string> args{};
 
   int pipefd[2];
-  int sockfd;
   int wstat;
+  pid_t pid;
+
+  // what this is needed for?
+  // ENVMAP envp;
+
+  // probable delete these?
+  std::string cgi;
+  int sockfd;
 
  public:
   CgiHandler(const Request& request);
@@ -40,8 +47,11 @@ class CgiHandler {
   void forkChildProcess(void);
   void waitChildProcess(void);
   void executeCgiScript(void);
-  void setEnvParams(void);
   void closePipeFds(void);
+
+ private:
+  std::vector<char*> createArgvArray(void);
+  std::vector<char*> createEnvpArray(void);
 
  private:
   bool isAccessable(void) const;
@@ -49,7 +59,7 @@ class CgiHandler {
   bool isChildProcess(void) const;
 
  private:
-  static inline const pid_t& addNewProcessId(void);
+  static inline const pid_t& addNewProcessId(void) noexcept;
 
  public:
   static void killAllChildPids(void);
