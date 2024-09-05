@@ -13,8 +13,9 @@ int main(int argc, char** argv) {
     LOG_INFO(ERR_MSG_USAGE);
     return (int)Error::Args;
   }
-  Config config;
+
   /* ======================================================================= */
+  Config config;
   /* if (argc == 2) { */
   /*   config.setFilePath(argv[1]); */
   /* } */

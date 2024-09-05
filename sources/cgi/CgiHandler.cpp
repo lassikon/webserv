@@ -2,11 +2,24 @@
 
 std::vector<pid_t> CgiHandler::pids;
 
-CgiHandler::CgiHandler(const Request& request) {
+CgiHandler::CgiHandler(const Client& client) {
   cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
   LOG_TRACE(Utility::getConstructor(*this));
   args.push_back(cgi);
-  (void)request;
+  generateEnvpMap();
+  (void)client;
+}
+
+void CgiHandler::generateEnvpMap(void) {
+envpmap = {
+      {"REDIRECT_STATUS=", "200"},
+      {"REQUEST_METHOD=", "FILLME"},
+      {"SCRIPT_FILENAME=", "FILLME"},
+      {"PATH_INFO=", "FILLME"},
+      {"CONTENT_TYPE=", "FILLME"},
+      {"CONTENT_LENGTH=", "FILLME"},
+      {"QUERY_STRING=", "FILLME"},
+      {"HTTP_COOKIE=", "FILLME"}};
 }
 
 CgiHandler::~CgiHandler(void) {
@@ -41,31 +54,39 @@ void CgiHandler::waitChildProcess(void) {
   }
 }
 
+void CgiHandler::convertEnvpMapToVector(void){
+  for(const auto& item : envpmap) {
+    this->envps.push_back(item.first + item.second);
+  }
+}
+
 std::vector<char*> CgiHandler::createEnvpArray(void) {
+  convertEnvpMapToVector();
   std::vector<char*> vector{};
-  for (auto& string : this->envps)
+  for (auto& string : this->envps) {
     vector.push_back(&string.front());
+  }
   return vector;
 }
 
 std::vector<char*> CgiHandler::createArgvArray(void) {
   std::vector<char*> vector{};
-  for (auto& string : this->args)
+  for (auto& string : this->args) {
     vector.push_back(&string.front());
+  }
   return vector;
 }
 
 void CgiHandler::executeCgiScript(void) {
   LOG_TRACE("Log entry from child process");
-  std::vector<char*> envp = createEnvpArray();
   std::vector<char*> argv = createArgvArray();
+  std::vector<char*> envp = createEnvpArray();
   if (dup2(pipefd[Fd::Write], STDOUT_FILENO) == -1) {
     cgiError("Could not duplicate pipe fd");
   }
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
     cgiError("Failed to execute CGI script");
   }
-  closePipeFds();
 }
 
 bool CgiHandler::isParentProcess(void) const {
@@ -95,7 +116,7 @@ void CgiHandler::forkChildProcess(void) {
   }
 }
 
-bool CgiHandler::isAccessable(void) const {
+bool CgiHandler::isValidScript(void) const {
   struct stat s;
   if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), X_OK)) {
     return true;
@@ -104,7 +125,7 @@ bool CgiHandler::isAccessable(void) const {
 }
 
 void CgiHandler::scriptLoader(void) {
-  if (!isAccessable()) {
+  if (!isValidScript()) {
     cgiError("Could not open script");
   } else if (pipe(pipefd) == -1) {
     cgiError("Could not create pipe");

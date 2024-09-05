@@ -1,8 +1,8 @@
 #pragma once
 
+#include <Client.hpp>
 #include <Exception.hpp>
 #include <Logger.hpp>
-#include <Request.hpp>
 #include <Typedef.hpp>
 #include <Utility.hpp>
 
@@ -28,15 +28,15 @@ class CgiHandler {
   int wstat;
   pid_t pid;
 
-  // what this is needed for?
-  // ENVMAP envp;
+  ENVPMAP envpmap;
 
-  // probable delete these?
+  // probably delete these?
   std::string cgi;
   int sockfd;
 
  public:
-  CgiHandler(const Request& request);
+  CgiHandler(void) = delete;
+  CgiHandler(const Client& client);
   ~CgiHandler(void);
 
  public:
@@ -44,6 +44,7 @@ class CgiHandler {
 
  private:
   void scriptLoader(void);
+  void generateEnvpMap(void);
   void forkChildProcess(void);
   void waitChildProcess(void);
   void executeCgiScript(void);
@@ -52,9 +53,10 @@ class CgiHandler {
  private:
   std::vector<char*> createArgvArray(void);
   std::vector<char*> createEnvpArray(void);
+  void convertEnvpMapToVector(void);
 
  private:
-  bool isAccessable(void) const;
+  bool isValidScript(void) const;
   bool isParentProcess(void) const;
   bool isChildProcess(void) const;
 
