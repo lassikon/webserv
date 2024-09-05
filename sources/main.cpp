@@ -2,10 +2,8 @@
 #include <Exception.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
-#include <Server.hpp>
 #include <ServersManager.hpp>
 #include <Signal.hpp>
-#include <Utility.hpp>
 
 sig_atomic_t g_ExitStatus;
 
