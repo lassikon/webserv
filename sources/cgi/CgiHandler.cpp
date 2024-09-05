@@ -2,8 +2,9 @@
 
 std::vector<pid_t> CgiHandler::pids;
 
-CgiHandler::CgiHandler(void) {
+CgiHandler::CgiHandler(const Request& request) {
   LOG_DEBUG(Utility::getConstructor(*this));
+  (void)request;
 }
 
 CgiHandler::~CgiHandler(void) {
@@ -45,6 +46,10 @@ void CgiHandler::executeCgiScript(void) {
   if (dup2(pipefd[Fd::Write], STDOUT_FILENO) == -1) {
     cgiError("Could not duplicate pipe fd");
   }
+  /* } else if (execve(cgi.c_str(), NULL, NULL) == -1) { */
+  /*   cgiError("Failed to execute CGI script"); */
+  /* } */
+  closePipeFds();
 }
 
 bool CgiHandler::isParentProcess(void) const {
@@ -60,7 +65,8 @@ const pid_t& CgiHandler::addNewProcessId(void) {
   return pids[pids.size() - 1];
 }
 
-void CgiHandler::createChildProcess(void) {
+void CgiHandler::forkChildProcess(void) {
+  LOG_TRACE("Forking new child process");
   pid = addNewProcessId();
   if (pid == -1) {
     cgiError("Could not create child process");
@@ -73,25 +79,24 @@ void CgiHandler::createChildProcess(void) {
   }
 }
 
-bool CgiHandler::validCgiScript(void) const {
+bool CgiHandler::isAccessable(void) const {
   return true;
 }
 
-bool CgiHandler::validCgiAccess(void) const {
-  return true;
-}
-
-void CgiHandler::cgiLoader(void) {
-  if (!validCgiAccess()) {
-    cgiError("Could not open CGI script");
-  } else if (!validCgiScript()) {
-    cgiError("Not a valid CGI script");
+void CgiHandler::scriptLoader(void) {
+  if (!isAccessable()) {
+    cgiError("Could not open script");
   } else if (pipe(pipefd) == -1) {
     cgiError("Could not create pipe");
   } else {
-    createChildProcess();
+    forkChildProcess();
     waitChildProcess();
   }
+}
+
+void CgiHandler::runScript(void) {
+  LOG_TRACE("Running new cgi instance");
+  Exception::tryCatch(&CgiHandler::scriptLoader, this);
 }
 
 /* CGIMAP m; */
@@ -100,3 +105,9 @@ void CgiHandler::cgiLoader(void) {
 /* if (it != m.end()) */
 /*   it->second = "NO"; */
 /* std::cout << m.at("WHAT"); */
+
+/* std::vector<std::string> strings{"one", "two", "three"}; */
+/* std::vector<char*> cstrings; */
+/* cstrings.reserve(strings.size()); */
+/* for (int i = 0; i < strings.size(); ++i) */
+/*   cstrings.push_back(const_cast<char*>(strings[i].c_str())); */

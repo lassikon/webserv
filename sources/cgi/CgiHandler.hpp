@@ -2,20 +2,26 @@
 
 #include <Exception.hpp>
 #include <Logger.hpp>
+#include <Request.hpp>
+#include <Typedef.hpp>
 #include <Utility.hpp>
 
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #include <csignal>
+#include <string>
 #include <vector>
 
 class CgiHandler {
  private:
+  static std::vector<pid_t> pids;
+
+ private:
   enum Fd { Read, Write };
 
-  static std::vector<pid_t> pids;
+  std::string cgi;
+  ENVMAP envp;
   pid_t pid;
 
   int pipefd[2];
@@ -23,22 +29,22 @@ class CgiHandler {
   int wstat;
 
  public:
-  CgiHandler(void);
+  CgiHandler(const Request& request);
   ~CgiHandler(void);
 
  public:
-  void cgiLoader(void);
+  void runScript(void);
 
  private:
-  void createChildProcess(void);
+  void scriptLoader(void);
+  void forkChildProcess(void);
   void waitChildProcess(void);
   void executeCgiScript(void);
   void setEnvParams(void);
   void closePipeFds(void);
 
  private:
-  bool validCgiAccess(void) const;
-  bool validCgiScript(void) const;
+  bool isAccessable(void) const;
   bool isParentProcess(void) const;
   bool isChildProcess(void) const;
 
