@@ -4,10 +4,9 @@ Socket::Socket(void) {
   LOG_DEBUG(Utility::getConstructor(*this));
 }
 
-Socket::Socket(ServerConfig& serverConfig) {
-  LOG_DEBUG(Utility::getConstructor(*this));
-  setupSocket(serverConfig);
-}
+// Socket::Socket(ServerConfig& serverConfig) {
+//   LOG_DEBUG(Utility::getConstructor(*this));
+// }
 
 Socket::~Socket(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));

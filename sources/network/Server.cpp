@@ -5,7 +5,8 @@ Server::Server(ServerConfig& serverConfig) : serverConfig(serverConfig) {
   port = serverConfig.port;
   ipAddress = serverConfig.ipAddress;
   serverName = serverConfig.serverName;
-  socket = Socket(serverConfig);
+  socket = Socket();
+  socket.setupSocket(serverConfig);
 }
 
 Server::~Server(void) {

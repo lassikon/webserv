@@ -14,9 +14,7 @@ void ServersManager::configServers(Config& config) {
   for (auto& serverConfig : config.getServers()) {
     LOG_INFO("Adding server", serverConfig.first);
     servers.emplace_back(serverConfig.second);
-  }
-  for (auto& server : servers) {
-    LOG_DEBUG("Server port:", server.getPort());
+    LOG_DEBUG("Server port:", serverConfig.second.port);
   }
 }
 
