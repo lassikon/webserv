@@ -34,38 +34,53 @@ void Request::parseHeaders(Client* client, std::istringstream& iBuf) {
   }
 }
 
-void Request::parseBody(Client* client, std::istringstream& iBuf) {
+void Request::parseBody(Client* client, std::istringstream& iBuf, int nbytes) {
   if (method != "POST") {
     client->setState(ClientState::READING_DONE);
     return;
   }
   if (transferEncodingChunked) {
-    LOG_TRACE("Parsing chunked body");
-    std::string chunkSizeHex;
-    while (std::getline(iBuf, chunkSizeHex) && chunkSizeHex != "\r") {
-      if (chunkSizeHex.back() == '\r') {
-        chunkSizeHex.pop_back();
-      }
-      int chunkSize = std::stoi(chunkSizeHex, 0, 16);
-      if (chunkSize == 0) {
-        client->setState(ClientState::READING_DONE);
-        break;
-      }
-      std::vector<char> chunkData(chunkSize);
-      iBuf.read(chunkData.data(), chunkSize);
-      body.append(chunkData.data(), chunkSize);
-      iBuf.ignore(2);  // remove \r\n
-    }
+    parseChunkedBody(client, iBuf);
   } else {
     LOG_TRACE("Parsing body");
-    if (headers.find("Content-Length") == headers.end()) {  // 400 bad request
-      LOG_ERROR("Content-Length header not found");
+    if (headers.find("Content-Length") != headers.end()) {  // 400 bad request
+      int contentLength = std::stoi(headers["Content-Length"]);
+      bodySize += contentLength;
+      std::vector<char> bodyData(contentLength);
+      iBuf.read(bodyData.data(), contentLength);
+      body.append(bodyData.data(), contentLength);
+      client->setState(ClientState::READING_DONE);
       return;
+    } else if (headers.find("Connection") != headers.end() &&
+               headers["Connection"] == "close") {
+      client->setState(ClientState::READING_DONE);
+      return;
+    } else {
+      LOG_ERROR("Content-Length header not found");
+      bodySize = nbytes;
+      std::vector<char> bodyData(nbytes);
+      iBuf.read(bodyData.data(), nbytes);
+      body.append(bodyData.data(), nbytes);
     }
-    int contentLength = std::stoi(headers["Content-Length"]);
-    std::vector<char> bodyData(contentLength);
-    iBuf.read(bodyData.data(), contentLength);
-    body.append(bodyData.data(), contentLength);
-    client->setState(ClientState::READING_DONE);
+  }
+}
+
+void Request::parseChunkedBody(Client* client, std::istringstream& iBuf) {
+  LOG_TRACE("Parsing chunked body");
+  std::string chunkSizeHex;
+  while (std::getline(iBuf, chunkSizeHex) && chunkSizeHex != "\r") {
+    if (chunkSizeHex.back() == '\r') {
+      chunkSizeHex.pop_back();
+    }
+    int chunkSize = std::stoi(chunkSizeHex, 0, 16);
+    bodySize += chunkSize;
+    if (chunkSize == 0) {
+      client->setState(ClientState::READING_DONE);
+      break;
+    }
+    std::vector<char> chunkData(chunkSize);
+    iBuf.read(chunkData.data(), chunkSize);
+    body.append(chunkData.data(), chunkSize);
+    iBuf.ignore(2);  // remove \r\n
   }
 }

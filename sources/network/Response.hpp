@@ -18,6 +18,7 @@ class Response {
   RouteConfig routeConfig;
   ServerConfig serverConfig;
   std::string reqMethod;
+  size_t reqBodySize;
   int statusCode;
   std::string statusMessage;
   std::vector<char> ibody = {};  // internal body
@@ -29,7 +30,7 @@ class Response {
   Response(ServerConfig& ServerConfig);
   ~Response();
 
-  void run(std::string reqURI, std::string method);
+  void run(std::string reqURI, std::string method, size_t bodySize);
   bool checkIsRouteMatch(std::string reqURI);
   std::string appendRoot(std::string reqURI);
   void makeResLine(void);
@@ -49,6 +50,7 @@ class Response {
   std::shared_ptr<ProcessTree> isDefaultFileExist;
   std::shared_ptr<ProcessTree> isIndexExist;
   std::shared_ptr<ProcessTree> isDirectoryListingOn;
+  std::shared_ptr<ProcessTree> isClientBodySizeAllowed;
 
   std::shared_ptr<ProcessTree> serveRedirect;
   std::shared_ptr<ProcessTree> serveDefaultFile;
@@ -58,6 +60,8 @@ class Response {
   std::shared_ptr<ProcessTree> serve403;
   std::shared_ptr<ProcessTree> serve404;
   std::shared_ptr<ProcessTree> serve405;
+  std::shared_ptr<ProcessTree> serve413;
+
 
   // make decision tree
   void makeDecisionTree();
@@ -67,7 +71,8 @@ class Response {
   void serveDefaultFileAction(std::string& path);
   void serveFileAction(std::string& path);
   void serveIndexAction(std::string& path);
-  void serve405Action(std::string& path);
-  void serve404Action(std::string& path);
   void serve403Action(std::string& path);
+  void serve404Action(std::string& path);
+  void serve405Action(std::string& path);
+  void serve413Action(std::string& path);
 };

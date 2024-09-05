@@ -40,12 +40,12 @@ bool Client::receiveData(void) {
   } else {
     LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
     std::istringstream bufStr(buf);
-    processRequest(bufStr);
+    processRequest(bufStr, nbytes);
   }
   return true;
 }
 
-void Client::processRequest(std::istringstream& iBuf) {
+void Client::processRequest(std::istringstream& iBuf, int nbytes) {
   LOG_DEBUG("Processing request from client fd:", fd);
   if (state == ClientState::READING_REQLINE) {
     std::string requestLine;
@@ -56,7 +56,7 @@ void Client::processRequest(std::istringstream& iBuf) {
     req.parseHeaders(this, iBuf);
   }
   if (state == ClientState::READING_BODY) {
-    req.parseBody(this, iBuf);
+    req.parseBody(this, iBuf, nbytes);
   }
   if (state == ClientState::READING_DONE) {
     std::cout << "Request received from client fd:" << fd << std::endl;
@@ -98,7 +98,7 @@ bool Client::sendResponse(void) {
     return false;
   }
   LOG_DEBUG("Sending response to client fd:", fd);
-  res.run(req.getReqURI(), req.getMethod());
+  res.run(req.getReqURI(), req.getMethod(), req.getBodySize());
   LOG_TRACE("Sending response");
   if (send(getFd(), res.getResponse().data(), res.getResponse().size(), 0) == -1) {
     LOG_ERROR("Failed to send response");

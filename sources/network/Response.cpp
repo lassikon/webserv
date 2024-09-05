@@ -27,6 +27,8 @@ void Response::makeDecisionTree() {
       [this](std::string& path) { this->serve404Action(path); });
   serve405 = std::make_shared<ProcessTree>(
       [this](std::string& path) { this->serve405Action(path); });
+  serve413 = std::make_shared<ProcessTree>(
+      [this](std::string& path) { this->serve413Action(path); });
   // define process tree
 
   isDirectoryListingOn = std::make_shared<ProcessTree>(
@@ -87,17 +89,31 @@ void Response::makeDecisionTree() {
         return it != routeConfig.methods.end();
       },
       isRedirect, serve405);
+
+  isClientBodySizeAllowed = std::make_shared<ProcessTree>(
+      [this](std::string& path) {
+        (void)path;
+
+        if (reqBodySize > Utility::convertSizetoBytes(serverConfig.clientBodySizeLimit)) {
+          LOG_WARN("Client body size limit exceeded");
+          return false;
+        }
+        return true;
+      },
+      isMethodAllowed, serve413);
+
   isRouteMatch = std::make_shared<ProcessTree>(
     [this](std::string& path) {
       return checkIsRouteMatch(path);
-    }, isMethodAllowed, serve404);
+    }, isClientBodySizeAllowed, serve404);
 
   root = isRouteMatch;
 }
 
-void Response::run(std::string reqURI, std::string method) {
+void Response::run(std::string reqURI, std::string method, size_t bodySize) {
   LOG_TRACE("Running response", reqURI);
   reqMethod = method;
+  reqBodySize = bodySize;
   root->process(reqURI);
   makeResponse();
 }
@@ -120,6 +136,7 @@ bool Response::checkIsRouteMatch(std::string reqURI) {
   if (maxMatchingLen == 0) {
     LOG_WARN("No matching route found");
     LOG_DEBUG("Request URI:", reqURI);
+    headers["Server"] = serverConfig.serverName;
     return false;
   } else {  // found matching route
     LOG_DEBUG("Route found: ", serverConfig.routes[routeIndex].location);
@@ -209,29 +226,8 @@ void Response::serveIndexAction(std::string& path) {
   headers["Connection"] = "close";
 }
 
-void Response::serve404Action(std::string& path) {
-  LOG_TRACE("Serving error");
-  statusCode = 404;
-  statusMessage = "Not Found";
-  auto key = serverConfig.pagesDefault.find(404);
-  path = key->second;
-  std::filesystem::path exePath;
-  exePath = Utility::getExePath(exePath);
-  if (path.front() == '/') {
-    path = path.substr(1, path.size());
-  }
-  std::filesystem::path errorPath = exePath / path;
-  std::string errorPathStr = errorPath.string();
-  ibody = Utility::readFile(errorPathStr);
-  std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
-  std::string mimeType = Utility::getMimeType(ext);
-  headers["Content-Type"] = mimeType;
-  headers["Content-Length"] = std::to_string(ibody.size());
-  headers["Connection"] = "close";
-}
-
 void Response::serve403Action(std::string& path) {
-  LOG_TRACE("Serving error");
+  LOG_TRACE("Serving error 403");
   statusCode = 403;
   statusMessage = "Forbidden";
   auto key = serverConfig.pagesDefault.find(403);
@@ -251,8 +247,33 @@ void Response::serve403Action(std::string& path) {
   headers["Connection"] = "close";
 }
 
+void Response::serve404Action(std::string& path) {
+  LOG_TRACE("Serving error 404");
+  LOG_DEBUG("Forbidden path:", path);
+  statusCode = 404;
+  statusMessage = "Not Found";
+  if (path.compare(0, 20, "/pagesDefault/assets") != 0) {
+    auto key = serverConfig.pagesDefault.find(404);
+    path = key->second;
+  }
+  std::filesystem::path exePath;
+  exePath = Utility::getExePath(exePath);
+  if (path.front() == '/') {
+    path = path.substr(1, path.size());
+  }
+  std::filesystem::path errorPath = exePath / path;
+  std::string errorPathStr = errorPath.string();
+  LOG_DEBUG("Error path:", errorPathStr);
+  ibody = Utility::readFile(errorPathStr);
+  std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
+}
+
 void Response::serve405Action(std::string& path) {
-  LOG_TRACE("Serving error");
+  LOG_TRACE("Serving error 405");
   statusCode = 405;
   statusMessage = "Method Not Allowed";
   auto key = serverConfig.pagesDefault.find(405);
@@ -271,6 +292,28 @@ void Response::serve405Action(std::string& path) {
   headers["Content-Length"] = std::to_string(ibody.size());
   headers["Connection"] = "close";
 }
+
+void Response::serve413Action(std::string& path) {
+  LOG_TRACE("Serving error 413");
+  statusCode = 413;
+  statusMessage = "Payload Too Large";
+  auto key = serverConfig.pagesDefault.find(413);
+  path = key->second;
+  std::filesystem::path exePath;
+  exePath = Utility::getExePath(exePath);
+  if (path.front() == '/') {
+    path = path.substr(1, path.size());
+  }
+  std::filesystem::path errorPath = exePath / path;
+  std::string errorPathStr = errorPath.string();
+  ibody = Utility::readFile(errorPathStr);
+  std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(ext);
+  headers["Content-Type"] = mimeType;
+  headers["Content-Length"] = std::to_string(ibody.size());
+  headers["Connection"] = "close";
+}
+
 
 void Response::makeResponse(void) {
   LOG_TRACE("Making response");

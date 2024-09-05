@@ -185,8 +185,7 @@ void Config::setIP(ServerConfig& server, std::string & value) {
   }
   if (!server.ipAddress.empty())
     LOG_WARN("Parse: IP already set, updating IP with line ", _lineNumber);
-  else
-    server.ipAddress = value;
+  server.ipAddress = value;
 }
 void Config::setServerName(ServerConfig& server, std::string & value) {
   const std::regex serverNamePattern(
@@ -198,8 +197,7 @@ void Config::setServerName(ServerConfig& server, std::string & value) {
   if (!server.serverName.empty())
     LOG_WARN("Parse: Server name already set, updating server name with line ",
              _lineNumber);
-  else
-    server.serverName = value;
+  server.serverName = value;
 }
 void Config::setPort(ServerConfig& server, std::string & value) {
   const std::regex port_pattern("^[0-9]+$");
@@ -212,8 +210,7 @@ void Config::setPort(ServerConfig& server, std::string & value) {
   }
   if (server.port != 0)
     LOG_WARN("Parse: Port already set, updating port with line ", _lineNumber);
-  else
-    server.port = std::stoi(value);
+  server.port = std::stoi(value);
 }
 //relative to cwd
 void Config::setErrorPages(ServerConfig& server, std::string & value) {
@@ -251,8 +248,7 @@ void Config::setClientBodySizeLimit(ServerConfig& server,
         "Parse: Client body size limit already set, updating client body size "
         "limit with line ",
         _lineNumber);
-  else
-    server.clientBodySizeLimit = value;
+  server.clientBodySizeLimit = value;
 }
 
 // route struct setters
@@ -285,8 +281,7 @@ void Config::setRoot(RouteConfig& route, std::string & value) {
   }
   if (!route.root.empty())
     LOG_WARN("Parse: Root already set, updating root with line ", _lineNumber);
-  else
-    route.root = value;
+  route.root = value;
 }
 
 void Config::setDirectoryListing(RouteConfig& route, std::string & value) {
@@ -319,8 +314,7 @@ void Config::setUploadPath(RouteConfig& route, std::string & value) {
   if (!route.uploadPath.empty())
     LOG_WARN("Parse: Upload path already set, updating upload path with line ",
              _lineNumber);
-  else
-    route.uploadPath = value;
+  route.uploadPath = value;
 }
 // either a path or a redirect url
 void Config::setRedirect(RouteConfig& route, std::string & value) {

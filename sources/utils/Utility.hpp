@@ -18,6 +18,7 @@ class Utility {
   static std::vector<char> readFile(std::string& path);
   static std::filesystem::path getExePath(std::filesystem::path& path);
   static std::string getMimeType(std::string& extension);
+  static size_t convertSizetoBytes(std::string& size);
   static int statusOk(void) noexcept;
 
   template <typename T>
