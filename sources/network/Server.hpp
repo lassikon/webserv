@@ -31,6 +31,8 @@ class Server {
 
   int getSocketFd(void) const { return socket.getFd(); }
   int getPort(void) const { return port; }
+  std::string getServerName(void) const { return serverName; }
+  std::string getIpAddress(void) const { return ipAddress; }
 
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd, short revents);

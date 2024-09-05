@@ -12,7 +12,7 @@ void ServersManager::configServers(Config& config) {
   LOG_DEBUG("Initializing servers");
   servers.reserve(config.getServers().size());
   for (auto& serverConfig : config.getServers()) {
-    LOG_DEBUG("Adding server", serverConfig.first);
+    LOG_INFO("Adding server", serverConfig.first);
     servers.emplace_back(serverConfig.second);
   }
   for (auto& server : servers) {
@@ -25,7 +25,7 @@ void ServersManager::runServers(void) {
   PollManager pollManager;
   for (auto& server : servers) {
     pollManager.addFd(server.getSocketFd(), POLLIN | POLLOUT);
-    LOG_DEBUG("Added server fd:", server.getSocketFd(), "port:", server.getPort(), "to pollFds");
+    LOG_DEBUG("Added server", server.getServerName(), "to pollFds");
   }
   while (true) {
     int pollCount = pollManager.pollFdsCount();

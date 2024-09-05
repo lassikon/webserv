@@ -5,8 +5,7 @@ int Config::_lineNumber = 0;
 Config::Config() {
   _configFile.open("confDefault/default.conf");
   if (_configFile.fail())
-    throw std::runtime_error("Parse: Could not open file at line " +
-                             std::to_string(_lineNumber));
+    throw std::runtime_error("Parse: Could not open file at line " + std::to_string(_lineNumber));
   std::stringstream configFileBuffer;
   configFileBuffer << _configFile.rdbuf();
   parseConfigFile(configFileBuffer);
@@ -15,8 +14,7 @@ Config::Config() {
 Config::Config(std::string configPath) {
   _configFile.open(configPath);
   if (_configFile.fail())
-    throw std::runtime_error("Parse: Could not open file at line " +
-                             std::to_string(_lineNumber));
+    throw std::runtime_error("Parse: Could not open file at line " + std::to_string(_lineNumber));
   std::stringstream configFileBuffer;
   configFileBuffer << _configFile.rdbuf();
   parseConfigFile(configFileBuffer);
@@ -24,25 +22,29 @@ Config::Config(std::string configPath) {
 }
 
 Config::~Config() {
-  if (_configFile.is_open()) _configFile.close();
+  if (_configFile.is_open())
+    _configFile.close();
 }
 
-Config::Config(Config const& src) { *this = src; }
+Config::Config(Config const& src) {
+  *this = src;
+}
 
 Config& Config::operator=(Config const& src) {
-  if (this != &src) _servers = src._servers;
+  if (this != &src)
+    _servers = src._servers;
   return *this;
 }
 
 void Config::parseConfigFile(std::stringstream& configFile) {
   while (callGetLine(configFile)) {
-    if (_line.empty()) continue;
+    if (_line.empty())
+      continue;
     if (_line.compare("[server]") == 0) {
       _blockStack.push("[server]");
       parseServerBlock(configFile);
       if (!_blockStack.empty() && _blockStack.top() == "[server]") {
-        LOG_WARN("Parse: Unclosed server block, ", _line, " at line ",
-                 _lineNumber);
+        LOG_WARN("Parse: Unclosed server block, ", _line, " at line ", _lineNumber);
         _blockStack.pop();
         configFile.clear();
         configFile.seekg(_pos);
@@ -58,7 +60,8 @@ void Config::parseServerBlock(std::stringstream& configFile) {
 
   serverConfig = ServerConfig{};
   while (callGetLine(configFile)) {
-    if (_line.empty()) continue;
+    if (_line.empty())
+      continue;
     auto delimiter_pos = _line.find(":");
     if (delimiter_pos != std::string::npos)
       populateServer(serverConfig, delimiter_pos);
@@ -68,8 +71,7 @@ void Config::parseServerBlock(std::stringstream& configFile) {
       _blockStack.push("[route]");
       parseRouteBlock(serverConfig, configFile);
       if (!_blockStack.empty() && (_blockStack.top() == "[route]")) {
-        LOG_WARN("Parse: Unclosed route block, ", _line, " at line ",
-                 _lineNumber);
+        LOG_WARN("Parse: Unclosed route block, ", _line, " at line ", _lineNumber);
         _blockStack.pop();
         configFile.clear();
         configFile.seekg(_pos);
@@ -80,20 +82,19 @@ void Config::parseServerBlock(std::stringstream& configFile) {
       addServerToMap(serverConfig);
       return;
     } else
-      LOG_WARN("Parse: Invalid directive, ", _line, " in server block at line ",
-               _lineNumber);
+      LOG_WARN("Parse: Invalid directive, ", _line, " in server block at line ", _lineNumber);
     _pos = configFile.tellg();
   }
 }
 
 // populate route block
-void Config::parseRouteBlock(ServerConfig& serverConfig,
-                             std::stringstream& configFile) {
+void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& configFile) {
   RouteConfig routeConfig;
 
   routeConfig = RouteConfig{};
   while (callGetLine(configFile)) {
-    if (_line.empty()) continue;
+    if (_line.empty())
+      continue;
     auto delimiter_pos = _line.find(":");
     if (delimiter_pos != std::string::npos)
       populateRoute(routeConfig, delimiter_pos);
@@ -105,15 +106,13 @@ void Config::parseRouteBlock(ServerConfig& serverConfig,
       serverConfig.routes.push_back(routeConfig);
       return;
     } else
-      LOG_WARN("Parse: Invalid directive, ", _line, " in route block at line ",
-               _lineNumber);
+      LOG_WARN("Parse: Invalid directive, ", _line, " in route block at line ", _lineNumber);
     _pos = configFile.tellg();
   }
 }
 // populate server struct
 void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
-  static std::unordered_map<
-      std::string, std::function<void(ServerConfig&, std::string &)>>
+  static std::unordered_map<std::string, std::function<void(ServerConfig&, std::string&)>>
       serverStructMap = {
           {"server_ip", setIP},
           {"server_name", setServerName},
@@ -139,8 +138,7 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
 
 // populate route struct
 void Config::populateRoute(RouteConfig& routeConfig, std::size_t& pos) {
-  static std::unordered_map<
-      std::string, std::function<void(RouteConfig&, std::string &)>>
+  static std::unordered_map<std::string, std::function<void(RouteConfig&, std::string&)>>
       routeStructMap = {{"location", setLocation},
                         {"methods", setMethods},
                         {"root", setRoot},
@@ -172,12 +170,13 @@ void Config::addServerToMap(ServerConfig& serverConfig) {
     return;
   }
   std::string hostName;
-  hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port);
+  hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port) + " " +
+             serverConfig.serverName;
   _servers.insert(std::pair<std::string, ServerConfig>(hostName, serverConfig));
 }
 
 // server struct setters
-void Config::setIP(ServerConfig& server, std::string & value) {
+void Config::setIP(ServerConfig& server, std::string& value) {
   const std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
   if (!std::regex_match(value, ipPattern)) {
     LOG_WARN("Parse: Invalid IP, ", value, " at line ", _lineNumber);
@@ -187,19 +186,17 @@ void Config::setIP(ServerConfig& server, std::string & value) {
     LOG_WARN("Parse: IP already set, updating IP with line ", _lineNumber);
   server.ipAddress = value;
 }
-void Config::setServerName(ServerConfig& server, std::string & value) {
-  const std::regex serverNamePattern(
-      "^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
+void Config::setServerName(ServerConfig& server, std::string& value) {
+  const std::regex serverNamePattern("^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
   if (!std::regex_match(value, serverNamePattern)) {
     LOG_WARN("Parse: Invalid server name, ", value, " at line ", _lineNumber);
     return;
   }
   if (!server.serverName.empty())
-    LOG_WARN("Parse: Server name already set, updating server name with line ",
-             _lineNumber);
+    LOG_WARN("Parse: Server name already set, updating server name with line ", _lineNumber);
   server.serverName = value;
 }
-void Config::setPort(ServerConfig& server, std::string & value) {
+void Config::setPort(ServerConfig& server, std::string& value) {
   const std::regex port_pattern("^[0-9]+$");
   if (!std::regex_match(value, port_pattern)) {
     LOG_WARN("Parse: Invalid port, ", value, " at line ", _lineNumber);
@@ -213,7 +210,7 @@ void Config::setPort(ServerConfig& server, std::string & value) {
   server.port = std::stoi(value);
 }
 //relative to cwd
-void Config::setErrorPages(ServerConfig& server, std::string & value) {
+void Config::setErrorPages(ServerConfig& server, std::string& value) {
   std::stringstream ss(value);
   std::string error;
   std::getline(ss, error, ' ');
@@ -228,19 +225,16 @@ void Config::setErrorPages(ServerConfig& server, std::string & value) {
   exePath = Utility::getExePath(exePath);
   std::filesystem::path errorPath = exePath.append(error);
   if (!std::filesystem::exists(errorPath))
-    LOG_WARN("Parse: Error page path not found, ", error, " at line ",
-             _lineNumber);
+    LOG_WARN("Parse: Error page path not found, ", error, " at line ", _lineNumber);
   else
     server.pagesCustom[error_code] = error;
 }
 // client body size limit is set in bytes, kilobytes k,K, megabytes m,M,
 // gigabytes g,G
-void Config::setClientBodySizeLimit(ServerConfig& server,
-                                    std::string & value) {
+void Config::setClientBodySizeLimit(ServerConfig& server, std::string& value) {
   const std::regex size_pattern("^[0-9]+[kKmMgG]?$");
   if (!std::regex_match(value, size_pattern)) {
-    LOG_WARN("Parse: Invalid client body size limit, ", value, " at line ",
-             _lineNumber);
+    LOG_WARN("Parse: Invalid client body size limit, ", value, " at line ", _lineNumber);
     return;
   }
   if (!server.clientBodySizeLimit.empty())
@@ -252,14 +246,13 @@ void Config::setClientBodySizeLimit(ServerConfig& server,
 }
 
 // route struct setters
-void Config::setLocation(RouteConfig& route, std::string & value) {
+void Config::setLocation(RouteConfig& route, std::string& value) {
   if (!route.location.empty())
-    LOG_WARN("Parse: Location already set, updating location with line ",
-             _lineNumber);
+    LOG_WARN("Parse: Location already set, updating location with line ", _lineNumber);
   route.location = value;
 }
 
-void Config::setMethods(RouteConfig& route, std::string & value) {
+void Config::setMethods(RouteConfig& route, std::string& value) {
   std::stringstream ss(value);
   std::string method;
   while (std::getline(ss, method, ',')) {
@@ -274,7 +267,7 @@ void Config::setMethods(RouteConfig& route, std::string & value) {
   }
 }
 //must be an absolute path
-void Config::setRoot(RouteConfig& route, std::string & value) {
+void Config::setRoot(RouteConfig& route, std::string& value) {
   if (!std::filesystem::exists(value)) {
     LOG_WARN("Parse: Root path not found, ", value, " at line ", _lineNumber);
     return;
@@ -284,21 +277,18 @@ void Config::setRoot(RouteConfig& route, std::string & value) {
   route.root = value;
 }
 
-void Config::setDirectoryListing(RouteConfig& route, std::string & value) {
+void Config::setDirectoryListing(RouteConfig& route, std::string& value) {
   if (value == "on")
     route.directoryListing = true;
   else if (value == "off")
     route.directoryListing = false;
   else
-    LOG_WARN("Parse: Invalid directory listing, ", value, " at line ",
-             _lineNumber);
+    LOG_WARN("Parse: Invalid directory listing, ", value, " at line ", _lineNumber);
 }
 
-void Config::setDefaultFile(RouteConfig& route, std::string & value) {
+void Config::setDefaultFile(RouteConfig& route, std::string& value) {
   if (!route.defaultFile.empty())
-    LOG_WARN(
-        "Parse: Default file already set, updating default file with line ",
-        _lineNumber);
+    LOG_WARN("Parse: Default file already set, updating default file with line ", _lineNumber);
   std::stringstream ss(value);
   std::string defaultFile;
   while (std::getline(ss, defaultFile, ' ')) {
@@ -306,25 +296,23 @@ void Config::setDefaultFile(RouteConfig& route, std::string & value) {
   }
 }
 
-void Config::setUploadPath(RouteConfig& route, std::string & value) {
+void Config::setUploadPath(RouteConfig& route, std::string& value) {
   if (!std::filesystem::exists(value)) {
     LOG_WARN("Parse: Upload path not found, ", value, " at line ", _lineNumber);
     return;
   }
   if (!route.uploadPath.empty())
-    LOG_WARN("Parse: Upload path already set, updating upload path with line ",
-             _lineNumber);
+    LOG_WARN("Parse: Upload path already set, updating upload path with line ", _lineNumber);
   route.uploadPath = value;
 }
 // either a path or a redirect url
-void Config::setRedirect(RouteConfig& route, std::string & value) {
+void Config::setRedirect(RouteConfig& route, std::string& value) {
   if (!route.redirect.empty())
-    LOG_WARN("Parse: Redirect already set, updating redirect with line ",
-             _lineNumber);
+    LOG_WARN("Parse: Redirect already set, updating redirect with line ", _lineNumber);
   route.redirect = value;
 }
 
-void Config::setCgi(RouteConfig& route, std::string & value) {
+void Config::setCgi(RouteConfig& route, std::string& value) {
   std::stringstream ss(value);
   std::string cgi;
   while (std::getline(ss, cgi, ',')) {
@@ -335,22 +323,26 @@ void Config::setCgi(RouteConfig& route, std::string & value) {
 
 bool Config::callGetLine(std::stringstream& configFile) {
   // handle unexpected EOF
-  if (!std::getline(configFile, _line)) return false;
+  if (!std::getline(configFile, _line))
+    return false;
   _line = Utility::trimComments(_line);
   _line = Utility::trimWhitespaces(_line);
   _lineNumber++;
   return true;
 }
 
-int Config::getLineNumber() const { return _lineNumber; }
+int Config::getLineNumber() const {
+  return _lineNumber;
+}
 
-std::map<std::string, ServerConfig>& Config::getServers() { return _servers; }
+std::map<std::string, ServerConfig>& Config::getServers() {
+  return _servers;
+}
 
 void Config::validateServer(std::map<std::string, ServerConfig>& servers) {
   for (auto serverIt = servers.begin(); serverIt != servers.end(); serverIt++) {
     auto& server = serverIt->second;
-    for (auto routeIt = server.routes.begin();
-         routeIt != server.routes.end();) {
+    for (auto routeIt = server.routes.begin(); routeIt != server.routes.end();) {
       if (routeIt->location.empty()) {
         LOG_WARN("Parse: Missing location in route block, deleting route...");
         routeIt = server.routes.erase(routeIt);
