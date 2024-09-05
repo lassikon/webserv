@@ -29,7 +29,8 @@ void Socket::setupSocket(ServerConfig& serverConfig) {
   }
   setNonBlocking();
   int opt = 1;
-  if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+  // replaced SO_REUSEADDR with SO_REUSEPORT to allow multiple servers to bind to the same port
+  if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt)) == -1) {
     socketError("Failed to set socket options:");
   }
   LOG_DEBUG("Socket fd:", sockFd);
