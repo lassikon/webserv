@@ -39,7 +39,7 @@ class Client {
   bool operator==(const Client& other) const;
   bool handlePollEvents(short revents);
   bool receiveData(void);
-  void processRequest(std::istringstream& iBuf);
+  void processRequest(std::istringstream& iBuf, int nbytes);
   void handleRequest(void);
   bool sendResponse(void);
 

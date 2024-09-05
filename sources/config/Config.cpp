@@ -185,8 +185,7 @@ void Config::setIP(ServerConfig& server, std::string & value) {
   }
   if (!server.ipAddress.empty())
     LOG_WARN("Parse: IP already set, updating IP with line ", _lineNumber);
-  else
-    server.ipAddress = value;
+  server.ipAddress = value;
 }
 void Config::setServerName(ServerConfig& server, std::string & value) {
   const std::regex serverNamePattern(
@@ -198,8 +197,7 @@ void Config::setServerName(ServerConfig& server, std::string & value) {
   if (!server.serverName.empty())
     LOG_WARN("Parse: Server name already set, updating server name with line ",
              _lineNumber);
-  else
-    server.serverName = value;
+  server.serverName = value;
 }
 void Config::setPort(ServerConfig& server, std::string & value) {
   const std::regex port_pattern("^[0-9]+$");
@@ -212,9 +210,9 @@ void Config::setPort(ServerConfig& server, std::string & value) {
   }
   if (server.port != 0)
     LOG_WARN("Parse: Port already set, updating port with line ", _lineNumber);
-  else
-    server.port = std::stoi(value);
+  server.port = std::stoi(value);
 }
+//relative to cwd
 void Config::setErrorPages(ServerConfig& server, std::string & value) {
   std::stringstream ss(value);
   std::string error;
@@ -250,8 +248,7 @@ void Config::setClientBodySizeLimit(ServerConfig& server,
         "Parse: Client body size limit already set, updating client body size "
         "limit with line ",
         _lineNumber);
-  else
-    server.clientBodySizeLimit = value;
+  server.clientBodySizeLimit = value;
 }
 
 // route struct setters
@@ -276,22 +273,15 @@ void Config::setMethods(RouteConfig& route, std::string & value) {
       route.methods.push_back(method);
   }
 }
-
+//must be an absolute path
 void Config::setRoot(RouteConfig& route, std::string & value) {
-  std::filesystem::path exePath;
-  exePath = Utility::getExePath(exePath);
-  if (value.front() == '/') {
-    value = value.substr(1, value.size());
-  }
-  std::filesystem::path rootPath = exePath / value;
-  if (!std::filesystem::exists(rootPath)) {
+  if (!std::filesystem::exists(value)) {
     LOG_WARN("Parse: Root path not found, ", value, " at line ", _lineNumber);
     return;
   }
   if (!route.root.empty())
     LOG_WARN("Parse: Root already set, updating root with line ", _lineNumber);
-  else
-    route.root = rootPath.string();
+  route.root = value;
 }
 
 void Config::setDirectoryListing(RouteConfig& route, std::string & value) {
@@ -317,35 +307,17 @@ void Config::setDefaultFile(RouteConfig& route, std::string & value) {
 }
 
 void Config::setUploadPath(RouteConfig& route, std::string & value) {
-  std::filesystem::path exePath;
-  exePath = Utility::getExePath(exePath);
-  std::filesystem::path uploadPath = exePath.append(value);
-  if (!std::filesystem::exists(uploadPath)) {
+  if (!std::filesystem::exists(value)) {
     LOG_WARN("Parse: Upload path not found, ", value, " at line ", _lineNumber);
     return;
   }
   if (!route.uploadPath.empty())
     LOG_WARN("Parse: Upload path already set, updating upload path with line ",
              _lineNumber);
-  else
-    route.uploadPath = uploadPath.string();
+  route.uploadPath = value;
 }
 // either a path or a redirect url
 void Config::setRedirect(RouteConfig& route, std::string & value) {
-  if (value.front() == '/') {
-    std::filesystem::path exePath;
-    exePath = Utility::getExePath(exePath);
-    std::filesystem::path redirectPath = exePath.append(value);
-    if (!std::filesystem::exists(redirectPath)) {
-      LOG_WARN("Parse: Redirect path not found, ", value, " at line ", _lineNumber);
-      return;
-    }
-    if (!route.redirect.empty())
-      LOG_WARN("Parse: Redirect already set, updating redirect with line ",
-              _lineNumber);
-    route.redirect = redirectPath.string();
-    return;
-  }
   if (!route.redirect.empty())
     LOG_WARN("Parse: Redirect already set, updating redirect with line ",
              _lineNumber);
@@ -369,18 +341,6 @@ bool Config::callGetLine(std::stringstream& configFile) {
   _lineNumber++;
   return true;
 }
-
-/* std::filesystem::path& Config::getExePath(std::filesystem::path& path) {
-  std::filesystem::path currentPath = std::filesystem::current_path();
-  std::filesystem::path exePath = currentPath / "webserv";
-  if (!std::filesystem::exists(exePath))
-  {
-    LOG_ERROR("Parse: Could not find executable at ", exePath);
-    return (path);
-  }
-  path = std::filesystem::canonical(exePath).parent_path().string();
-  return (path);
-} */
 
 int Config::getLineNumber() const { return _lineNumber; }
 

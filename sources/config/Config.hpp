@@ -41,9 +41,6 @@ struct ServerConfig {
       {200, "/pagesDefault/200.html"},   // ok
       {204, "pagesDefault/204.html"},   // no content
       {301, "/pagesDefault/301.html"},   // moved permanently
-      {302, "/pagesDefault/302.html"},   // found
-      {303, "/pagesDefault/303.html"},   // see other
-      {307, "/pagesDefault/307.html"},   // temporary redirect
       {308, "/pagesDefault/308.html"},   // permanent redirect
       {400, "/pagesDefault/400.html"},   // bad request
       {401, "/pagesDefault/401.html"},   // unauthorized
@@ -64,7 +61,7 @@ struct ServerConfig {
 
 class Config {
  private:
-  std::map<std::string, ServerConfig> _servers;
+  std::map<std::string, ServerConfig> _servers; // ip:port as key and server config as value
   std::ifstream _configFile;
   std::string _line;
   std::stack<std::string> _blockStack;
