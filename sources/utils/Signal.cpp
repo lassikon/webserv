@@ -1,3 +1,4 @@
+#include <CgiHandler.hpp>
 #include <Signal.hpp>
 
 SIGMAP Signal::sigmap;
@@ -14,6 +15,7 @@ void Signal::signalHandler(int sigNum) noexcept {
   std::cout << std::endl;
   LOG_INFO("Server interrupted by signal:", sigNum, sigmap.at(sigNum));
   g_ExitStatus = (int)Error::Signal + sigNum;
+  CgiHandler::killAllChildPids();
 }
 
 void Signal::trackSignals(void) noexcept {

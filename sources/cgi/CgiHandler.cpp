@@ -1,5 +1,7 @@
 #include <CgiHandler.hpp>
 
+std::vector<pid_t> CgiHandler::pids;
+
 CgiHandler::CgiHandler(void) {
   LOG_DEBUG(Utility::getConstructor(*this));
 }
@@ -18,12 +20,12 @@ void CgiHandler::closePipeFds(void) {
   }
 }
 
-void CgiHandler::setEnvParams(void) {}
-
-void CgiHandler::executeCgiScript(void) {
-  setEnvParams();
-  if (dup2(pipefd[Fd::Write], STDOUT_FILENO) == -1) {
-    THROW(Error::Cgi, "Could not duplicate pipe fd");
+void CgiHandler::killAllChildPids(void) {
+  for (auto const& pid : pids) {
+    if (pid != -1) {
+      LOG_DEBUG("Terminating child pid:", pid);
+      kill(pid, SIGTERM);
+    }
   }
 }
 
@@ -36,32 +38,60 @@ void CgiHandler::waitChildProcess(void) {
   }
 }
 
-void CgiHandler::createChildProcess(void) {
-  pid = fork();
-  if (pid == -1) {
-    THROW(Error::Cgi, "Could not create child process")
-  } else if (pid == 0) {  // child process
-    executeCgiScript();
-  } else if (pid != 0) {  // parent process
-    if (dup2(pipefd[Fd::Read], tempfd) == -1) {
-      THROW(Error::Cgi, "Could not duplicate pipe fd");
-    }
-    closePipeFds();
+void CgiHandler::setEnvParams(void) {}
+
+void CgiHandler::executeCgiScript(void) {
+  setEnvParams();
+  if (dup2(pipefd[Fd::Write], STDOUT_FILENO) == -1) {
+    cgiError("Could not duplicate pipe fd");
   }
 }
 
-bool CgiHandler::validCgiFile(void) {
+bool CgiHandler::isParentProcess(void) const {
+  return pid != 0 ? true : false;
+}
+
+bool CgiHandler::isChildProcess(void) const {
+  return pid == 0 ? true : false;
+}
+
+const pid_t& CgiHandler::addNewProcessId(void) {
+  pids.push_back(fork());
+  return pids[pids.size() - 1];
+}
+
+void CgiHandler::createChildProcess(void) {
+  pid = addNewProcessId();
+  if (pid == -1) {
+    cgiError("Could not create child process");
+  } else if (isChildProcess()) {
+    executeCgiScript();
+  } else if (isParentProcess()) {
+    if (dup2(pipefd[Fd::Read], sockfd) == -1) {
+      cgiError("Could not duplicate pipe fd");
+    }
+  }
+}
+
+bool CgiHandler::validCgiScript(void) const {
+  return true;
+}
+
+bool CgiHandler::validCgiAccess(void) const {
   return true;
 }
 
 void CgiHandler::cgiLoader(void) {
-  if (!validCgiFile()) {
-    THROW(Error::Cgi, "Could not open script");
-  } else if (pipe(pipefd)) {
-    THROW(Error::Cgi, "Could not create pipe");
+  if (!validCgiAccess()) {
+    cgiError("Could not open CGI script");
+  } else if (!validCgiScript()) {
+    cgiError("Not a valid CGI script");
+  } else if (pipe(pipefd) == -1) {
+    cgiError("Could not create pipe");
+  } else {
+    createChildProcess();
+    waitChildProcess();
   }
-  createChildProcess();
-  waitChildProcess();
 }
 
 /* CGIMAP m; */
