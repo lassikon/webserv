@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CgiHandler.hpp>
 #include <Exception.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>

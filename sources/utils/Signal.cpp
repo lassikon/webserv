@@ -1,4 +1,3 @@
-#include <CgiHandler.hpp>
 #include <Signal.hpp>
 
 SIGMAP Signal::sigmap;
