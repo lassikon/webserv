@@ -44,6 +44,8 @@ VLGFLAGS    := --leak-check=full \
 # **************************************************************************** #
 
 MODULES := network \
+           network/request \
+           network/response \
            config \
            cgi \
            utils

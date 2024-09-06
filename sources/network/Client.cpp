@@ -1,6 +1,6 @@
 #include <Client.hpp>
 
-Client::Client(int socketFd, ServerConfig& serverConfig)
+Client::Client(int socketFd, const ServerConfig& serverConfig)
     : fd(socketFd), serverConfig(serverConfig), res(serverConfig) {
   LOG_DEBUG("Client constructor called");
   state = ClientState::READING_REQLINE;
@@ -13,7 +13,7 @@ Client::~Client(void) {
 
 bool Client::operator==(const Client& other) const { return fd == other.fd; }
 
-//GET /cgi-bin HTTP/1.1
+// GET /cgi-bin HTTP/1.1
 bool Client::handlePollEvents(short revents) {
   if (revents & POLLIN) {
     if (!receiveData()) {
@@ -94,13 +94,14 @@ void Client::handleRequest(void) {
 
 bool Client::sendResponse(void) {
   if (state != ClientState::READING_DONE) {
-    LOG_ERROR("Client state is not READING_DONE", getFd());
+    LOG_ERROR("Client state is not done reading", getFd());
     return false;
   }
-  LOG_DEBUG("Sending response to client fd:", fd);
+  LOG_DEBUG("Constructing response to client fd:", fd);
   res.run(req.getReqURI(), req.getMethod(), req.getBodySize());
   LOG_TRACE("Sending response");
-  if (send(getFd(), res.getResponse().data(), res.getResponse().size(), 0) == -1) {
+  if (send(getFd(), res.getResContent().data(), res.getResContent().size(),
+           0) == -1) {
     LOG_ERROR("Failed to send response");
     return false;
   }

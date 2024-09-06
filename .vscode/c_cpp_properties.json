@@ -6,6 +6,8 @@
           "${workspaceFolder}/sources",
           "${workspaceFolder}/sources/utils",
 		      "${workspaceFolder}/sources/network",
+		      "${workspaceFolder}/sources/network/request",
+		      "${workspaceFolder}/sources/network/response",
           "${workspaceFolder}/sources/config"
         ],
         "defines": [],

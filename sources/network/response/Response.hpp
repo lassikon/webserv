@@ -15,19 +15,22 @@ class Client;
 
 class Response {
  private:
-  RouteConfig routeConfig;
-  ServerConfig serverConfig;
+  const ServerConfig& serverConfig;
   std::string reqMethod;
   size_t reqBodySize;
-  int statusCode;
-  std::string statusMessage;
-  std::vector<char> ibody = {};  // internal body
-  std::vector<char> response = {};
-  std::map<std::string, std::string> headers = {};
+  std::string reqURI;
+
+ private:
+  RouteConfig routeConfig;
+  int resStatusCode;
+  std::string resStatusMessage;
+  std::vector<char> resBody = {};  // internal body
+  std::vector<char> resContent = {};
+  std::map<std::string, std::string> resHeaders = {};
   bool transferEncodingChunked;
 
  public:
-  Response(ServerConfig& ServerConfig);
+  Response(const ServerConfig& ServerConfig);
   ~Response();
 
   void run(std::string reqURI, std::string method, size_t bodySize);
@@ -37,7 +40,7 @@ class Response {
   void makeHeaders(void);
   void makeResponse(void);
 
-  std::vector<char>& getResponse(void) { return response; }
+  std::vector<char>& getResContent(void) { return resContent; }
 
  private:
   std::shared_ptr<ProcessTree> root;
@@ -61,7 +64,6 @@ class Response {
   std::shared_ptr<ProcessTree> serve404;
   std::shared_ptr<ProcessTree> serve405;
   std::shared_ptr<ProcessTree> serve413;
-
 
   // make decision tree
   void makeDecisionTree();

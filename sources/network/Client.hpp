@@ -26,14 +26,14 @@ enum struct ClientState {
 class Client {
  private:
   int fd;
-  ServerConfig serverConfig;
+  const ServerConfig& serverConfig;
   ClientState state;
   Request req;
   Response res;
   // ResourceManager resourceManager;
 
  public:
-  Client(int socketFd, ServerConfig& serverConfig);
+  Client(int socketFd, const ServerConfig& serverConfig);
   ~Client(void);
 
   bool operator==(const Client& other) const;
