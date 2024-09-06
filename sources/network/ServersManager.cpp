@@ -1,18 +1,37 @@
 #include <ServersManager.hpp>
 
-ServersManager::ServersManager(void) { LOG_DEBUG("ServersManager constructor called"); }
+ServersManager::ServersManager(void) {
+  LOG_DEBUG(Utility::getConstructor(*this));
+}
 
-ServersManager::~ServersManager(void) { LOG_DEBUG("ServersManager destructor called"); }
+ServersManager::~ServersManager(void) {
+  LOG_DEBUG(Utility::getDeconstructor(*this));
+}
+
+bool ServersManager::checkServerExists(ServerConfig& serverConfig) {
+  for (auto& server : servers) {
+    if (server.getPort() == serverConfig.port) {  // check ip as well?
+      return true;
+    }
+  }
+  return false;
+}
 
 void ServersManager::configServers(Config& config) {
   LOG_DEBUG("Initializing servers");
-  servers.reserve(config.getServers().size());
   for (auto& serverConfig : config.getServers()) {
-    LOG_DEBUG("Adding server", serverConfig.first);
-    servers.emplace_back(serverConfig.second);
-  }
-  for (auto& server : servers) {
-    LOG_DEBUG("Server port:", server.getPort());
+    if (checkServerExists(serverConfig.second)) {
+      LOG_DEBUG("Server already exists, adding config to existing server in port:", serverConfig.second.port);
+      for (auto& server : servers) {
+        if (server.getPort() == serverConfig.second.port) {
+          server.addServerConfig(serverConfig.second);
+          break;
+        }
+      }
+    } else {
+      LOG_DEBUG("Creating new server in port:", serverConfig.second.port);
+      servers.emplace_back(Server(serverConfig.second));
+    }
   }
 }
 
@@ -21,14 +40,13 @@ void ServersManager::runServers(void) {
   PollManager pollManager;
   for (auto& server : servers) {
     pollManager.addFd(server.getSocketFd(), POLLIN | POLLOUT);
-    LOG_DEBUG("Added server fd:", server.getSocketFd(), "port:", server.getPort(), "to pollFds");
+    LOG_DEBUG("Added server", server.getServerName(), "to pollFds");
   }
   while (true) {
     int pollCount = pollManager.pollFdsCount();
     if (pollCount == -1) {
-      LOG_ERROR("Failed to poll");
-      // throw exception
-      break;
+      serverError("Failed to poll fds:");
+
     } else if (pollCount == 0) {
       LOG_DEBUG("Timeout");
       continue;

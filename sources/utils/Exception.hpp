@@ -14,44 +14,52 @@
 #define ERR_MSG_EMPTYFILE "Config file is empty:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
-enum class Error { NoError, Args, Config, Server, Socket, Signal = 128 };
+enum class Error { NoError, Args, Config, Server, Socket, Cgi, Signal = 128 };
 
 class Exception : public std::exception {
  public:
+  // Template to create new try-catch block, can create multiple blocks inside each other
+  // Requires: refrence to class method, reference to class instance and method arguments
+  // If you have instance of MyClass as 'example' with public method 'void fn(int number)'
+  // Note: If called inside class, reference to class should be 'this'
+  // Example: Exception::tryCatch(&MyClass::fn, &example, 42);
   template <typename Func, typename Cref, typename... Args>
   static auto tryCatch(Func fn, Cref ref, Args&&... args) {
-    std::ostringstream ss;
+    std::ostringstream exceptionEntry;
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
     } catch (const std::logic_error& e) {
-      ss << "Logic Error: " << e.what();
+      exceptionEntry << "Logic Error: " << e.what();
     } catch (const std::runtime_error& e) {
-      ss << "Runtime Error: " << e.what();
+      exceptionEntry << "Runtime Error: " << e.what();
     } catch (const std::bad_alloc& e) {
-      ss << "Memory Error: " << e.what();
+      exceptionEntry << "Memory Error: " << e.what();
     } catch (const std::bad_exception& e) {
-      ss << "Unexpected Error: " << e.what();
+      exceptionEntry << "Unexpected Error: " << e.what();
     } catch (const std::exception& e) {
+      // Suppresses extra logging for manual throw
+      // where logging is already done by THROW
       if ((std::string)e.what() != "std::exception")
-        ss << "Exception occured: " << e.what();
+        exceptionEntry << "Exception occured: " << e.what();
     }
-    if (!ss.str().empty())
-      LOG_FATAL(ss.str());
+    if (!exceptionEntry.str().empty())
+      LOG_FATAL(exceptionEntry.str());
   }
 
   static inline std::string expandErrno(void) noexcept {
-    std::ostringstream ss;
+    std::ostringstream oss;
     if (!errno) {
-      ss << "";
+      oss << "";
     } else {
-      ss << "[errno:" << errno << "] " << strerror(errno);
+      oss << "[errno:" << errno << "] " << strerror(errno);
     }
-    return ss.str();
+    return oss.str();
   }
 };
 
 #define STRERROR Exception::expandErrno()
-#define THROW(errCode, ...)    \
-  LOG_FATAL(__VA_ARGS__);      \
-  g_ExitStatus = (int)errCode; \
+
+#define THROW(errCode, ...)         \
+  LOG_FATAL(__VA_ARGS__, STRERROR); \
+  g_ExitStatus = (int)errCode;      \
   throw Exception();

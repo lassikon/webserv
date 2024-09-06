@@ -3,11 +3,17 @@
 #include <ProcessTreeBuilder.hpp>
 #include <Response.hpp>
 
-Response::Response(ServerConfig& serverConfig) : serverConfig(serverConfig) {
+Response::Response() {
   LOG_TRACE("response constructor called");
 }
 
-Response::~Response() { LOG_TRACE("response destructor called"); }
+/* Response::Response(ServerConfig& serverConfig) : serverConfig(serverConfig) {
+  LOG_TRACE("response constructor called");
+}
+ */
+Response::~Response() {
+  LOG_TRACE("response destructor called");
+}
 
 void Response::run(std::string reqURI, std::string method, size_t bodySize) {
   LOG_TRACE("Running response for URI:", reqURI);

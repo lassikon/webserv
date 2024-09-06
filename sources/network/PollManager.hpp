@@ -8,10 +8,10 @@
 #include <algorithm>
 #include <vector>
 
-#define TIMEOUT -1
-#define MAX_CLIENTS 100
-
 class PollManager {
+#define MAX_CLIENTS 100
+#define TIMEOUT -1
+
  private:
   std::vector<struct pollfd> pollFds;
 

@@ -10,7 +10,9 @@ Config::Config(std::unique_ptr<IDirectiveSetter> serverDirective,
   LOG_DEBUG("Config constructor called");
 }
 
-Config::~Config() { LOG_DEBUG("Config destructor called"); }
+Config::~Config() {
+  LOG_DEBUG("Config destructor called");
+}
 
 void Config::parseConfigFile() {
   std::stringstream configFile;
@@ -21,7 +23,8 @@ void Config::parseConfigFile() {
   }
   configFile.str(std::string(content.begin(), content.end()));
   while (callGetLine(configFile)) {
-    if (_line.empty()) continue;
+    if (_line.empty())
+      continue;
     if (_line.compare("[server]") == 0) {
       _bStack.push("[server]");
       parseServerBlock(configFile);
@@ -37,7 +40,8 @@ void Config::parseServerBlock(std::stringstream& configFile) {
   ServerConfig serverConfig;
   serverConfig = ServerConfig{};
   while (callGetLine(configFile)) {
-    if (_line.empty()) continue;
+    if (_line.empty())
+      continue;
     auto delimiter_pos = _line.find(":");
     if (delimiter_pos != std::string::npos)
       populateServer(serverConfig, delimiter_pos);
@@ -53,35 +57,33 @@ void Config::parseServerBlock(std::stringstream& configFile) {
       addServerToMap(serverConfig);
       return;
     } else
-      LOG_WARN("Parse: Invalid directive,", _line, " in server block at line",
-               _lineNumber);
+      LOG_WARN("Parse: Invalid directive,", _line, " in server block at line", _lineNumber);
     _pos = configFile.tellg();
   }
 }
 
 // populate route block
-void Config::parseRouteBlock(ServerConfig& serverConfig,
-                             std::stringstream& configFile) {
+void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& configFile) {
   RouteConfig routeConfig;
   routeConfig = RouteConfig{};
   while (callGetLine(configFile)) {
-    if (_line.empty()) continue;
+    if (_line.empty())
+      continue;
     auto delimiter_pos = _line.find(":");
     if (delimiter_pos != std::string::npos)
       populateRoute(routeConfig, delimiter_pos);
     else if (_line.compare("[route]") == 0)
       return;
-    else if (_line.compare("[/route]") == 0 &&
-             (!_bStack.empty() && _bStack.top() == "[route]")) {
+    else if (_line.compare("[/route]") == 0 && (!_bStack.empty() && _bStack.top() == "[route]")) {
       _bStack.pop();
       serverConfig.routes.push_back(routeConfig);
       return;
     } else
-      LOG_WARN("Parse: Invalid directive, ", _line, " in route block at line ",
-               _lineNumber);
+      LOG_WARN("Parse: Invalid directive, ", _line, " in route block at line ", _lineNumber);
     _pos = configFile.tellg();
   }
 }
+
 // populate server struct
 void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
   std::string key = _line.substr(0, pos);
@@ -112,8 +114,8 @@ void Config::addServerToMap(ServerConfig& serverConfig) {
     return;
   }
   std::string hostName;
-  hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port) +
-             " " + serverConfig.serverName;
+  hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port) + " " +
+             serverConfig.serverName;
   _servers.insert(std::pair<std::string, ServerConfig>(hostName, serverConfig));
 }
 
@@ -137,7 +139,8 @@ void Config::closeRouteBlock(std::stringstream& configFile) {
 
 bool Config::callGetLine(std::stringstream& configFile) {
   // handle unexpected EOF
-  if (!std::getline(configFile, _line)) return false;
+  if (!std::getline(configFile, _line))
+    return false;
   _line = Utility::trimComments(_line);
   _line = Utility::trimWhitespaces(_line);
   _lineNumber++;
@@ -147,8 +150,7 @@ bool Config::callGetLine(std::stringstream& configFile) {
 void Config::validateServer(std::map<std::string, ServerConfig>& servers) {
   for (auto serverIt = servers.begin(); serverIt != servers.end(); serverIt++) {
     auto& server = serverIt->second;
-    for (auto routeIt = server.routes.begin();
-         routeIt != server.routes.end();) {
+    for (auto routeIt = server.routes.begin(); routeIt != server.routes.end();) {
       if (routeIt->location.empty()) {
         LOG_WARN("Parse: Missing location in route block, deleting route...");
         routeIt = server.routes.erase(routeIt);

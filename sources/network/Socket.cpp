@@ -1,19 +1,22 @@
 #include <Socket.hpp>
 
-Socket::Socket() : sockFd(0) { LOG_DEBUG(Utility::getConstructor(*this)); }
+Socket::Socket(void) {
+  LOG_DEBUG(Utility::getConstructor(*this));
+  sockFd = 0;
+}
 
 Socket::~Socket(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
   cleanupSocket();
 }
 
-void Socket::setupSocket(int port) {
+void Socket::setupSocket(ServerConfig& serverConfig) {
   struct addrinfo hints = {}, *res;
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  if (int s = getaddrinfo(NULL, std::to_string(port).c_str(), &hints, &res) != 0) {
+  if (int s = getaddrinfo(NULL, std::to_string(serverConfig.port).c_str(), &hints, &res) != 0) {
     socketError("Failed to get address info:", gai_strerror(s));
   }
   sockFd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
@@ -51,6 +54,6 @@ void Socket::cleanupSocket(void) {
     if (close(sockFd) == -1) {
       socketError("Failed to close fd:", sockFd);
     }
-    sockFd = 0; // Mark as closed
+    sockFd = 0;  // Mark as closed
   }
 }

@@ -1,8 +1,8 @@
 #include <Client.hpp>
 
-Client::Client(int socketFd, ServerConfig& serverConfig)
-    : fd(socketFd), serverConfig(serverConfig), res(serverConfig) {
-  LOG_TRACE("Client constructor called");
+Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
+    : fd(socketFd), serverConfigs(serverConfigs) {
+  LOG_DEBUG("Client constructor called");
   state = ClientState::READING_REQLINE;
 }
 
@@ -11,7 +11,9 @@ Client::~Client(void) {
   cleanupClient();
 }
 
-bool Client::operator==(const Client& other) const { return fd == other.fd; }
+bool Client::operator==(const Client& other) const {
+  return fd == other.fd;
+}
 
 bool Client::handlePollEvents(short revents) {
   if (revents & POLLIN) {
@@ -91,16 +93,27 @@ void Client::handleRequest(void) {
   }
 }
 
+ServerConfig Client::chooseServerConfig(void) {
+  LOG_DEBUG("Choosing server config for client fd:", fd);
+  for (auto& serverConfig : serverConfigs) {
+    if (serverConfig->serverName == req.getHeaders()["Host"]) {
+      return *serverConfig;
+    }
+  }
+  return *(serverConfigs.front());
+  // throw exception
+}
+
 bool Client::sendResponse(void) {
   if (state != ClientState::READING_DONE) {
     LOG_ERROR("Client", getFd(), "state is NOT done reading");
     return false;
   }
+  res.setServerConfig(chooseServerConfig());
   LOG_DEBUG("Creating response to client fd:", fd);
   res.run(req.getReqURI(), req.getMethod(), req.getBodySize());
   LOG_TRACE("Sending response");
-  if (send(getFd(), res.getResContent().data(), res.getResContent().size(),
-           0) == -1) {
+  if (send(getFd(), res.getResContent().data(), res.getResContent().size(), 0) == -1) {
     LOG_ERROR("Failed to send response");
     return false;
   }

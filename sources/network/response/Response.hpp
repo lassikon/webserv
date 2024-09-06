@@ -17,7 +17,7 @@ class ProcessTreeBuilder;
 class Response {
  private:  // from request
   RouteConfig routeConfig;
-  ServerConfig& serverConfig;
+  ServerConfig serverConfig;
   std::string reqMethod;
   size_t reqBodySize;
   std::string reqURI;
@@ -32,7 +32,8 @@ class Response {
   std::shared_ptr<ProcessTree> root;
 
  public:
-  Response(ServerConfig& ServerConfig);
+ Response();
+  //Response(ServerConfig& ServerConfig);
   ~Response();
 
   void run(std::string reqURI, std::string method, size_t bodySize);
@@ -51,6 +52,7 @@ class Response {
   }
   void setResBody(std::vector<char>& body) { resBody = body; }
   void setRouteConfig(RouteConfig& route) { routeConfig = route; }
+  void setServerConfig(ServerConfig server) { serverConfig = server; }
 
   void printServerConfig();
 };
