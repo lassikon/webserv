@@ -2,18 +2,17 @@
 
 Client::Client(int socketFd, ServerConfig& serverConfig)
     : fd(socketFd), serverConfig(serverConfig), res(serverConfig) {
-  LOG_DEBUG("Client constructor called");
+  LOG_TRACE("Client constructor called");
   state = ClientState::READING_REQLINE;
 }
 
 Client::~Client(void) {
-  LOG_DEBUG("Client destructor called");
+  LOG_TRACE("Client destructor called");
   cleanupClient();
 }
 
 bool Client::operator==(const Client& other) const { return fd == other.fd; }
 
-//GET /cgi-bin HTTP/1.1
 bool Client::handlePollEvents(short revents) {
   if (revents & POLLIN) {
     if (!receiveData()) {
@@ -59,8 +58,8 @@ void Client::processRequest(std::istringstream& iBuf, int nbytes) {
     req.parseBody(this, iBuf, nbytes);
   }
   if (state == ClientState::READING_DONE) {
-    std::cout << "Request received from client fd:" << fd << std::endl;
-    handleRequest();
+    LOG_TRACE("Request received from client fd:", fd);
+    // handleRequest();
   }
 }
 
@@ -94,13 +93,14 @@ void Client::handleRequest(void) {
 
 bool Client::sendResponse(void) {
   if (state != ClientState::READING_DONE) {
-    LOG_ERROR("Client state is not READING_DONE", getFd());
+    LOG_ERROR("Client", getFd(), "state is NOT done reading");
     return false;
   }
-  LOG_DEBUG("Sending response to client fd:", fd);
+  LOG_DEBUG("Creating response to client fd:", fd);
   res.run(req.getReqURI(), req.getMethod(), req.getBodySize());
   LOG_TRACE("Sending response");
-  if (send(getFd(), res.getResponse().data(), res.getResponse().size(), 0) == -1) {
+  if (send(getFd(), res.getResContent().data(), res.getResContent().size(),
+           0) == -1) {
     LOG_ERROR("Failed to send response");
     return false;
   }

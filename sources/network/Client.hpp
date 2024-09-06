@@ -26,11 +26,10 @@ enum struct ClientState {
 class Client {
  private:
   int fd;
-  ServerConfig serverConfig;
+  ServerConfig& serverConfig;
   ClientState state;
   Request req;
   Response res;
-  // ResourceManager resourceManager;
 
  public:
   Client(int socketFd, ServerConfig& serverConfig);

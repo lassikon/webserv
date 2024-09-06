@@ -5,20 +5,22 @@ ProcessTree::ProcessTree(Validate validate,
                          std::shared_ptr<ProcessTree> falseBranch)
     : validate(validate), trueBranch(trueBranch), falseBranch(falseBranch) {}
 
-ProcessTree::ProcessTree(Action action) : action(action) {}
+ProcessTree::ProcessTree(std::shared_ptr<IServeAction> action)
+    : action(action) {}
 
 ProcessTree::~ProcessTree() {}
 
-void ProcessTree::process(std::string& path) {
+void ProcessTree::process(Response& res) {
   if (validate) {
-    if (validate(path)) {
+    if (validate(res.getReqURI())) {
       LOG_TRACE("ProcessTree: true branch");
-      trueBranch->process(path);
+      trueBranch->process(res);
     } else {
       LOG_TRACE("ProcessTree: false branch");
-      falseBranch->process(path);
+      falseBranch->process(res);
     }
   } else {
-    action(path);
+    LOG_TRACE("ProcessTree: action");
+    action->execute(res);
   }
 }

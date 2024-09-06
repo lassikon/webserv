@@ -113,7 +113,7 @@ void Config::addServerToMap(ServerConfig& serverConfig) {
   }
   std::string hostName;
   hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port) +
-             ":" + serverConfig.serverName;
+             " " + serverConfig.serverName;
   _servers.insert(std::pair<std::string, ServerConfig>(hostName, serverConfig));
 }
 
