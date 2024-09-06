@@ -47,7 +47,6 @@ class Client {
   Request& getReq(void) { return req; }
   void setFd(int fd);
 
-
   ClientState getState(void) const { return state; }
   void setState(ClientState state) { this->state = state; }
 

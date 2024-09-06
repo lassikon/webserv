@@ -83,7 +83,6 @@ bool ProcessTreeBuilder::isDefaultFileExist(std::string& path) {
 }
 
 bool ProcessTreeBuilder::isDirectory(std::string& path) {
-  LOG_INFO("Checking if path is directory", path);
   LOG_DEBUG("Checking if path is directory");
   return std::filesystem::is_directory(path);
 }

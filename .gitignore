@@ -8,3 +8,4 @@ webserv
 **/*.pdf
 **/*.sh
 .clang-format
+.vscode/
