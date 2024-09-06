@@ -52,7 +52,8 @@ void Logger::insertLogDetails(std::ostringstream& log, std::string src, const ch
     log << "[" << getDateTimeStamp() << "]";
   }
   if (enabledDetail[(int)logDetail::File]) {
-    log << "[" << src.substr(src.find_last_of('/') + 1, 4);
+    src = src.substr(0, src.find_last_of('.'));
+    log << "[" << src.substr(src.find_last_of('/') + 1);
   }
   if (enabledDetail[(int)logDetail::Func]) {
     log << ":" << fn;
