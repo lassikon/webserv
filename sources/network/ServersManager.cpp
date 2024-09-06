@@ -8,13 +8,30 @@ ServersManager::~ServersManager(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
 }
 
+bool ServersManager::checkServerExists(ServerConfig& serverConfig) {
+  for (auto& server : servers) {
+    if (server.getPort() == serverConfig.port) {  // check ip as well?
+      return true;
+    }
+  }
+  return false;
+}
+
 void ServersManager::configServers(Config& config) {
   LOG_DEBUG("Initializing servers");
-  servers.reserve(config.getServers().size());
   for (auto& serverConfig : config.getServers()) {
-    LOG_INFO("Adding server", serverConfig.first);
-    servers.emplace_back(serverConfig.second);
-    LOG_DEBUG("Server port:", serverConfig.second.port);
+    if (checkServerExists(serverConfig.second)) {
+      LOG_DEBUG("Server already exists, adding config to existing server in port:", serverConfig.second.port);
+      for (auto& server : servers) {
+        if (server.getPort() == serverConfig.second.port) {
+          server.addServerConfig(serverConfig.second);
+          break;
+        }
+      }
+    } else {
+      LOG_DEBUG("Creating new server in port:", serverConfig.second.port);
+      servers.emplace_back(Server(serverConfig.second));
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 #include <Client.hpp>
 
-Client::Client(int socketFd, ServerConfig& serverConfig)
-    : fd(socketFd), serverConfig(serverConfig), res(serverConfig) {
+Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfig)
+    : fd(socketFd), serverConfigs(serverConfig), res(serverConfig) {
   LOG_DEBUG("Client constructor called");
   state = ClientState::READING_REQLINE;
 }
@@ -11,7 +11,9 @@ Client::~Client(void) {
   cleanupClient();
 }
 
-bool Client::operator==(const Client& other) const { return fd == other.fd; }
+bool Client::operator==(const Client& other) const {
+  return fd == other.fd;
+}
 
 //GET /cgi-bin HTTP/1.1
 bool Client::handlePollEvents(short revents) {

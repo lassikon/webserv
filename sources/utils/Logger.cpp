@@ -10,7 +10,7 @@ Logger::~Logger(void) {
 }
 
 void Logger::loadDefaults(void) {
-  currentLevel = logLevel::Trace;
+  currentLevel = logLevel::Debug;
   currentOutput = logOutput::Both;
   setLogDetails(false, true, true, true);
   if (currentOutput != logOutput::ConsoleOnly)

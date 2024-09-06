@@ -22,9 +22,9 @@ class ServersManager {
 
  private:
   void serverLoop(PollManager& pollManager);
+  bool checkServerExists(ServerConfig& serverConfig);
 
-  template <typename... Args>
-  void serverError(Args&&... args) {
+  template <typename... Args> void serverError(Args&&... args) {
     THROW(Error::Server, std::forward<Args>(args)..., STRERROR);
   }
 };
