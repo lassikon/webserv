@@ -1,6 +1,15 @@
 #include <Client.hpp>
 #include <Request.hpp>
 
+Request::Request() {
+  LOG_DEBUG(Utility::getConstructor(*this));
+  transferEncodingChunked = false;
+}
+
+Request::~Request() {
+  LOG_DEBUG(Utility::getDeconstructor(*this));
+}
+
 void Request::parseRequestLine(Client* client, std::string& requestLine) {
   LOG_TRACE("Parsing request line");
   std::istringstream iss(requestLine);
@@ -50,7 +59,7 @@ void Request::parseBody(Client* client, std::istringstream& iBuf, int nbytes) {
       reqBodySize += contentLength;
       std::vector<char> bodyData(contentLength);
       iBuf.read(bodyData.data(), contentLength);
-      reqBody.append(bodyData.data(), contentLength);
+      reqBody.insert(reqBody.end(), bodyData.begin(), bodyData.end());
       client->setState(ClientState::READING_DONE);
     } else if (reqHeaders.find("Connection") != reqHeaders.end() &&
                reqHeaders["Connection"] == "close") {
@@ -60,7 +69,7 @@ void Request::parseBody(Client* client, std::istringstream& iBuf, int nbytes) {
       reqBodySize = nbytes;
       std::vector<char> bodyData(nbytes);
       iBuf.read(bodyData.data(), nbytes);
-      reqBody.append(bodyData.data(), nbytes);
+      reqBody.insert(reqBody.end(), bodyData.begin(), bodyData.end());
     }
   }
 }
@@ -80,7 +89,35 @@ void Request::parseChunkedBody(Client* client, std::istringstream& iBuf) {
     }
     std::vector<char> chunkData(chunkSize);
     iBuf.read(chunkData.data(), chunkSize);
-    reqBody.append(chunkData.data(), chunkSize);
+    reqBody.insert(reqBody.end(), chunkData.begin(), chunkData.end());
     iBuf.ignore(2);  // remove \r\n
   }
+}
+
+std::string Request::getMethod(void) const {
+  return reqMethod;
+}
+
+std::string Request::getReqURI(void) const {
+  return reqURI;
+}
+
+std::string Request::getVersion(void) const {
+  return reqVersion;
+}
+
+size_t Request::getBodySize(void) const {
+  return reqBodySize;
+}
+
+std::map<std::string, std::string> Request::getHeaders(void) const {
+  return reqHeaders;
+}
+
+std::vector<char> Request::getBody(void) const {
+  return reqBody;
+}
+
+bool Request::isTransferEncodingChunked(void) const {
+  return transferEncodingChunked;
 }

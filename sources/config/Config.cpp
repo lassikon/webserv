@@ -7,18 +7,18 @@ Config::Config(std::unique_ptr<IDirectiveSetter> serverDirective,
     : _configFilePath("confDefault/default.conf"),
       _serverDirective(std::move(serverDirective)),
       _routeDirective(std::move(routeDirective)) {
-  LOG_DEBUG("Config constructor called");
+  LOG_DEBUG(Utility::getConstructor(*this));
 }
 
 Config::~Config() {
-  LOG_DEBUG("Config destructor called");
+  LOG_DEBUG(Utility::getDeconstructor(*this));
 }
 
 void Config::parseConfigFile() {
   std::stringstream configFile;
   std::vector<char> content = Utility::readFile(_configFilePath);
   if (content.empty()) {
-    THROW(Error::Config, ERR_MSG_EMPTYFILE);
+    configError("Empty config file");
     return;
   }
   configFile.str(std::string(content.begin(), content.end()));
@@ -84,7 +84,6 @@ void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& conf
   }
 }
 
-// populate server struct
 void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
   std::string key = _line.substr(0, pos);
   key = Utility::trimComments(key);
@@ -95,7 +94,6 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
   _serverDirective->handleDirective(&serverConfig, key, value, _lineNumber);
 }
 
-// populate route struct
 void Config::populateRoute(RouteConfig& routeConfig, std::size_t& pos) {
   std::string key = _line.substr(0, pos);
   key = Utility::trimComments(key);

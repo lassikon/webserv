@@ -14,7 +14,7 @@
 #define ERR_MSG_EMPTYFILE "Config file is empty:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
-enum class Error { NoError, Args, Config, Server, Socket, Cgi, Signal = 128 };
+enum class Error { NoError, Args, Config, Server, Socket, Cgi, Client, Signal = 128 };
 
 class Exception : public std::exception {
  public:

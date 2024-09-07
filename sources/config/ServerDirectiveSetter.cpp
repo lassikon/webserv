@@ -1,8 +1,7 @@
 #include <ServerDirectiveSetter.hpp>
 
-void ServerDirectiveSetter::handleDirective(void* data, std::string& key,
-                                             std::string& value,
-                                             int& lineNumber) {
+void ServerDirectiveSetter::handleDirective(void* data, std::string& key, std::string& value,
+                                            int& lineNumber) {
   ServerConfig* server = static_cast<ServerConfig*>(data);
   if (key == "server_ip") {
     setIP(*server, value, lineNumber);
@@ -20,8 +19,7 @@ void ServerDirectiveSetter::handleDirective(void* data, std::string& key,
 }
 
 // server struct setters
-void ServerDirectiveSetter::setIP(ServerConfig& server, std::string& value,
-                                   int& lineNumber) {
+void ServerDirectiveSetter::setIP(ServerConfig& server, std::string& value, int& lineNumber) {
   const std::regex ipPattern("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$");
   if (!std::regex_match(value, ipPattern)) {
     LOG_WARN("Parse: Invalid IP,", value, " at line", lineNumber);
@@ -32,11 +30,9 @@ void ServerDirectiveSetter::setIP(ServerConfig& server, std::string& value,
   server.ipAddress = value;
 }
 
-void ServerDirectiveSetter::setServerName(ServerConfig& server,
-                                           std::string& value,
-                                           int& lineNumber) {
-  const std::regex serverNamePattern(
-      "^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
+void ServerDirectiveSetter::setServerName(ServerConfig& server, std::string& value,
+                                          int& lineNumber) {
+  const std::regex serverNamePattern("^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
   if (!std::regex_match(value, serverNamePattern)) {
     LOG_WARN("Parse: Invalid server name,", value, " at line ", lineNumber);
     return;
@@ -45,8 +41,8 @@ void ServerDirectiveSetter::setServerName(ServerConfig& server,
     LOG_WARN("Parse: Server name already set, updating with line", lineNumber);
   server.serverName = value;
 }
-void ServerDirectiveSetter::setPort(ServerConfig& server, std::string& value,
-                                     int& lineNumber) {
+
+void ServerDirectiveSetter::setPort(ServerConfig& server, std::string& value, int& lineNumber) {
   const std::regex port_pattern("^[0-9]+$");
   if (!std::regex_match(value, port_pattern)) {
     LOG_WARN("Parse: Invalid port,", value, " at line", lineNumber);
@@ -59,10 +55,10 @@ void ServerDirectiveSetter::setPort(ServerConfig& server, std::string& value,
     LOG_WARN("Parse: Port already set, updating with line", lineNumber);
   server.port = std::stoi(value);
 }
+
 // relative to cwd
-void ServerDirectiveSetter::setErrorPages(ServerConfig& server,
-                                           std::string& value,
-                                           int& lineNumber) {
+void ServerDirectiveSetter::setErrorPages(ServerConfig& server, std::string& value,
+                                          int& lineNumber) {
   std::stringstream ss(value);
   std::string error;
   std::getline(ss, error, ' ');
@@ -72,30 +68,30 @@ void ServerDirectiveSetter::setErrorPages(ServerConfig& server,
     return;
   }
   int error_code = std::stoi(error);
+  if (server.pagesDefault.find(error_code) == server.pagesDefault.end()) {
+    LOG_WARN("Parse: Invalid custo Error page at", lineNumber);
+    return;
+  }
   std::getline(ss, error, ' ');
   std::filesystem::path exePath;
   exePath = Utility::getExePath(exePath);
   std::filesystem::path errorPath = exePath.append(error);
   if (!std::filesystem::exists(errorPath))
-    LOG_WARN("Parse: Error page path not found,", error, " at line",
-             lineNumber);
+    LOG_WARN("Parse: Error page path not found,", error, " at line", lineNumber);
   else
     server.pagesCustom[error_code] = error;
 }
+
 // client body size limit is set in bytes, kilobytes k,K, megabytes m,M,
 // gigabytes g,G
-void ServerDirectiveSetter::setClientBodySizeLimit(ServerConfig& server,
-                                                    std::string& value,
-                                                    int& lineNumber) {
+void ServerDirectiveSetter::setClientBodySizeLimit(ServerConfig& server, std::string& value,
+                                                   int& lineNumber) {
   const std::regex size_pattern("^[0-9]+[kKmMgG]?$");
   if (!std::regex_match(value, size_pattern)) {
-    LOG_WARN("Parse: Invalid client body size limit,", value, " at line",
-             lineNumber);
+    LOG_WARN("Parse: Invalid client body size limit,", value, " at line", lineNumber);
     return;
   }
   if (!server.clientBodySizeLimit.empty())
-    LOG_WARN(
-        "Parse: Client body size limit already set, updating with line",
-        lineNumber);
+    LOG_WARN("Parse: Client body size limit already set, updating with line", lineNumber);
   server.clientBodySizeLimit = value;
 }

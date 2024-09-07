@@ -10,7 +10,7 @@
 
 class ServersManager {
  private:
-  std::vector<Server> servers;
+  std::vector<std::shared_ptr<Server>> servers;
   std::vector<struct pollfd> pollFds;
 
  public:

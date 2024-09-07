@@ -9,7 +9,9 @@
           "${workspaceFolder}/sources/network/response",
           "${workspaceFolder}/sources/network/response/actions",
           "${workspaceFolder}/sources/network/request",
-          "${workspaceFolder}/sources/config"
+          "${workspaceFolder}/sources/config",
+          "${workspaceFolder}/sources/cgi"
+
         ],
         "defines": [],
         "compilerPath": "/usr/bin/gcc",

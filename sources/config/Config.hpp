@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Exception.hpp>
 #include <IDirectiveSetter.hpp>
 #include <Logger.hpp>
 #include <Utility.hpp>
-#include <Exception.hpp>
 
 #include <map>
 #include <sstream>
@@ -37,9 +37,8 @@ struct ServerConfig {
   int port;
   std::map<int, std::string> pagesDefault = {
       {200, "/pagesDefault/200.html"},   // ok
-      {204, "pagesDefault/204.html"},    // no content
+      {204, "/pagesDefault/204.html"},    // no content
       {301, "/pagesDefault/301.html"},   // moved permanently
-      {308, "/pagesDefault/308.html"},   // permanent redirect
       {400, "/pagesDefault/400.html"},   // bad request
       {401, "/pagesDefault/401.html"},   // unauthorized
       {403, "/pagesDefault/403.html"},   // forbidden
@@ -59,8 +58,7 @@ struct ServerConfig {
 
 class Config {
  private:
-  std::map<std::string, ServerConfig>
-      _servers;  // ip:port as key and server config as value
+  std::map<std::string, ServerConfig> _servers;  // ip:port as key and server config as value
   std::string _configFilePath;
 
  public:
@@ -69,9 +67,13 @@ class Config {
   ~Config();
 
   void parseConfigFile();
+
   std::map<std::string, ServerConfig>& getServers() { return _servers; }
+
   void printServerConfig();
+
   void setFilePath(char* path) { _configFilePath = std::string(path); }
+
   std::string getFilePath() { return _configFilePath; }
 
  private:
@@ -79,12 +81,13 @@ class Config {
   void closeRouteBlock(std::stringstream& configFile);
   void parseServerBlock(std::stringstream& configFile);
   void populateServer(ServerConfig& serverConfig, std::size_t& pos);
-  void parseRouteBlock(ServerConfig& serverConfig,
-                       std::stringstream& configFile);
+  void parseRouteBlock(ServerConfig& serverConfig, std::stringstream& configFile);
   void populateRoute(RouteConfig& routeConfig, std::size_t& pos);
   void addServerToMap(ServerConfig& serverConfig);
   bool callGetLine(std::stringstream& configFile);
+
   int getLineNumber() const { return _lineNumber; };
+
   void validateServer(std::map<std::string, ServerConfig>& servers);
 
  private:
@@ -94,4 +97,9 @@ class Config {
   static int _lineNumber;
   std::unique_ptr<IDirectiveSetter> _serverDirective;
   std::unique_ptr<IDirectiveSetter> _routeDirective;
+
+ private:
+  template <typename... Args> void configError(Args&&... args) {
+    THROW(Error::Config, std::forward<Args>(args)...);
+  }
 };

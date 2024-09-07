@@ -2,12 +2,12 @@
 
 Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
     : fd(socketFd), serverConfigs(serverConfigs) {
-  LOG_DEBUG("Client constructor called");
+  LOG_DEBUG(Utility::getConstructor(*this));
   state = ClientState::READING_REQLINE;
 }
 
 Client::~Client(void) {
-  LOG_TRACE("Client destructor called");
+  LOG_DEBUG(Utility::getDeconstructor(*this));
   cleanupClient();
 }
 
@@ -32,11 +32,10 @@ bool Client::handlePollEvents(short revents) {
 bool Client::receiveData(void) {
   char buf[4096] = {0};
   int nbytes = recv(fd, buf, sizeof(buf), 0);
-  if (nbytes == -1) {  //&& errno != EWOULDBLOCK && errno != EAGAIN
-    LOG_ERROR("Failed to recv() from fd:", fd);
-    // throw exception
+  if (nbytes == -1) {
+    clientError("Failed to recv() from fd:", fd);
   } else if (nbytes == 0) {  // Connection closed
-    LOG_DEBUG("Connection closed for client fd:", fd);
+    LOG_TRACE("Connection closed for client fd:", fd);
     return false;
   } else {
     LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
@@ -47,7 +46,7 @@ bool Client::receiveData(void) {
 }
 
 void Client::processRequest(std::istringstream& iBuf, int nbytes) {
-  LOG_DEBUG("Processing request from client fd:", fd);
+  LOG_TRACE("Processing request from client fd:", fd);
   if (state == ClientState::READING_REQLINE) {
     std::string requestLine;
     std::getline(iBuf, requestLine);
@@ -65,7 +64,7 @@ void Client::processRequest(std::istringstream& iBuf, int nbytes) {
   }
 }
 
-void Client::handleRequest(void) {
+/* void Client::handleRequest(void) {
   LOG_TRACE("Handling request from client fd:", fd);
   if (req.getMethod() == "GET") {
     LOG_INFO("GET request for path:", req.getReqURI());
@@ -91,10 +90,10 @@ void Client::handleRequest(void) {
   } else {
     LOG_ERROR("Unsupported method:", req.getMethod());
   }
-}
+} */
 
 ServerConfig Client::chooseServerConfig(void) {
-  LOG_DEBUG("Choosing server config for client fd:", fd);
+  LOG_TRACE("Choosing server config for client fd:", fd);
   for (auto& serverConfig : serverConfigs) {
     if (serverConfig->serverName == req.getHeaders()["Host"]) {
       return *serverConfig;
@@ -110,7 +109,7 @@ bool Client::sendResponse(void) {
     return false;
   }
   res.setServerConfig(chooseServerConfig());
-  LOG_DEBUG("Creating response to client fd:", fd);
+  LOG_TRACE("Creating response to client fd:", fd);
   res.run(req.getReqURI(), req.getMethod(), req.getBodySize());
   LOG_TRACE("Sending response");
   if (send(getFd(), res.getResContent().data(), res.getResContent().size(), 0) == -1) {

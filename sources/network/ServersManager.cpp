@@ -10,7 +10,7 @@ ServersManager::~ServersManager(void) {
 
 bool ServersManager::checkServerExists(ServerConfig& serverConfig) {
   for (auto& server : servers) {
-    if (server.getPort() == serverConfig.port) {  // check ip as well?
+    if (server->getPort() == serverConfig.port) {  // check ip as well?
       return true;
     }
   }
@@ -23,14 +23,14 @@ void ServersManager::configServers(Config& config) {
     if (checkServerExists(serverConfig.second)) {
       LOG_DEBUG("Server already exists, adding config to existing server in port:", serverConfig.second.port);
       for (auto& server : servers) {
-        if (server.getPort() == serverConfig.second.port) {
-          server.addServerConfig(serverConfig.second);
+        if (server->getPort() == serverConfig.second.port) {
+          server->addServerConfig(serverConfig.second);
           break;
         }
       }
     } else {
       LOG_DEBUG("Creating new server in port:", serverConfig.second.port);
-      servers.emplace_back(Server(serverConfig.second));
+      servers.emplace_back(std::make_shared<Server>(serverConfig.second));
     }
   }
 }
@@ -39,8 +39,8 @@ void ServersManager::runServers(void) {
   LOG_DEBUG("Running servers");
   PollManager pollManager;
   for (auto& server : servers) {
-    pollManager.addFd(server.getSocketFd(), POLLIN | POLLOUT);
-    LOG_DEBUG("Added server", server.getServerName(), "to pollFds");
+    pollManager.addFd(server->getSocketFd(), POLLIN | POLLOUT);
+    LOG_DEBUG("Added server", server->getServerName(), "to pollFds");
   }
   while (true) {
     int pollCount = pollManager.pollFdsCount();
@@ -66,12 +66,12 @@ void ServersManager::serverLoop(PollManager& pollManager) {
     if (pollFd.revents & (POLLIN | POLLOUT)) {
       for (auto& server : servers) {
         if (pollFd.fd ==
-            server.getSocketFd()) {  // It's a listening socket, accept a new connection
-          server.acceptConnection(pollManager);
+            server->getSocketFd()) {  // It's a listening socket, accept a new connection
+          server->acceptConnection(pollManager);
           break;
-        } else if (server.isClientFd(
+        } else if (server->isClientFd(
                        pollFd.fd)) {  // It's a client socket, handle client communication
-          server.handleClient(pollManager, pollFd.fd, pollFd.revents);
+          server->handleClient(pollManager, pollFd.fd, pollFd.revents);
           break;
         }
       }

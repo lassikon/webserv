@@ -14,10 +14,12 @@
 #include <Config.hpp>
 #include <memory>
 #include <string>
+#include <filesystem>
+#include <sys/stat.h>
 
 class Response;
 
-class ProcessTreeBuilder {
+class ProcessTreeBuilder : public std::enable_shared_from_this<ProcessTreeBuilder> {
  private:
   Response& res;
   ServerConfig& serverConfig;
@@ -32,10 +34,13 @@ class ProcessTreeBuilder {
   bool isDIrectoryListingOn(std::string& path);
   bool isIndexExist(std::string& path);
   bool isDefaultFileExist(std::string& path);
+  bool isRPermOn(std::string& path);
+  bool isXPermOn(std::string& path);
   bool isDirectory(std::string& path);
   bool isPathExist(std::string& path);
   bool isRedirect(std::string& path);
   bool isMethodAllowed(std::string& path);
   bool isClientBodySizeAllowed(std::string& path);
-  bool checkIsRouteMatch(std::string reqURI);
+  bool isRouteMatch(std::string reqURI);
+  bool isErrorAsset(std::string& reqURI);
 };

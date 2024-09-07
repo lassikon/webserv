@@ -32,27 +32,24 @@ class Response {
   std::shared_ptr<ProcessTree> root;
 
  public:
- Response();
+  Response();
   //Response(ServerConfig& ServerConfig);
   ~Response();
 
   void run(std::string reqURI, std::string method, size_t bodySize);
   void makeResponse(void);
 
-  std::vector<char>& getResContent(void) { return resContent; }
-  std::string& getReqURI(void) { return reqURI; }
-  std::string& getReqMethod(void) { return reqMethod; }
-  size_t& getReqBodySize(void) { return reqBodySize; }
-  RouteConfig& getRouteConfig(void) { return routeConfig; }
-  ServerConfig& getServerConfig(void) { return serverConfig; }
-  void setResStatusCode(int code) { resStatusCode = code; }
-  void setResStatusMessage(std::string message) { resStatusMessage = message; }
-  void addHeader(std::string key, std::string value) {
-    resHeaders[key] = value;
-  }
-  void setResBody(std::vector<char>& body) { resBody = body; }
-  void setRouteConfig(RouteConfig& route) { routeConfig = route; }
-  void setServerConfig(ServerConfig server) { serverConfig = server; }
-
+  std::vector<char>& getResContent(void);
+  std::string& getReqURI(void);
+  std::string& getReqMethod(void);
+  size_t& getReqBodySize(void);
+  RouteConfig& getRouteConfig(void);
+  ServerConfig& getServerConfig(void);
+  void setResStatusCode(int code);
+  void setResStatusMessage(std::string message);
+  void addHeader(std::string key, std::string value);
+  void setResBody(std::vector<char>& body);
+  void setRouteConfig(RouteConfig& route);
+  void setServerConfig(ServerConfig server);
   void printServerConfig();
 };
