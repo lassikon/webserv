@@ -4,7 +4,10 @@ void Serve413Action::execute(Response& res) {
   LOG_TRACE("Serving error 413");
   res.setResStatusCode(413);
   res.setResStatusMessage("Payload Too Large");
-  auto key = res.getServerConfig().pagesDefault.find(413);
+   auto key = res.getServerConfig().pagesCustom.find(413);
+  if (key == res.getServerConfig().pagesCustom.end()) {
+    key = res.getServerConfig().pagesDefault.find(413);
+  }
   std::string path = key->second;
   std::filesystem::path exePath;
   exePath = Utility::getExePath(exePath);

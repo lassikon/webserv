@@ -69,7 +69,7 @@ void ServerDirectiveSetter::setErrorPages(ServerConfig& server, std::string& val
   }
   int error_code = std::stoi(error);
   if (server.pagesDefault.find(error_code) == server.pagesDefault.end()) {
-    LOG_WARN("Parse: Invalid custo Error page at", lineNumber);
+    LOG_WARN("Parse: Invalid Custom Error page at", lineNumber);
     return;
   }
   std::getline(ss, error, ' ');

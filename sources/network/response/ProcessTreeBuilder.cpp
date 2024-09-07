@@ -10,11 +10,11 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildProcessTree() {
   // ProcessTreeBuilder class for constructing the decision tree
   // Define actions
   auto serveRedirect = std::make_shared<ProcessTree>(std::make_shared<ServeRedirectAction>());
-  auto serveDefaultFile = std::make_shared<ProcessTree>(std::make_shared<ServeDefaultFileAction>());
+  //auto serveDefaultFile = std::make_shared<ProcessTree>(std::make_shared<ServeDefaultFileAction>());
   auto serveDirectoryListing =
     std::make_shared<ProcessTree>(std::make_shared<ServeDirectoryListingAction>());
   auto serveFile = std::make_shared<ProcessTree>(std::make_shared<ServeFileAction>());
-  auto serveIndex = std::make_shared<ProcessTree>(std::make_shared<ServeIndexAction>());
+  //auto serveIndex = std::make_shared<ProcessTree>(std::make_shared<ServeIndexAction>());
   auto serve403 = std::make_shared<ProcessTree>(std::make_shared<Serve403Action>());
   auto serve404 = std::make_shared<ProcessTree>(std::make_shared<Serve404Action>());
   auto serve405 = std::make_shared<ProcessTree>(std::make_shared<Serve405Action>());
@@ -28,12 +28,12 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildProcessTree() {
     [self](std::string& path) { return self->isDIrectoryListingOn(path); }, isDirectoryRPermOn,
     serve403);
   auto isIndexRPermOn = std::make_shared<ProcessTree>(
-    [self](std::string& path) { return self->isRPermOn(path); }, serveIndex, serve403);
+    [self](std::string& path) { return self->isRPermOn(path); }, serveFile, serve403);
   auto isIndexExist =
     std::make_shared<ProcessTree>([self](std::string& path) { return self->isIndexExist(path); },
                                   isIndexRPermOn, isDirectoryListingOn);
   auto isDefaultRPermOn = std::make_shared<ProcessTree>(
-    [self](std::string& path) { return self->isRPermOn(path); }, serveDefaultFile, serve403);
+    [self](std::string& path) { return self->isRPermOn(path); }, serveFile, serve403);
   auto isDefaultFileExist = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isDefaultFileExist(path); }, isDefaultRPermOn,
     isIndexExist);
@@ -185,7 +185,8 @@ bool ProcessTreeBuilder::isRouteMatch(std::string reqURI) {
 bool ProcessTreeBuilder::isErrorAsset(std::string& reqURI) {
   LOG_TRACE("Checking for error asset");
   std::filesystem::path path(reqURI);
-  if (path.parent_path().string() == "/pagesDefault/assets") {
+  if (path.parent_path().string() == "/pagesDefault/assets" ||
+      path.parent_path().string() == "/pagesCustom/assets") {
     std::filesystem::path exePath;
     exePath = Utility::getExePath(exePath);
     reqURI = reqURI.substr(1, reqURI.size());

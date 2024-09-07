@@ -4,7 +4,10 @@ void Serve405Action::execute(Response& res) {
   LOG_TRACE("Serving error 405");
   res.setResStatusCode(405);
   res.setResStatusMessage("Method Not Allowed");
-  auto key = res.getServerConfig().pagesDefault.find(413);
+  auto key = res.getServerConfig().pagesCustom.find(405);
+  if (key == res.getServerConfig().pagesCustom.end()) {
+    key = res.getServerConfig().pagesDefault.find(405);
+  }
   std::string path = key->second;
   std::filesystem::path exePath;
   exePath = Utility::getExePath(exePath);
@@ -17,6 +20,7 @@ void Serve405Action::execute(Response& res) {
   res.setResBody(ibody);
   std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
   std::string mimeType = Utility::getMimeType(ext);
+  res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
   res.addHeader("Content-Type", mimeType);
   res.addHeader("Content-Length", std::to_string(ibody.size()));
   res.addHeader("Connection", "close");

@@ -8,6 +8,7 @@
 #include <string>
 #include <filesystem>
 #include <vector>
+#include <algorithm>
 
 class Serve404Action : public IServeAction {
  public:

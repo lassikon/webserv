@@ -9,6 +9,7 @@ void ServeDirectoryListingAction::execute(Response& res) {
   res.setResStatusMessage("OK");
   std::vector<char> ibody = std::vector<char>(html.begin(), html.end());
   res.setResBody(ibody);
+  res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
   res.addHeader("Content-Type", "text/html");
   res.addHeader("Content-Length", std::to_string(ibody.size()));
   res.addHeader("Connection", "close");
