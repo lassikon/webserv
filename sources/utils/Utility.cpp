@@ -55,6 +55,6 @@ std::string Utility::getMimeType(std::string& extension) {
   return "application/octet-stream";
 }
 
-int Utility::statusOk(void) noexcept {
-  return !g_ExitStatus;
+bool Utility::statusOk(void) noexcept {
+  return g_ExitStatus == 0 ? true : false;
 }

@@ -1,3 +1,4 @@
+#include <CgiHandler.hpp>
 #include <Config.hpp>
 #include <Exception.hpp>
 #include <Global.hpp>
@@ -23,6 +24,8 @@ int main(int argc, char** argv) {
   /* ======================================================================= */
 
   //TESTING
+  CgiHandler cgi;
+  cgi.runScript();
 
   /* ======================================================================= */
   /* Exception::tryCatch(&Config::parseConfigFile, &config); */

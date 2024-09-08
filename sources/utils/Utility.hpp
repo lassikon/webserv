@@ -17,20 +17,17 @@ class Utility {
   static std::vector<char> readFile(std::string& path);
   static std::filesystem::path getExePath(std::filesystem::path& path);
   static std::string getMimeType(std::string& extension);
-  static int statusOk(void) noexcept;
+  static bool statusOk(void) noexcept;
 
-  template <class T>
-  static std::string getConstructor(const T& object) {
+  template <class T> static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";
   };
 
-  template <class T>
-  static std::string getDeconstructor(const T& object) {
+  template <class T> static std::string getDeconstructor(const T& object) {
     return getClassName(object) + " deconstructor called";
   };
 
-  template <class T>
-  static std::string getClassName(const T& object) {
+  template <class T> static std::string getClassName(const T& object) {
     int start_pos = 0;
     std::string str = typeid(object).name();
     for (int i = 0; !std::isdigit(str[i]); i++) {

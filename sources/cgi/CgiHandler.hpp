@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include <csignal>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -23,19 +24,19 @@ class CgiHandler {
 
   std::vector<std::string> envps{};
   std::vector<std::string> args{};
+  std::string cgi;
 
   int pipefd[2];
+  int cgiFd;
   int wstat;
   pid_t pid;
 
+  // need this?
   ENVPMAP envpmap;
 
-  // probably delete these?
-  std::string cgi;
-  int sockfd;
-
  public:
-  CgiHandler(void) = delete;
+  /* CgiHandler(void) = delete; */
+  CgiHandler();
   CgiHandler(const Client& client);
   ~CgiHandler(void);
 
@@ -49,6 +50,10 @@ class CgiHandler {
   void waitChildProcess(void);
   void executeCgiScript(void);
   void closePipeFds(void);
+
+ private:
+  void childTimeout(int sigNum) noexcept;
+  void childSuccess(int sigNum) noexcept;
 
  private:
   std::vector<char*> createArgvArray(void);
