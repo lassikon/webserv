@@ -13,10 +13,7 @@ int main(int argc, char** argv) {
     LOG_INFO(ERR_MSG_USAGE);
     return (int)Error::Args;
   }
-  Config config = ConfigInitializer::initializeConfig();
-  if (argc == 2) {
-    config.setFilePath(argv[1]);
-  }
+  Config config = ConfigInitializer::initializeConfig(argc, argv);
   Signal::trackSignals();
   Exception::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers().empty()) {

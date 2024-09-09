@@ -47,7 +47,7 @@ struct ServerConfig {
       {408, "/pagesDefault/408.html"},   // request timeout
       {413, "/pagesDefault/413.html"},   // request entity too large
       {415, "/pagesDefault/415.html"},   // unsupported media type
-      {500, "/pagesDefault/500.html"},   // internal server error
+      {500, "/pagesDefault/500.html"},   // internal server error cgi?
       {505, "/pagesDefault/505.html"},   // http version not supported
       {501, "/pagesDefault/501.html"}};  // not implemented
 
@@ -63,17 +63,13 @@ class Config {
 
  public:
   Config(std::unique_ptr<IDirectiveSetter> serverDirective,
-         std::unique_ptr<IDirectiveSetter> routeDirective);
+         std::unique_ptr<IDirectiveSetter> routeDirective,
+         std::string configFilePath);
   ~Config();
 
   void parseConfigFile();
-
   std::map<std::string, ServerConfig>& getServers() { return _servers; }
-
   void printServerConfig();
-
-  void setFilePath(char* path) { _configFilePath = std::string(path); }
-
   std::string getFilePath() { return _configFilePath; }
 
  private:
@@ -87,7 +83,6 @@ class Config {
   bool callGetLine(std::stringstream& configFile);
 
   int getLineNumber() const { return _lineNumber; };
-
   void validateServer(std::map<std::string, ServerConfig>& servers);
 
  private:

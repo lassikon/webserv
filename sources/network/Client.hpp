@@ -35,13 +35,9 @@ class Client {
 
   // getters and setters
   int getFd(void) const { return fd; }
-
   Request& getReq(void) { return req; }
-
   void setFd(int fd);
-
   ClientState getState(void) const { return state; }
-
   void setState(ClientState state) { this->state = state; }
 
  private:
