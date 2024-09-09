@@ -4,27 +4,40 @@ std::vector<pid_t> CgiHandler::pids;
 
 /* : cgiFd(-1), pipefd{-1, -1} */
 
+void CgiHandler::debugPrintCgiFd(void) {
+  /* char c; */
+  /* int bytes; */
+  LOG_DEBUG("Printing CGI fd contents");
+  /* while ((bytes = read(pipefd[Fd::Read], &c, sizeof(c))) > 0) { */
+  /*   write(STDOUT_FILENO, &c, sizeof(c)); */
+  /* } */
+}
+
 CgiHandler::CgiHandler(const Client& client) {
   cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
   LOG_TRACE(Utility::getConstructor(*this));
   args.push_back(cgi);
-  generateEnvpMap();
+  generateEnvpVector();
   (void)client;
 }
 
-CgiHandler::CgiHandler(void) {
+CgiHandler::CgiHandler(void) {  // delete this
   LOG_TRACE(Utility::getDeconstructor(*this));
   cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
   LOG_TRACE("Using binary:", cgi);
   args.push_back(cgi);
-  generateEnvpMap();
+  generateEnvpVector();
 }
 
-void CgiHandler::generateEnvpMap(void) {
-  envpmap = {{"REDIRECT_STATUS=", "200"},    {"REQUEST_METHOD=", "FILLME"},
-             {"SCRIPT_FILENAME=", "FILLME"}, {"PATH_INFO=", "FILLME"},
-             {"CONTENT_TYPE=", "FILLME"},    {"CONTENT_LENGTH=", "FILLME"},
-             {"QUERY_STRING=", "FILLME"},    {"HTTP_COOKIE=", "FILLME"}};
+void CgiHandler::generateEnvpVector(void) {
+  envps.push_back(std::string("REDIRECT_STATUS=") + "200");
+  envps.push_back(std::string("REQUEST_METHOD=") + "FILLME");
+  envps.push_back(std::string("SCRIPT_FILENAME=") + "FILLME");
+  envps.push_back(std::string("PATH_INFO=") + "FILLME");
+  envps.push_back(std::string("CONTENT_TYPE=") + "FILLME");
+  envps.push_back(std::string("CONTENT_LENGTH=") + "FILLME");
+  envps.push_back(std::string("QUERY_STRING=") + "FILLME");
+  envps.push_back(std::string("HTTP_COOKIE=") + "FILLME");
 }
 
 CgiHandler::~CgiHandler(void) {
@@ -33,7 +46,7 @@ CgiHandler::~CgiHandler(void) {
 }
 
 void CgiHandler::closePipeFds(void) {
-  LOG_DEBUG("Closing file descriptors");
+  LOG_TRACE("Closing file descriptors");
   if (pipefd[Fd::Read] != -1) {
     close(pipefd[Fd::Read]);
   }
@@ -49,7 +62,7 @@ void CgiHandler::killAllChildPids(void) {
   for (const auto& pid : pids) {
     if (pid != -1) {
       LOG_DEBUG("Terminating child process:", pid);
-      kill(pid, SIGTERM);
+      kill(pid, SIGKILL);
     }
   }
 }
@@ -63,34 +76,19 @@ void CgiHandler::waitChildProcess(void) {
   }
 }
 
-void CgiHandler::convertEnvpMapToVector(void) {
-  for (const auto& [envp, value] : envpmap) {
-    this->envps.push_back(envp + value);
-  }
-}
-
-std::vector<char*> CgiHandler::createEnvpArray(void) {
-  convertEnvpMapToVector();
+std::vector<char*> CgiHandler::convertStringToChar(std::vector<std::string>& vec) {
   std::vector<char*> vector{};
-  for (auto& string : this->envps) {
+  for (auto& string : vec) {
     vector.push_back(&string.front());
   }
-  return vector;
-}
-
-std::vector<char*> CgiHandler::createArgvArray(void) {
-  std::vector<char*> vector{};
-  for (auto& string : this->args) {
-    vector.push_back(&string.front());
-  }
+  vector.push_back(nullptr);
   return vector;
 }
 
 void CgiHandler::executeCgiScript(void) {
   LOG_TRACE("Log entry from child process");
-  std::vector<char*> argv = createArgvArray();
-  std::vector<char*> envp = createEnvpArray();
-  LOG_TRACE(argv[0], argv[1], envp[1]);
+  std::vector<char*> argv = convertStringToChar(args);
+  std::vector<char*> envp = convertStringToChar(envps);
   if (dup2(pipefd[Fd::Write], STDOUT_FILENO) == -1) {
     cgiError("Could not duplicate pipe fd");
   }
@@ -122,9 +120,9 @@ void CgiHandler::forkChildProcess(void) {
     executeCgiScript();
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-    if (dup2(pipefd[Fd::Read], cgiFd) == -1) {
-      cgiError("Could not duplicate pipe fd");
-    }
+    /* if (dup2(pipefd[Fd::Read], cgiFd) == -1) { */
+    /*   cgiError("Could not duplicate pipe fd"); */
+    /* } */
   }
 }
 
@@ -144,21 +142,11 @@ void CgiHandler::scriptLoader(void) {
   } else {
     forkChildProcess();
     waitChildProcess();
+    debugPrintCgiFd();
   }
 }
 
 void CgiHandler::runScript(void) {
   LOG_TRACE("Running new CGI instance");
   Exception::tryCatch(&CgiHandler::scriptLoader, this);
-}
-
-void CgiHandler::childTimeout(int sigNum) noexcept {
-  LOG_DEBUG("Child process terminated by timeout");
-  kill(this->pid, SIGTERM);
-  (void)sigNum;
-}
-
-void CgiHandler::childSuccess(int sigNum) noexcept {
-  LOG_DEBUG("Child process finished execution");
-  (void)sigNum;
 }

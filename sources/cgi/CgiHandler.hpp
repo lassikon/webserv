@@ -24,19 +24,16 @@ class CgiHandler {
 
   std::vector<std::string> envps{};
   std::vector<std::string> args{};
-  std::string cgi;
+  std::string cgi;  // delete this?
 
   int pipefd[2];
   int cgiFd;
   int wstat;
   pid_t pid;
 
-  // need this?
-  ENVPMAP envpmap;
-
  public:
   /* CgiHandler(void) = delete; */
-  CgiHandler();
+  CgiHandler();  // delete this
   CgiHandler(const Client& client);
   ~CgiHandler(void);
 
@@ -45,20 +42,15 @@ class CgiHandler {
 
  private:
   void scriptLoader(void);
-  void generateEnvpMap(void);
+  void generateEnvpVector(void);
   void forkChildProcess(void);
   void waitChildProcess(void);
   void executeCgiScript(void);
   void closePipeFds(void);
+  void debugPrintCgiFd(void);
 
  private:
-  void childTimeout(int sigNum) noexcept;
-  void childSuccess(int sigNum) noexcept;
-
- private:
-  std::vector<char*> createArgvArray(void);
-  std::vector<char*> createEnvpArray(void);
-  void convertEnvpMapToVector(void);
+  std::vector<char*> convertStringToChar(std::vector<std::string>& vec);
 
  private:
   bool isValidScript(void) const;
