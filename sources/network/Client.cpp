@@ -1,7 +1,7 @@
 #include <Client.hpp>
 
 Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
-    : fd(socketFd), serverConfigs(serverConfigs), res(serverConfigs) {
+    : fd(socketFd), serverConfigs(serverConfigs), res(*serverConfigs.begin()->get()) {
   LOG_DEBUG("Client constructor called");
   state = ClientState::READING_REQLINE;
 }

@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
     config.printServerConfig();
     ServersManager serversManager;
     serversManager.configServers(config);
-    serversManager.runServers();
+    // serversManager.runServers();
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
     return g_ExitStatus;

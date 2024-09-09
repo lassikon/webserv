@@ -62,7 +62,6 @@ class Response {
   std::shared_ptr<ProcessTree> serve405;
   std::shared_ptr<ProcessTree> serve413;
 
-
   // make decision tree
   void makeDecisionTree();
   // actions
