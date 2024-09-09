@@ -9,10 +9,12 @@
 #include <sstream>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv ./<path>/<config>"
-#define ERR_MSG_CONFIG "No valid server config was found in:"
-#define ERR_MSG_SERVER "Failed to configure servers from:"
+#define ERR_MSG_NOSERVER "No valid server found in:"
+#define ERR_MSG_NOFILE "Could not access file:"
+#define ERR_MSG_EMPTYFILE "Config file is empty:"
+#define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
-enum class Error { NoError, Args, Config, Server, Socket, Cgi, Signal = 128 };
+enum class Error { NoError, Args, Config, Server, Socket, Cgi, Client, Signal = 128 };
 
 class Exception : public std::exception {
  public:

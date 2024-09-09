@@ -58,3 +58,28 @@ std::string Utility::getMimeType(std::string& extension) {
 bool Utility::statusOk(void) noexcept {
   return g_ExitStatus == 0 ? true : false;
 }
+
+size_t Utility::convertSizetoBytes(std::string& size) {
+  size_t bytes = 0;
+  size_t multiplier = 1;
+  if (size.back() == 'k' || size.back() == 'K') {
+    multiplier = 1024;
+    size.pop_back();
+  } else if (size.back() == 'm' || size.back() == 'M') {
+    multiplier = 1024 * 1024;
+    size.pop_back();
+  } else if (size.back() == 'g' || size.back() == 'G') {
+    multiplier = 1024 * 1024 * 1024;
+    size.pop_back();
+  }
+  try {
+        bytes = std::stoull(size) * multiplier;
+    } catch (const std::invalid_argument&) {
+        // Handle invalid argument
+        bytes = 0;
+    } catch (const std::out_of_range&) {
+        // Handle out of range
+        bytes = SIZE_MAX;
+    }
+  return bytes;
+}

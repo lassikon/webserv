@@ -1,5 +1,6 @@
 #include <CgiHandler.hpp>
 #include <Config.hpp>
+#include <ConfigInitializer.hpp>
 #include <Exception.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
@@ -9,30 +10,37 @@
 sig_atomic_t g_ExitStatus;
 
 int main(int argc, char** argv) {
-  (void)argv;
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
     return (int)Error::Args;
   }
-
+  Signal::trackSignals();
   /* ======================================================================= */
-  Config config;
+  /* Config config; */
   /* if (argc == 2) { */
   /*   config.setFilePath(argv[1]); */
   /* } */
-  Signal::trackSignals();
   /* ======================================================================= */
 
-  //TESTING
+  //MY TESTING
   CgiHandler cgi;
   cgi.runScript();
 
   /* ======================================================================= */
-  /* Exception::tryCatch(&Config::parseConfigFile, &config); */
-  /* if (config.getServers().empty()) { */
-  /*   LOG_FATAL(ERR_MSG_CONFIG, config.getFileName); */
-  /*   return (int)Error::Config; */
-  /* } */
+  
+  Config config = ConfigInitializer::initializeConfig(argc, argv);
+  Exception::tryCatch(&Config::parseConfigFile, &config);
+  if (config.getServers().empty()) {
+    LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
+    return (int)Error::Config;
+  }
+
+  config.printServerConfig();
+  ServersManager serversManager;
+  serversManager.configServers(config);
+  serversManager.runServers();
+
+  /* ======================================================================= */
   /* ServersManager server; */
   /* Exception::tryCatch(&ServersManager::configServers, &server, config); */
   /* if (config.getServers().empty()) { */

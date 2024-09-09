@@ -2,11 +2,7 @@
 
 Socket::Socket(void) {
   LOG_DEBUG(Utility::getConstructor(*this));
-}
-
-Socket::Socket(ServerConfig& serverConfig) {
-  LOG_DEBUG(Utility::getConstructor(*this));
-  setupSocket(serverConfig);
+  sockFd = 0;
 }
 
 Socket::~Socket(void) {

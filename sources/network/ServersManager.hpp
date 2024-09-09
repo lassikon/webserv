@@ -10,7 +10,7 @@
 
 class ServersManager {
  private:
-  std::vector<Server> servers;
+  std::vector<std::shared_ptr<Server>> servers;
   std::vector<struct pollfd> pollFds;
 
  public:
@@ -22,9 +22,9 @@ class ServersManager {
 
  private:
   void serverLoop(PollManager& pollManager);
+  bool checkServerExists(ServerConfig& serverConfig);
 
-  template <typename... Args>
-  void serverError(Args&&... args) {
+  template <typename... Args> void serverError(Args&&... args) {
     THROW(Error::Server, std::forward<Args>(args)..., STRERROR);
   }
 };

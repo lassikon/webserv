@@ -1,19 +1,20 @@
 #include <Client.hpp>
 
-Client::Client(int socketFd, ServerConfig& serverConfig)
-    : fd(socketFd), serverConfig(serverConfig), res(serverConfig) {
-  LOG_DEBUG("Client constructor called");
+Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
+    : fd(socketFd), serverConfigs(serverConfigs) {
+  LOG_DEBUG(Utility::getConstructor(*this));
   state = ClientState::READING_REQLINE;
 }
 
 Client::~Client(void) {
-  LOG_DEBUG("Client destructor called");
+  LOG_DEBUG(Utility::getDeconstructor(*this));
   cleanupClient();
 }
 
-bool Client::operator==(const Client& other) const { return fd == other.fd; }
+bool Client::operator==(const Client& other) const {
+  return fd == other.fd;
+}
 
-//GET /cgi-bin HTTP/1.1
 bool Client::handlePollEvents(short revents) {
   if (revents & POLLIN) {
     if (!receiveData()) {
@@ -31,22 +32,21 @@ bool Client::handlePollEvents(short revents) {
 bool Client::receiveData(void) {
   char buf[4096] = {0};
   int nbytes = recv(fd, buf, sizeof(buf), 0);
-  if (nbytes == -1) {  //&& errno != EWOULDBLOCK && errno != EAGAIN
-    LOG_ERROR("Failed to recv() from fd:", fd);
-    // throw exception
+  if (nbytes == -1) {
+    clientError("Failed to recv() from fd:", fd);
   } else if (nbytes == 0) {  // Connection closed
-    LOG_DEBUG("Connection closed for client fd:", fd);
+    LOG_TRACE("Connection closed for client fd:", fd);
     return false;
   } else {
     LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
     std::istringstream bufStr(buf);
-    processRequest(bufStr);
+    processRequest(bufStr, nbytes);
   }
   return true;
 }
 
-void Client::processRequest(std::istringstream& iBuf) {
-  LOG_DEBUG("Processing request from client fd:", fd);
+void Client::processRequest(std::istringstream& iBuf, int nbytes) {
+  LOG_TRACE("Processing request from client fd:", fd);
   if (state == ClientState::READING_REQLINE) {
     std::string requestLine;
     std::getline(iBuf, requestLine);
@@ -56,15 +56,15 @@ void Client::processRequest(std::istringstream& iBuf) {
     req.parseHeaders(this, iBuf);
   }
   if (state == ClientState::READING_BODY) {
-    req.parseBody(this, iBuf);
+    req.parseBody(this, iBuf, nbytes);
   }
   if (state == ClientState::READING_DONE) {
-    std::cout << "Request received from client fd:" << fd << std::endl;
-    handleRequest();
+    LOG_TRACE("Request received from client fd:", fd);
+    // handleRequest();
   }
 }
 
-void Client::handleRequest(void) {
+/* void Client::handleRequest(void) {
   LOG_TRACE("Handling request from client fd:", fd);
   if (req.getMethod() == "GET") {
     LOG_INFO("GET request for path:", req.getReqURI());
@@ -90,17 +90,29 @@ void Client::handleRequest(void) {
   } else {
     LOG_ERROR("Unsupported method:", req.getMethod());
   }
+} */
+
+ServerConfig Client::chooseServerConfig(void) {
+  LOG_TRACE("Choosing server config for client fd:", fd);
+  for (auto& serverConfig : serverConfigs) {
+    if (serverConfig->serverName == req.getHeaders()["Host"]) {
+      return *serverConfig;
+    }
+  }
+  return *(serverConfigs.front());
+  // throw exception
 }
 
 bool Client::sendResponse(void) {
   if (state != ClientState::READING_DONE) {
-    LOG_ERROR("Client state is not READING_DONE", getFd());
+    LOG_ERROR("Client", getFd(), "state is NOT done reading");
     return false;
   }
-  LOG_DEBUG("Sending response to client fd:", fd);
-  res.run(req.getReqURI(), req.getMethod());
+  res.setServerConfig(chooseServerConfig());
+  LOG_TRACE("Creating response to client fd:", fd);
+  res.run(req.getReqURI(), req.getMethod(), req.getBodySize());
   LOG_TRACE("Sending response");
-  if (send(getFd(), res.getResponse().data(), res.getResponse().size(), 0) == -1) {
+  if (send(getFd(), res.getResContent().data(), res.getResContent().size(), 0) == -1) {
     LOG_ERROR("Failed to send response");
     return false;
   }

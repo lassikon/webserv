@@ -18,6 +18,7 @@ class Utility {
   static std::filesystem::path getExePath(std::filesystem::path& path);
   static std::string getMimeType(std::string& extension);
   static bool statusOk(void) noexcept;
+  static size_t convertSizetoBytes(std::string& size);
 
   template <class T> static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";
