@@ -1,15 +1,15 @@
-#include <CgiHandler.hpp>
+#include <CgiManager.hpp>
 
-std::vector<pid_t> CgiHandler::pids;
+std::vector<pid_t> CgiManager::pids;
 
-void CgiHandler::debugPrintCgiFd(void) {
+void CgiManager::debugPrintCgiFd(void) {
   char buffer[256];
   LOG_DEBUG("Printing CGI fd contents");
   read(cgiFd, &buffer, sizeof(buffer));
   write(STDOUT_FILENO, &buffer, sizeof(buffer));
 }
 
-CgiHandler::CgiHandler(const Client& client) {
+CgiManager::CgiManager(const Client& client) {
   cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
   LOG_TRACE(Utility::getConstructor(*this));
   args.push_back(cgi);
@@ -17,7 +17,7 @@ CgiHandler::CgiHandler(const Client& client) {
   (void)client;
 }
 
-CgiHandler::CgiHandler(void) : pipefd{-1, -1}, cgiFd(-1) {  // delete this
+CgiManager::CgiManager(void) : pipefd{-1, -1}, cgiFd(-1) {  // delete this
   cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
   LOG_TRACE(Utility::getDeconstructor(*this));
   LOG_TRACE("Using binary:", cgi);
@@ -25,7 +25,7 @@ CgiHandler::CgiHandler(void) : pipefd{-1, -1}, cgiFd(-1) {  // delete this
   generateEnvpVector();
 }
 
-void CgiHandler::generateEnvpVector(void) {
+void CgiManager::generateEnvpVector(void) {
   envps.push_back(std::string("REDIRECT_STATUS=") + "200");
   envps.push_back(std::string("REQUEST_METHOD=") + "FILLME");
   envps.push_back(std::string("SCRIPT_FILENAME=") + "FILLME");
@@ -36,12 +36,12 @@ void CgiHandler::generateEnvpVector(void) {
   envps.push_back(std::string("HTTP_COOKIE=") + "FILLME");
 }
 
-CgiHandler::~CgiHandler(void) {
+CgiManager::~CgiManager(void) {
   LOG_TRACE(Utility::getDeconstructor(*this));
   closePipeFds();
 }
 
-void CgiHandler::closePipeFds(void) {
+void CgiManager::closePipeFds(void) {
   LOG_TRACE("Closing file descriptors");
   if (pipefd[Fd::Read] != -1) {
     close(pipefd[Fd::Read]);
@@ -54,7 +54,7 @@ void CgiHandler::closePipeFds(void) {
   }
 }
 
-void CgiHandler::killAllChildPids(void) {
+void CgiManager::killAllChildPids(void) {
   for (const auto& pid : pids) {
     if (pid != -1) {
       LOG_DEBUG("Terminating child process:", pid);
@@ -63,7 +63,7 @@ void CgiHandler::killAllChildPids(void) {
   }
 }
 
-void CgiHandler::waitChildProcess(void) {
+void CgiManager::waitChildProcess(void) {
   waitpid(this->pid, &wstat, WNOHANG);
   if (WIFSIGNALED(wstat) != 0) {
     g_ExitStatus = (int)Error::Signal + WTERMSIG(wstat);
@@ -72,7 +72,7 @@ void CgiHandler::waitChildProcess(void) {
   }
 }
 
-std::vector<char*> CgiHandler::convertStringToChar(std::vector<std::string>& vec) {
+std::vector<char*> CgiManager::convertStringToChar(std::vector<std::string>& vec) {
   std::vector<char*> vector{};
   for (auto& string : vec) {
     vector.push_back(&string.front());
@@ -81,7 +81,7 @@ std::vector<char*> CgiHandler::convertStringToChar(std::vector<std::string>& vec
   return vector;
 }
 
-void CgiHandler::executeCgiScript(void) {
+void CgiManager::executeCgiScript(void) {
   LOG_TRACE("Log entry from child process");
   std::vector<char*> argv = convertStringToChar(args);
   std::vector<char*> envp = convertStringToChar(envps);
@@ -93,20 +93,20 @@ void CgiHandler::executeCgiScript(void) {
   }
 }
 
-bool CgiHandler::isParentProcess(void) const {
+bool CgiManager::isParentProcess(void) const {
   return this->pid != 0 ? true : false;
 }
 
-bool CgiHandler::isChildProcess(void) const {
+bool CgiManager::isChildProcess(void) const {
   return this->pid == 0 ? true : false;
 }
 
-const pid_t& CgiHandler::addNewProcessId(void) noexcept {
+const pid_t& CgiManager::addNewProcessId(void) noexcept {
   pids.push_back(fork());
   return pids[pids.size() - 1];
 }
 
-void CgiHandler::forkChildProcess(void) {
+void CgiManager::forkChildProcess(void) {
   LOG_TRACE("Forking new child process");
   this->pid = addNewProcessId();
   if (this->pid == -1) {
@@ -120,7 +120,7 @@ void CgiHandler::forkChildProcess(void) {
   }
 }
 
-bool CgiHandler::isValidScript(void) const {
+bool CgiManager::isValidScript(void) const {
   struct stat s;
   if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), X_OK)) {
     return true;
@@ -128,7 +128,7 @@ bool CgiHandler::isValidScript(void) const {
   return false;
 }
 
-void CgiHandler::scriptLoader(void) {
+void CgiManager::scriptLoader(void) {
   if (!isValidScript()) {
     cgiError("Could not open script");
   } else if (pipe(pipefd) == -1) {
@@ -139,8 +139,8 @@ void CgiHandler::scriptLoader(void) {
   }
 }
 
-void CgiHandler::runScript(void) {
+void CgiManager::runScript(void) {
   LOG_TRACE("Running new CGI instance");
-  Exception::tryCatch(&CgiHandler::scriptLoader, this);
+  Exception::tryCatch(&CgiManager::scriptLoader, this);
   /* debugPrintCgiFd(); */
 }

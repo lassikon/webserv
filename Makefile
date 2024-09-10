@@ -48,25 +48,25 @@ MODULES := network \
            network/response/actions \
            network/request \
            config \
-           cgi \
            utils
 
 SOURCES := main \
            Client \
+           CgiManager \
            PollManager \
            Request \
            Response \
-            Serve403Action \
-            Serve404Action \
-            Serve405Action \
-            Serve413Action \
-            ServeDefaultFileAction \
-            ServeDirectoryListingAction \
-            ServeFileAction \
-            ServeIndexAction \
-            ServeRedirectAction \
+           Serve403Action \
+           Serve404Action \
+           Serve405Action \
+           Serve413Action \
+           ServeDefaultFileAction \
+           ServeDirectoryListingAction \
+           ServeFileAction \
+           ServeIndexAction \
+           ServeRedirectAction \
            ProcessTree \
-            ProcessTreeBuilder \
+           ProcessTreeBuilder \
            Server \
            ServersManager \
            Socket \
@@ -74,7 +74,6 @@ SOURCES := main \
            ConfigInitializer \
            RouteDirectiveSetter \
            ServerDirectiveSetter \
-           CgiHandler \
            Logger \
            Signal \
            Utility

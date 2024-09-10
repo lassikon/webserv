@@ -1,4 +1,4 @@
-#include <CgiHandler.hpp>
+#include <CgiManager.hpp>
 #include <Config.hpp>
 #include <ConfigInitializer.hpp>
 #include <Exception.hpp>
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
   /* ======================================================================= */
 
   //MY TESTING
-  CgiHandler cgi;
+  CgiManager cgi;
   cgi.runScript();
 
   /* ======================================================================= */
