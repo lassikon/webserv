@@ -2,6 +2,7 @@
 
 #include <Colors.hpp>
 
+#include <array>
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -19,9 +20,9 @@ class Logger {
   const char* fileName = "webserv.log";
   std::ofstream logFile;
 
+  std::array<bool, 4> enabledDetail;
   logOutput currentOutput;
   logLevel currentLevel;
-  bool enabledDetail[4];
 
  public:
   Logger(void);
@@ -68,9 +69,18 @@ class Logger {
   }
 };
 
-#define LOG_TRACE(...) (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_DEBUG(...) (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_WARN(...) (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_FATAL(...) (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, __FILE__, __func__, __LINE__, __VA_ARGS__))
+#define LOG_TRACE(...)                                                                  \
+  (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, __FILE__, __func__, __LINE__, \
+               __VA_ARGS__))
+#define LOG_DEBUG(...)                                                                   \
+  (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, __FILE__, __func__, __LINE__, \
+               __VA_ARGS__))
+#define LOG_INFO(...) \
+  (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, __FILE__, __func__, __LINE__, __VA_ARGS__))
+#define LOG_WARN(...)                                                                      \
+  (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, __FILE__, __func__, __LINE__, \
+               __VA_ARGS__))
+#define LOG_ERROR(...) \
+  (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, __FILE__, __func__, __LINE__, __VA_ARGS__))
+#define LOG_FATAL(...) \
+  (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, __FILE__, __func__, __LINE__, __VA_ARGS__))

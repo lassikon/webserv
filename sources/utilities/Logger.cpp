@@ -36,7 +36,7 @@ void Logger::setLogDetails(bool time, bool file, bool func, bool line) {
 }
 
 void Logger::setLogDetail(int index, bool value) {
-  enabledDetail[index] = value;
+  enabledDetail.at(index) = value;
 }
 
 std::string Logger::getDateTimeStamp(void) const {
