@@ -28,6 +28,8 @@ class Exception : public std::exception {
     std::ostringstream exceptionEntry;
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
+    } catch (const Error& e) {
+      return;  // this is processed by macros
     } catch (const std::logic_error& e) {
       exceptionEntry << "Logic Error: " << e.what();
     } catch (const std::runtime_error& e) {
@@ -37,10 +39,7 @@ class Exception : public std::exception {
     } catch (const std::bad_exception& e) {
       exceptionEntry << "Unexpected Error: " << e.what();
     } catch (const std::exception& e) {
-      // Suppresses extra logging for manual throw
-      // where logging is already done by THROW
-      if ((std::string)e.what() != "std::exception")
-        exceptionEntry << "Exception occured: " << e.what();
+      exceptionEntry << "Exception occured: " << e.what();
     }
     if (!exceptionEntry.str().empty())
       LOG_FATAL(exceptionEntry.str());
@@ -62,4 +61,6 @@ class Exception : public std::exception {
 #define THROW(errCode, ...)         \
   LOG_FATAL(__VA_ARGS__, STRERROR); \
   g_ExitStatus = (int)errCode;      \
-  throw Exception();
+  throw errCode;
+
+#define cgiError(...) THROW(Error::Cgi, __VA_ARGS__)

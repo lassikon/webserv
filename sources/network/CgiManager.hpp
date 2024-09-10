@@ -62,9 +62,4 @@ class CgiManager {
 
  public:
   static void killAllChildPids(void);
-
- private:
-  template <typename... Args> void cgiError(Args&&... args) {
-    THROW(Error::Cgi, std::forward<Args>(args)...);
-  }
 };

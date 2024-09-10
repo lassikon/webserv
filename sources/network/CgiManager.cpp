@@ -129,6 +129,7 @@ bool CgiManager::isValidScript(void) const {
 }
 
 void CgiManager::scriptLoader(void) {
+  cgiError("whatever error");
   if (!isValidScript()) {
     cgiError("Could not open script");
   } else if (pipe(pipefd) == -1) {

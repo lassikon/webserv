@@ -12,7 +12,7 @@ Logger::~Logger(void) {
 void Logger::loadDefaults(void) {
   currentLevel = logLevel::Trace;
   currentOutput = logOutput::Both;
-  setLogDetails(false, false, true, true);
+  setLogDetails(false, true, true, true);
   if (currentOutput != logOutput::ConsoleOnly)
     createLogFile();
 }
