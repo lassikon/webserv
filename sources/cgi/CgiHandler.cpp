@@ -2,15 +2,11 @@
 
 std::vector<pid_t> CgiHandler::pids;
 
-/* : cgiFd(-1), pipefd{-1, -1} */
-
 void CgiHandler::debugPrintCgiFd(void) {
-  /* char c; */
-  /* int bytes; */
+  char buffer[256];
   LOG_DEBUG("Printing CGI fd contents");
-  /* while ((bytes = read(pipefd[Fd::Read], &c, sizeof(c))) > 0) { */
-  /*   write(STDOUT_FILENO, &c, sizeof(c)); */
-  /* } */
+  read(cgiFd, &buffer, sizeof(buffer));
+  write(STDOUT_FILENO, &buffer, sizeof(buffer));
 }
 
 CgiHandler::CgiHandler(const Client& client) {
@@ -21,9 +17,9 @@ CgiHandler::CgiHandler(const Client& client) {
   (void)client;
 }
 
-CgiHandler::CgiHandler(void) {  // delete this
-  LOG_TRACE(Utility::getDeconstructor(*this));
+CgiHandler::CgiHandler(void) : pipefd{-1, -1}, cgiFd(-1) {  // delete this
   cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
+  LOG_TRACE(Utility::getDeconstructor(*this));
   LOG_TRACE("Using binary:", cgi);
   args.push_back(cgi);
   generateEnvpVector();
@@ -120,9 +116,7 @@ void CgiHandler::forkChildProcess(void) {
     executeCgiScript();
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-    /* if (dup2(pipefd[Fd::Read], cgiFd) == -1) { */
-    /*   cgiError("Could not duplicate pipe fd"); */
-    /* } */
+    cgiFd = pipefd[Fd::Read];
   }
 }
 
@@ -142,11 +136,11 @@ void CgiHandler::scriptLoader(void) {
   } else {
     forkChildProcess();
     waitChildProcess();
-    debugPrintCgiFd();
   }
 }
 
 void CgiHandler::runScript(void) {
   LOG_TRACE("Running new CGI instance");
   Exception::tryCatch(&CgiHandler::scriptLoader, this);
+  /* debugPrintCgiFd(); */
 }

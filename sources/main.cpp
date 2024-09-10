@@ -15,6 +15,7 @@ int main(int argc, char** argv) {
     return (int)Error::Args;
   }
   Signal::trackSignals();
+  (void)argv;
   /* ======================================================================= */
   /* Config config; */
   /* if (argc == 2) { */
@@ -27,18 +28,18 @@ int main(int argc, char** argv) {
   cgi.runScript();
 
   /* ======================================================================= */
-  
-  Config config = ConfigInitializer::initializeConfig(argc, argv);
-  Exception::tryCatch(&Config::parseConfigFile, &config);
-  if (config.getServers().empty()) {
-    LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
-    return (int)Error::Config;
-  }
 
-  config.printServerConfig();
-  ServersManager serversManager;
-  serversManager.configServers(config);
-  serversManager.runServers();
+  /* Config config = ConfigInitializer::initializeConfig(argc, argv); */
+  /* Exception::tryCatch(&Config::parseConfigFile, &config); */
+  /* if (config.getServers().empty()) { */
+  /*   LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath()); */
+  /*   return (int)Error::Config; */
+  /* } */
+
+  /* config.printServerConfig(); */
+  /* ServersManager serversManager; */
+  /* serversManager.configServers(config); */
+  /* serversManager.runServers(); */
 
   /* ======================================================================= */
   /* ServersManager server; */
