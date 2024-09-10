@@ -47,6 +47,7 @@ MODULES := network \
            network/response \
            network/response/actions \
            network/request \
+           network/httpException \
            config \
            cgi \
            utils
@@ -55,11 +56,11 @@ SOURCES := main \
            Client \
            PollManager \
            Request \
+            GetHandler \
+            PostHandler \
+            DeleteHandler \
+            HttpException \
            Response \
-            Serve403Action \
-            Serve404Action \
-            Serve405Action \
-            Serve413Action \
             ServeDefaultFileAction \
             ServeDirectoryListingAction \
             ServeFileAction \

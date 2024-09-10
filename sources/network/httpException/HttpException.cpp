@@ -1,12 +1,11 @@
-#include <Serve405Action.hpp>
+#include <HttpException.hpp>
 
-void Serve405Action::execute(Response& res) {
-  LOG_TRACE("Serving error 405");
-  res.setResStatusCode(405);
-  res.setResStatusMessage("Method Not Allowed");
-  auto key = res.getServerConfig().pagesCustom.find(405);
+void HttpException::setResponseAttributes(void) {
+  res.setResStatusCode(errorCode);
+  res.setResStatusMessage(message);
+  auto key = res.getServerConfig().pagesCustom.find(errorCode);
   if (key == res.getServerConfig().pagesCustom.end()) {
-    key = res.getServerConfig().pagesDefault.find(405);
+    key = res.getServerConfig().pagesDefault.find(errorCode);
   }
   std::string path = key->second;
   std::filesystem::path exePath;

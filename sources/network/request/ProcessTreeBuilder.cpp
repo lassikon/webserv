@@ -1,8 +1,9 @@
 #include <ProcessTreeBuilder.hpp>
 #include <Response.hpp>
+#include <Request.hpp>
 
-ProcessTreeBuilder::ProcessTreeBuilder(Response& res, ServerConfig& ServerConfig)
-    : res(res), serverConfig(ServerConfig) {
+ProcessTreeBuilder::ProcessTreeBuilder(Request& req, Response& res, ServerConfig& ServerConfig)
+    : req(req), res(res), serverConfig(ServerConfig) {
   LOG_TRACE(Utility::getConstructor(*this));
 }
 
@@ -141,14 +142,14 @@ bool ProcessTreeBuilder::isMethodAllowed(std::string& path) {
   LOG_TRACE("Checking method allowed");
   (void)path;
   auto it = std::find(res.getRouteConfig().methods.begin(), res.getRouteConfig().methods.end(),
-                      res.getReqMethod());
+                      req.getMethod());
   return it != res.getRouteConfig().methods.end();
 }
 
 bool ProcessTreeBuilder::isClientBodySizeAllowed(std::string& path) {
   LOG_TRACE("Checking client body size limit");
   (void)path;
-  if (res.getReqBodySize() >
+  if (req.getBodySize() >
       Utility::convertSizetoBytes(res.getServerConfig().clientBodySizeLimit)) {
     return false;
   }

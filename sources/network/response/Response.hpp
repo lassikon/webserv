@@ -11,16 +11,12 @@
 #include <vector>
 
 class Client;
-class ProcessTree;
-class ProcessTreeBuilder;
 
 class Response {
  private:  // from request
   RouteConfig routeConfig;
   ServerConfig serverConfig;
-  std::string reqMethod;
-  size_t reqBodySize;
-  std::string reqURI;
+  std::string reqURI; // updated by ProcessTreeBuilder to full path
 
  private:  // for response
   int resStatusCode;
@@ -29,27 +25,22 @@ class Response {
   std::map<std::string, std::string> resHeaders = {};
   std::vector<char> resContent = {};
   bool transferEncodingChunked;
-  std::shared_ptr<ProcessTree> root;
 
  public:
   Response();
-  //Response(ServerConfig& ServerConfig);
   ~Response();
 
-  void run(std::string reqURI, std::string method, size_t bodySize);
   void makeResponse(void);
 
-  std::vector<char>& getResContent(void);
-  std::string& getReqURI(void);
-  std::string& getReqMethod(void);
-  size_t& getReqBodySize(void);
-  RouteConfig& getRouteConfig(void);
-  ServerConfig& getServerConfig(void);
-  void setResStatusCode(int code);
-  void setResStatusMessage(std::string message);
-  void addHeader(std::string key, std::string value);
-  void setResBody(std::vector<char>& body);
-  void setRouteConfig(RouteConfig& route);
-  void setServerConfig(ServerConfig server);
-  void printServerConfig();
+  std::vector<char>& getResContent(void) { return resContent; }
+  std::string& getReqURI(void) { return reqURI; }
+  RouteConfig& getRouteConfig(void) { return routeConfig; }
+  ServerConfig& getServerConfig(void) { return serverConfig; }
+  void setResStatusCode(int code) { resStatusCode = code; }
+  void setResStatusMessage(std::string message) { resStatusMessage = message; }
+  void addHeader(std::string key, std::string value) { resHeaders[key] = value; }
+  void setReqURI(std::string uri) { reqURI = uri; }
+  void setResBody(std::vector<char>& body) { resBody = body; }
+  void setRouteConfig(RouteConfig& route) { routeConfig = route; }
+  void setServerConfig(ServerConfig server) { serverConfig = server; }
 };

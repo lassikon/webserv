@@ -1,18 +1,18 @@
 #pragma once
 
+#include <HttpException.hpp>
 #include <IServeAction.hpp>
-#include <Response.hpp>
 #include <Logger.hpp>
-#include <Utility.hpp>
-#include <filesystem>
-#include <string>
-#include <filesystem>
-#include <vector>
-
+#include <MethodNotAllowed.hpp>
+#include <Response.hpp>
 
 class Serve405Action : public IServeAction {
  public:
   Serve405Action() = default;
   virtual ~Serve405Action() = default;
-  void execute(Response& res) override;
+
+  inline void execute(Response& res) override {
+    LOG_TRACE("Method Not Allowed");
+    throw MethodNotAllowed(res);
+  }
 };

@@ -6,17 +6,21 @@
 #include <unistd.h>
 
 #include <Config.hpp>
+#include <DeleteHandler.hpp>
+#include <GetHandler.hpp>
 #include <Logger.hpp>
+#include <PostHandler.hpp>
 #include <Request.hpp>
 #include <Response.hpp>
 #include <Utility.hpp>
+#include <HttpException.hpp>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <unordered_set>
 #include <vector>
 
-enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING_DONE };
+enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING_DONE};
 
 class Client {
  private:
@@ -25,6 +29,9 @@ class Client {
   ClientState state;
   Request req;
   Response res;
+  GetHandler getHandler;
+  PostHandler postHandler;
+  DeleteHandler deleteHandler;
 
  public:
   Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs);
@@ -46,8 +53,9 @@ class Client {
 
  private:
   bool receiveData(void);
-  void processRequest(std::istringstream& iBuf, int nbytes);
-  void handleRequest(void);
+  void parseRequest(std::istringstream& iBuf, int nbytes);
+  void processRequest(void);
+  bool handleRequest(void);
   bool sendResponse(void);
   void cleanupClient(void);
   ServerConfig chooseServerConfig();
