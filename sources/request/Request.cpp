@@ -93,31 +93,3 @@ void Request::parseChunkedBody(Client* client, std::istringstream& iBuf) {
     iBuf.ignore(2);  // remove \r\n
   }
 }
-
-std::string Request::getMethod(void) const {
-  return reqMethod;
-}
-
-std::string Request::getReqURI(void) const {
-  return reqURI;
-}
-
-std::string Request::getVersion(void) const {
-  return reqVersion;
-}
-
-size_t Request::getBodySize(void) const {
-  return reqBodySize;
-}
-
-std::map<std::string, std::string> Request::getHeaders(void) const {
-  return reqHeaders;
-}
-
-std::vector<char> Request::getBody(void) const {
-  return reqBody;
-}
-
-bool Request::isTransferEncodingChunked(void) const {
-  return transferEncodingChunked;
-}

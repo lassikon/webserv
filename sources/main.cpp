@@ -1,9 +1,10 @@
-#include <CgiManager.hpp>
+#include <CgiHandler.hpp>
 #include <Config.hpp>
 #include <ConfigInitializer.hpp>
 #include <Exception.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
+#include <Server.hpp>
 #include <ServersManager.hpp>
 #include <Signal.hpp>
 
@@ -24,7 +25,7 @@ int main(int argc, char** argv) {
   /* ======================================================================= */
 
   //MY TESTING
-  CgiManager cgi;
+  CgiHandler cgi;
   cgi.runScript();
 
   /* ======================================================================= */

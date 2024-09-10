@@ -1,6 +1,5 @@
 #include <ServeDirectoryListingAction.hpp>
 
-//not coded
 void ServeDirectoryListingAction::execute(Response& res) {
   LOG_TRACE("Serving directory listing");
   std::string path = res.getReqURI();

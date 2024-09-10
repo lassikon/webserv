@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-class CgiManager {
+class CgiHandler {
  private:
   static std::vector<pid_t> pids;
 
@@ -33,9 +33,9 @@ class CgiManager {
 
  public:
   /* CgiHandler(void) = delete; */
-  CgiManager();  // delete this
-  CgiManager(const Client& client);
-  ~CgiManager(void);
+  CgiHandler();  // delete this
+  CgiHandler(const Client& client);
+  ~CgiHandler(void);
 
  public:
   void runScript(void);

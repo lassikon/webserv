@@ -1,0 +1,25 @@
+{
+    "configurations": [
+      {
+        "name": "mine",
+        "includePath": [
+          "${workspaceFolder}/sources",
+          "${workspaceFolder}/sources/utils",
+		      "${workspaceFolder}/sources/network",
+          "${workspaceFolder}/sources/network/response",
+          "${workspaceFolder}/sources/network/response/actions",
+          "${workspaceFolder}/sources/network/request",
+          "${workspaceFolder}/sources/network/httpException",
+          "${workspaceFolder}/sources/config",
+          "${workspaceFolder}/sources/cgi"
+
+        ],
+        "defines": [],
+        "compilerPath": "/usr/bin/gcc",
+        "cStandard": "${default}",
+        "cppStandard": "${default}",
+        "intelliSenseMode": "${default}"
+      }
+    ],
+    "version": 4
+  }
