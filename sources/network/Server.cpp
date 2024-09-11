@@ -41,10 +41,6 @@ void Server::handleClient(PollManager& pollManager, int clientFd, short revents)
   if (it == clients.end()) {
     return;
   }
-  if (revents & POLLIN)
-    LOG_DEBUG("Client fd:", clientFd, "has POLLIN event");
-  if (revents & POLLOUT)
-    LOG_DEBUG("Client fd:", clientFd, "has POLLOUT event");
   if ((*it)->handlePollEvents(revents) == false) {  // connection closed or error
     LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
