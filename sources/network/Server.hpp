@@ -11,8 +11,10 @@
 #include <PollManager.hpp>
 #include <Socket.hpp>
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -23,8 +25,9 @@ class Server {
   std::string ipAddress;
   std::string serverName;
   std::vector<std::shared_ptr<Client>> clients;
-  // ServerConfig& serverConfig;
   std::vector<std::shared_ptr<ServerConfig>> serverConfigs;
+  std::map<int, std::chrono::steady_clock::time_point> clientLastActivity;
+  const std::chrono::seconds idleTimeout = std::chrono::seconds(10);
 
  public:
   Server(ServerConfig& serverConfig);
@@ -41,5 +44,7 @@ class Server {
   void addServerConfig(ServerConfig& serverConfig);
   void acceptConnection(PollManager& pollManager);
   void handleClient(PollManager& pollManager, int clientFd, short revents);
+  void checkIdleClients(PollManager& pollManager);
+  void updateClientLastActivity(int clientFd);
   bool isClientFd(int fd) const;
 };

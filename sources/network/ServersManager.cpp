@@ -48,8 +48,10 @@ void ServersManager::runServers(void) {
     if (pollCount == -1) {
       serverError("Failed to poll fds:");
 
-    } else if (pollCount == 0) {
-      LOG_DEBUG("Timeout");
+    } else if (pollCount == 0) {  // No events
+      for (auto& server : servers) {
+        server->checkIdleClients(pollManager);
+      }
       continue;
     } else {
       serverLoop(pollManager);

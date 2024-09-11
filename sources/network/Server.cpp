@@ -30,6 +30,8 @@ void Server::acceptConnection(PollManager& pollManager) {
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs));
   LOG_DEBUG("Accepted new client fd:", newFd);
   pollManager.addFd(newFd, POLLIN | POLLOUT);
+  clientLastActivity[newFd] = std::chrono::steady_clock::now();
+  LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
 void Server::handleClient(PollManager& pollManager, int clientFd, short revents) {
@@ -39,12 +41,33 @@ void Server::handleClient(PollManager& pollManager, int clientFd, short revents)
   if (it == clients.end()) {
     return;
   }
-  if (!(*it)->handlePollEvents(revents)) {  // connection closed or error
+  if ((*it)->handlePollEvents(revents) == false) {  // connection closed or error
     LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
+    clientLastActivity.erase(clientFd);
     LOG_DEBUG("Erasing client fd:", (*it)->getFd(), "from clients");
     clients.erase(it);
+  } else {
+    updateClientLastActivity(clientFd);
   }
+}
+
+void Server::checkIdleClients(PollManager& pollManager) {
+  auto now = std::chrono::steady_clock::now();
+  for (auto it = clientLastActivity.begin(); it != clientLastActivity.end();) {
+    if (now - it->second > idleTimeout) {
+      LOG_DEBUG("Client fd:", it->first, "has been idle for too long, closing connection");
+      pollManager.removeFd(it->first);
+      it = clientLastActivity.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+void Server::updateClientLastActivity(int clientFd) {
+  clientLastActivity[clientFd] = std::chrono::steady_clock::now();
+  LOG_DEBUG("Updated last activity for client fd:", clientFd);
 }
 
 bool Server::isClientFd(int fd) const {

@@ -16,9 +16,6 @@ void PollManager::addFd(int fd, short events) {
 }
 
 void PollManager::removeFd(int fd) {
-  // pollFds.erase(std::remove_if(pollFds.begin(), pollFds.end(),
-  //                              [fd](const pollfd& pfd) { return pfd.fd == fd; }),
-  //               pollFds.end());
   auto it = std::find_if(pollFds.begin(), pollFds.end(),
                          [fd](const pollfd& pfd) { return pfd.fd == fd; });
   if (it != pollFds.end()) {
