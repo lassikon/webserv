@@ -3,8 +3,8 @@
 int Config::_lineNumber = 0;
 
 Config::Config(std::unique_ptr<IDirectiveSetter> serverDirective,
-               std::unique_ptr<IDirectiveSetter> routeDirective)
-    : _configFilePath("confDefault/default.conf"),
+               std::unique_ptr<IDirectiveSetter> routeDirective, std::string configFilePath)
+    : _configFilePath(configFilePath),
       _serverDirective(std::move(serverDirective)),
       _routeDirective(std::move(routeDirective)) {
   LOG_DEBUG(Utility::getConstructor(*this));
@@ -121,6 +121,8 @@ void Config::closeServerBlock(std::stringstream& configFile) {
   if (!_bStack.empty() && _bStack.top() == "[server]") {
     LOG_WARN("Parse: Unclosed server block,", _line, " at line", _lineNumber);
     _bStack.pop();
+    if (configFile.eof())
+      return;
     configFile.clear();
     configFile.seekg(_pos);
   }
@@ -130,6 +132,8 @@ void Config::closeRouteBlock(std::stringstream& configFile) {
   if (!_bStack.empty() && _bStack.top() == "[route]") {
     LOG_WARN("Parse: Unclosed route block,", _line, " at line", _lineNumber);
     _bStack.pop();
+    if (configFile.eof())
+      return;
     configFile.clear();
     configFile.seekg(_pos);
   }

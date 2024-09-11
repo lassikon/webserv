@@ -7,5 +7,5 @@
 
 class ConfigInitializer {
  public:
-  static Config initializeConfig();
+  static Config initializeConfig(int argc, char **argv);
 };

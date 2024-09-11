@@ -44,29 +44,18 @@ VLGFLAGS    := --leak-check=full \
 # **************************************************************************** #
 
 MODULES := network \
-           network/response \
-           network/response/actions \
-           network/request \
-           config \
-           cgi \
-           utils
+		   config \
+		   config/setters \
+		   request \
+		   request/handlers \
+		   response \
+		   response/actions \
+		   exception \
+           utilities
 
 SOURCES := main \
            Client \
            PollManager \
-           Request \
-           Response \
-            Serve403Action \
-            Serve404Action \
-            Serve405Action \
-            Serve413Action \
-            ServeDefaultFileAction \
-            ServeDirectoryListingAction \
-            ServeFileAction \
-            ServeIndexAction \
-            ServeRedirectAction \
-           ProcessTree \
-            ProcessTreeBuilder \
            Server \
            ServersManager \
            Socket \
@@ -75,6 +64,19 @@ SOURCES := main \
            RouteDirectiveSetter \
            ServerDirectiveSetter \
            CgiHandler \
+           DeleteHandler \
+           GetHandler \
+           PostHandler \
+           ProcessTree \
+           ProcessTreeBuilder \
+           Request \
+           HttpException \
+           ServeDefaultFileAction \
+           ServeDirectoryListingAction \
+           ServeFileAction \
+           ServeIndexAction \
+           ServeRedirectAction \
+           Response \
            Logger \
            Signal \
            Utility

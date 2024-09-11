@@ -22,7 +22,7 @@ bool Client::handlePollEvents(short revents) {
     }
   }
   if (revents & POLLOUT) {
-    if (!sendResponse()) {
+    if (!handleRequest()) {
       return false;
     }
   }
@@ -40,12 +40,12 @@ bool Client::receiveData(void) {
   } else {
     LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
     std::istringstream bufStr(buf);
-    processRequest(bufStr, nbytes);
+    parseRequest(bufStr, nbytes);
   }
   return true;
 }
 
-void Client::processRequest(std::istringstream& iBuf, int nbytes) {
+void Client::parseRequest(std::istringstream& iBuf, int nbytes) {
   LOG_TRACE("Processing request from client fd:", fd);
   if (state == ClientState::READING_REQLINE) {
     std::string requestLine;
@@ -60,37 +60,43 @@ void Client::processRequest(std::istringstream& iBuf, int nbytes) {
   }
   if (state == ClientState::READING_DONE) {
     LOG_TRACE("Request received from client fd:", fd);
-    // handleRequest();
   }
 }
 
-/* void Client::handleRequest(void) {
-  LOG_TRACE("Handling request from client fd:", fd);
-  if (req.getMethod() == "GET") {
-    LOG_INFO("GET request for path:", req.getReqURI());
-    LOG_INFO("Request body:", req.getBody());
-    LOG_INFO("Request headers:");
-    for (auto& header : req.getHeaders()) {
-      LOG_INFO(header.first, ":", header.second);
-    }
-  } else if (req.getMethod() == "POST") {
-    LOG_INFO("POST request for path:", req.getReqURI());
-    LOG_INFO("Request body:", req.getBody());
-    LOG_INFO("Request headers:");
-    for (auto& header : req.getHeaders()) {
-      LOG_INFO(header.first, ":", header.second);
-    }
-  } else if (req.getMethod() == "DELETE") {
-    LOG_INFO("DELETE request for path:", req.getReqURI());
-    LOG_INFO("Request body:", req.getBody());
-    LOG_INFO("Request headers:");
-    for (auto& header : req.getHeaders()) {
-      LOG_INFO(header.first, ":", header.second);
-    }
-  } else {
-    LOG_ERROR("Unsupported method:", req.getMethod());
+bool Client::handleRequest(void) {
+  if (state != ClientState::READING_DONE) {
+    LOG_ERROR("Client", getFd(), "state is NOT done reading");
+    return false;
   }
-} */
+  LOG_TRACE("Handling request from client fd:", fd);
+    processRequest();
+  if (!sendResponse()) {
+    return false;
+  }
+  return true;
+}
+
+void Client::processRequest(void) {
+  res.setServerConfig(chooseServerConfig());  // choose server config
+  try {
+    if (req.getMethod() == "GET") {
+      LOG_INFO("Processing GET request for path:", req.getReqURI());
+      getHandler.executeRequest(req, res);
+    } else if (req.getMethod() == "POST") {
+      LOG_INFO("Processing POST request for path:", req.getReqURI());
+      postHandler.executeRequest(req, res);
+    } else if (req.getMethod() == "DELETE") {
+      LOG_INFO("Processing DELETE request for path:", req.getReqURI());
+      deleteHandler.executeRequest(req, res);
+    } else {
+      LOG_ERROR("Unsupported method:", req.getMethod());
+    }
+  } catch (HttpException& e) {
+    LOG_ERROR("Exception caught:", e.what());
+    e.setResponseAttributes();
+  }
+  res.makeResponse();
+}
 
 ServerConfig Client::chooseServerConfig(void) {
   LOG_TRACE("Choosing server config for client fd:", fd);
@@ -104,13 +110,6 @@ ServerConfig Client::chooseServerConfig(void) {
 }
 
 bool Client::sendResponse(void) {
-  if (state != ClientState::READING_DONE) {
-    LOG_ERROR("Client", getFd(), "state is NOT done reading");
-    return false;
-  }
-  res.setServerConfig(chooseServerConfig());
-  LOG_TRACE("Creating response to client fd:", fd);
-  res.run(req.getReqURI(), req.getMethod(), req.getBodySize());
   LOG_TRACE("Sending response");
   // TODO: handle send not being able to send all data
   if (send(getFd(), res.getResContent().data(), res.getResContent().size(), 0) == -1) {
