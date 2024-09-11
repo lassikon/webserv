@@ -1,11 +1,20 @@
 #include <Client.hpp>
 #include <Request.hpp>
 
+Request::Request() {
+  LOG_DEBUG(Utility::getConstructor(*this));
+  transferEncodingChunked = false;
+}
+
+Request::~Request() {
+  LOG_DEBUG(Utility::getDeconstructor(*this));
+}
+
 void Request::parseRequestLine(Client* client, std::string& requestLine) {
   LOG_TRACE("Parsing request line");
   std::istringstream iss(requestLine);
-  iss >> method >> reqURI >> version;
-  LOG_DEBUG("Method:", method, "URI:", reqURI, "Version:", version);
+  iss >> reqMethod >> reqURI >> reqVersion;
+  LOG_DEBUG("reqMethod:", reqMethod, "URI:", reqURI, "reqVersion:", reqVersion);
   client->setState(ClientState::READING_HEADER);
 }
 
@@ -24,9 +33,10 @@ void Request::parseHeaders(Client* client, std::istringstream& iBuf) {
     auto pos = header.find(':');
     if (pos != std::string::npos) {
       std::string key = header.substr(0, pos);
+      key = Utility::trimWhitespaces(key);
       std::string value = header.substr(pos + 1);
       value = Utility::trimWhitespaces(value);
-      headers[key] = value;
+      reqHeaders[key] = value;
       if (key == "Transfer-Encoding" && value == "chunked") {
         transferEncodingChunked = true;
       }
@@ -35,7 +45,7 @@ void Request::parseHeaders(Client* client, std::istringstream& iBuf) {
 }
 
 void Request::parseBody(Client* client, std::istringstream& iBuf, int nbytes) {
-  if (method != "POST") {
+  if (reqMethod != "POST") {
     client->setState(ClientState::READING_DONE);
     return;
   }
@@ -43,24 +53,23 @@ void Request::parseBody(Client* client, std::istringstream& iBuf, int nbytes) {
     parseChunkedBody(client, iBuf);
   } else {
     LOG_TRACE("Parsing body");
-    if (headers.find("Content-Length") != headers.end()) {  // 400 bad request
-      int contentLength = std::stoi(headers["Content-Length"]);
-      bodySize += contentLength;
+    if (reqHeaders.find("Content-Length") !=
+        reqHeaders.end()) {  // 400 bad request
+      int contentLength = std::stoi(reqHeaders["Content-Length"]);
+      reqBodySize += contentLength;
       std::vector<char> bodyData(contentLength);
       iBuf.read(bodyData.data(), contentLength);
-      body.append(bodyData.data(), contentLength);
+      reqBody.insert(reqBody.end(), bodyData.begin(), bodyData.end());
       client->setState(ClientState::READING_DONE);
-      return;
-    } else if (headers.find("Connection") != headers.end() &&
-               headers["Connection"] == "close") {
+    } else if (reqHeaders.find("Connection") != reqHeaders.end() &&
+               reqHeaders["Connection"] == "close") {
       client->setState(ClientState::READING_DONE);
-      return;
     } else {
       LOG_ERROR("Content-Length header not found");
-      bodySize = nbytes;
+      reqBodySize = nbytes;
       std::vector<char> bodyData(nbytes);
       iBuf.read(bodyData.data(), nbytes);
-      body.append(bodyData.data(), nbytes);
+      reqBody.insert(reqBody.end(), bodyData.begin(), bodyData.end());
     }
   }
 }
@@ -73,14 +82,42 @@ void Request::parseChunkedBody(Client* client, std::istringstream& iBuf) {
       chunkSizeHex.pop_back();
     }
     int chunkSize = std::stoi(chunkSizeHex, 0, 16);
-    bodySize += chunkSize;
+    reqBodySize += chunkSize;
     if (chunkSize == 0) {
       client->setState(ClientState::READING_DONE);
       break;
     }
     std::vector<char> chunkData(chunkSize);
     iBuf.read(chunkData.data(), chunkSize);
-    body.append(chunkData.data(), chunkSize);
+    reqBody.insert(reqBody.end(), chunkData.begin(), chunkData.end());
     iBuf.ignore(2);  // remove \r\n
   }
+}
+
+std::string Request::getMethod(void) const {
+  return reqMethod;
+}
+
+std::string Request::getReqURI(void) const {
+  return reqURI;
+}
+
+std::string Request::getVersion(void) const {
+  return reqVersion;
+}
+
+size_t Request::getBodySize(void) const {
+  return reqBodySize;
+}
+
+std::map<std::string, std::string> Request::getHeaders(void) const {
+  return reqHeaders;
+}
+
+std::vector<char> Request::getBody(void) const {
+  return reqBody;
+}
+
+bool Request::isTransferEncodingChunked(void) const {
+  return transferEncodingChunked;
 }

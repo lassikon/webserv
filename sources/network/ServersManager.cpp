@@ -10,8 +10,7 @@ ServersManager::~ServersManager(void) {
 
 bool ServersManager::checkServerExists(ServerConfig& serverConfig) {
   for (auto& server : servers) {
-    if (server->getPort() == serverConfig.port &&
-        server->getIpAddress() == serverConfig.ipAddress) {
+    if (server->getPort() == serverConfig.port) {  // check ip as well?
       return true;
     }
   }
@@ -60,11 +59,11 @@ void ServersManager::runServers(void) {
 
 void ServersManager::serverLoop(PollManager& pollManager) {
   for (auto& pollFd : pollManager.getPollFds()) {
-    // if (pollFd.revents & (POLLERR || POLLHUP || POLLNVAL)) {
-    //   LOG_ERROR("Error:", pollFd.revents, "on fd:", pollFd.fd);
-    //   pollManager.removeFd(pollFd.fd);
-    //   continue;
-    // }
+    if (pollFd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+      LOG_ERROR("Error:", pollFd.revents, "on fd:", pollFd.fd);
+      pollManager.removeFd(pollFd.fd);
+      continue;
+    }
     if (pollFd.revents & (POLLIN | POLLOUT)) {
       for (auto& server : servers) {
         if (pollFd.fd ==
@@ -72,7 +71,7 @@ void ServersManager::serverLoop(PollManager& pollManager) {
           server->acceptConnection(pollManager);
           break;
         } else if (server->isClientFd(
-                       pollFd.fd)) {  // It's a client socket, handle client communication
+                     pollFd.fd)) {  // It's a client socket, handle client communication
           server->handleClient(pollManager, pollFd.fd, pollFd.revents);
           break;
         }

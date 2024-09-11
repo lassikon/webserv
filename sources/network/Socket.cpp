@@ -12,14 +12,14 @@ Socket::~Socket(void) {
 
 void Socket::setupSocket(ServerConfig& serverConfig) {
   struct addrinfo hints = {}, *res;
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
   if (int s = getaddrinfo(NULL, std::to_string(serverConfig.port).c_str(), &hints, &res) != 0) {
     socketError("Failed to get address info:", gai_strerror(s));
   }
-  sockFd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  sockFd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockFd == -1) {
     socketError("Failed to create socket:");
   }
@@ -50,7 +50,7 @@ void Socket::setNonBlocking(void) {
 
 void Socket::cleanupSocket(void) {
   if (sockFd > 0) {
-    LOG_DEBUG("cleanupSocket() closing fd:", sockFd);
+    LOG_DEBUG("Closing fd:", sockFd);
     if (close(sockFd) == -1) {
       socketError("Failed to close fd:", sockFd);
     }

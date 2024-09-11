@@ -25,7 +25,6 @@ class Client {
   ClientState state;
   Request req;
   Response res;
-  // ResourceManager resourceManager;
 
  public:
   Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs);
@@ -33,10 +32,6 @@ class Client {
 
   bool operator==(const Client& other) const;
   bool handlePollEvents(short revents);
-  bool receiveData(void);
-  void processRequest(std::istringstream& iBuf, int nbytes);
-  void handleRequest(void);
-  bool sendResponse(void);
 
   // getters and setters
   int getFd(void) const { return fd; }
@@ -50,5 +45,15 @@ class Client {
   void setState(ClientState state) { this->state = state; }
 
  private:
+  bool receiveData(void);
+  void processRequest(std::istringstream& iBuf, int nbytes);
+  void handleRequest(void);
+  bool sendResponse(void);
   void cleanupClient(void);
+  ServerConfig chooseServerConfig();
+
+ private:
+  template <typename... Args> void clientError(Args&&... args) {
+    THROW(Error::Client, std::forward<Args>(args)...);
+  }
 };

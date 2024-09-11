@@ -34,15 +34,15 @@ void Server::acceptConnection(PollManager& pollManager) {
 
 void Server::handleClient(PollManager& pollManager, int clientFd, short revents) {
   auto it = std::find_if(
-      clients.begin(), clients.end(),
-      [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
+    clients.begin(), clients.end(),
+    [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
   if (it == clients.end()) {
     return;
   }
   if (!(*it)->handlePollEvents(revents)) {  // connection closed or error
-    LOG_DEBUG("handleCLient removing client fd:", clientFd);
+    LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
-    LOG_DEBUG("handleClient erasing client fd:", (*it)->getFd());
+    LOG_DEBUG("Erasing client fd:", (*it)->getFd(), "from clients");
     clients.erase(it);
   }
 }
