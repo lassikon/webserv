@@ -40,7 +40,7 @@ void ServersManager::runServers(void) {
   LOG_DEBUG("Running servers");
   PollManager pollManager;
   for (auto& server : servers) {
-    pollManager.addFd(server->getSocketFd(), POLLIN | POLLOUT);
+    pollManager.addFd(server->getSocketFd(), POLLIN);
     LOG_DEBUG("Added server", server->getServerName(), "to pollFds");
   }
   while (true) {
@@ -49,6 +49,7 @@ void ServersManager::runServers(void) {
       serverError("Failed to poll fds:");
 
     } else if (pollCount == 0) {  // No events
+      LOG_DEBUG("No events, checking for idle clients");
       for (auto& server : servers) {
         server->checkIdleClients(pollManager);
       }
@@ -61,20 +62,33 @@ void ServersManager::runServers(void) {
 
 void ServersManager::serverLoop(PollManager& pollManager) {
   for (auto& pollFd : pollManager.getPollFds()) {
-    if (pollFd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-      LOG_ERROR("Error:", pollFd.revents, "on fd:", pollFd.fd);
+    if (pollFd.revents & POLLERR) {
+      LOG_ERROR("Poll error on fd:", pollFd.fd);
       pollManager.removeFd(pollFd.fd);
-      continue;
-    }
-    if (pollFd.revents & (POLLIN | POLLOUT)) {
+    } else if (pollFd.revents & POLLHUP) {
+      LOG_WARN("Poll hangup on fd:", pollFd.fd);
+      pollManager.removeFd(pollFd.fd);
+    } else if (pollFd.revents & POLLNVAL) {
+      LOG_ERROR("Invalid poll fd:", pollFd.fd);
+      pollManager.removeFd(pollFd.fd);
+    } else if (pollFd.revents & POLLIN) {
       for (auto& server : servers) {
-        if (pollFd.fd ==
-            server->getSocketFd()) {  // It's a listening socket, accept a new connection
+        if (pollFd.fd == server->getSocketFd()) {  // Listening socket, accept a new connection
           server->acceptConnection(pollManager);
           break;
-        } else if (server->isClientFd(
-                     pollFd.fd)) {  // It's a client socket, handle client communication
+        } else if (server->isClientFd(pollFd.fd)) {  // Client socket, handle communication
+          LOG_DEBUG("Handling client communication (POLLIN)");
           server->handleClient(pollManager, pollFd.fd, pollFd.revents);
+          pollFd.revents = 0;  // Reset revents after handling
+          break;
+        }
+      }
+    } else if (pollFd.revents & POLLOUT) {
+      for (auto& server : servers) {
+        if (server->isClientFd(pollFd.fd)) {  // Client socket ready for writing
+          LOG_DEBUG("Handling client communication (POLLOUT)");
+          server->handleClient(pollManager, pollFd.fd, pollFd.revents);
+          pollFd.revents = 0;
           break;
         }
       }
