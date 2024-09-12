@@ -1,7 +1,9 @@
 #pragma once
 
-#include <Client.hpp>
 #include <Exception.hpp>
+#include <IRequestHandler.hpp>
+#include <Request.hpp>
+#include <Response.hpp>
 #include <Logger.hpp>
 #include <Typedef.hpp>
 #include <Utility.hpp>
@@ -15,7 +17,7 @@
 #include <string>
 #include <vector>
 
-class CgiHandler {
+class CgiHandler : public IRequestHandler {
  private:
   static std::vector<pid_t> pids;
 
@@ -35,9 +37,10 @@ class CgiHandler {
   /* CgiHandler(void) = delete; */
   CgiHandler();  // delete this
   CgiHandler(const Client& client);
-  ~CgiHandler(void);
+  virtual ~CgiHandler(void);
 
  public:
+  void executeRequest(Request& req, Response& res) override;
   void runScript(void);
 
  private:

@@ -17,11 +17,13 @@ bool Client::operator==(const Client& other) const {
 
 bool Client::handlePollEvents(short revents) {
   if (revents & POLLIN) {
+    LOG_INFO("Client fd:", fd, "has POLLIN event");
     if (!receiveData()) {
       return false;
     }
   }
   if (revents & POLLOUT) {
+    LOG_INFO("Client fd:", fd, "has POLLOUT event");
     if (!handleRequest()) {
       return false;
     }
@@ -31,7 +33,7 @@ bool Client::handlePollEvents(short revents) {
 
 bool Client::receiveData(void) {
   char buf[4096] = {0};
-  int nbytes = recv(fd, buf, sizeof(buf), 0);
+  ssize_t nbytes = recv(fd, buf, sizeof(buf), 0);
   if (nbytes == -1) {
     clientError("Failed to recv() from fd:", fd);
   } else if (nbytes == 0) {  // Connection closed
@@ -69,27 +71,51 @@ bool Client::handleRequest(void) {
     return false;
   }
   LOG_TRACE("Handling request from client fd:", fd);
-    processRequest();
+  processRequest();
   if (!sendResponse()) {
     return false;
   }
   return true;
 }
 
+void Client::buildPath(void) {
+  LOG_TRACE("Building path for client fd:", fd);
+  std::shared_ptr<ProcessTreeBuilder> ptb =
+    std::make_shared<ProcessTreeBuilder>(req, res, res.getServerConfig());
+  res.setReqURI(req.getReqURI());
+  root = ptb->buildPathTree();
+  root->process(res);
+}
+
 void Client::processRequest(void) {
   res.setServerConfig(chooseServerConfig());  // choose server config
   try {
-    if (req.getMethod() == "GET") {
-      LOG_INFO("Processing GET request for path:", req.getReqURI());
+    buildPath();
+    if (res.getReqURI().find("/cgi-bin/") != std::string::npos) {
+      cgiHandler.executeRequest(req, res);
+      res.setResStatusCode(200);
+      res.setResStatusMessage("OK");
+      char buffer[4096] = {0};
+      LOG_DEBUG("Reading from cgiFd:", res.getCgiFd());
+      read(res.getCgiFd(), &buffer, sizeof(buffer));
+      std::cout << "here buffer: " << buffer << std::endl;
+      auto body = std::vector<char>(buffer, buffer + sizeof(buffer));
+      std::cout << "here body: " << body.data() << std::endl;
+      res.addHeader("Content-Type", "text/html");
+      res.addHeader("Content-Length", std::to_string(body.size()));
+      res.addHeader("Server", res.getServerConfig().serverName);
+      res.addHeader("Connection", "close");
+      res.setResBody(body);
+    } else if (req.getMethod() == "GET") {
       getHandler.executeRequest(req, res);
     } else if (req.getMethod() == "POST") {
-      LOG_INFO("Processing POST request for path:", req.getReqURI());
       postHandler.executeRequest(req, res);
     } else if (req.getMethod() == "DELETE") {
-      LOG_INFO("Processing DELETE request for path:", req.getReqURI());
       deleteHandler.executeRequest(req, res);
+    } else if (req.getMethod() == "GET") {
+      getHandler.executeRequest(req, res);
     } else {
-      LOG_ERROR("Unsupported method:", req.getMethod());
+      LOG_ERROR("Unsupported method in client:", fd);
     }
   } catch (HttpException& e) {
     LOG_ERROR("Exception caught:", e.what());
@@ -111,10 +137,14 @@ ServerConfig Client::chooseServerConfig(void) {
 
 bool Client::sendResponse(void) {
   LOG_TRACE("Sending response");
-  if (send(getFd(), res.getResContent().data(), res.getResContent().size(), 0) == -1) {
+  ssize_t nbytes;
+  nbytes = send(getFd(), res.getResContent().data(), res.getResContent().size(), 0);
+  if (nbytes == -1) {
     LOG_ERROR("Failed to send response");
     return false;
   }
+  LOG_DEBUG("bytes sent:", nbytes);
+  LOG_DEBUG("total bytes:", res.getResContent().size());
   state = ClientState::READING_REQLINE;
   return true;
 }

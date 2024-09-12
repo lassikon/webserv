@@ -71,10 +71,8 @@ SOURCES := main \
            ProcessTreeBuilder \
            Request \
            HttpException \
-           ServeDefaultFileAction \
            ServeDirectoryListingAction \
            ServeFileAction \
-           ServeIndexAction \
            ServeRedirectAction \
            Response \
            Logger \

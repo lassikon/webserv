@@ -18,11 +18,7 @@ CgiHandler::CgiHandler(const Client& client) {
 }
 
 CgiHandler::CgiHandler(void) : pipefd{-1, -1}, cgiFd(-1) {  // delete this
-  cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
-  LOG_TRACE(Utility::getDeconstructor(*this));
-  LOG_TRACE("Using binary:", cgi);
-  args.push_back(cgi);
-  generateEnvpVector();
+  LOG_TRACE(Utility::getConstructor(*this));
 }
 
 void CgiHandler::generateEnvpVector(void) {
@@ -64,11 +60,13 @@ void CgiHandler::killAllChildPids(void) {
 }
 
 void CgiHandler::waitChildProcess(void) {
-  waitpid(this->pid, &wstat, WNOHANG);
+  //waitpid(this->pid, &wstat, WNOHANG);
+  waitpid(this->pid, &wstat, 0);
   if (WIFSIGNALED(wstat) != 0) {
     g_ExitStatus = (int)Error::Signal + WTERMSIG(wstat);
   } else if (WIFEXITED(wstat)) {
     g_ExitStatus = WEXITSTATUS(wstat);
+    close(pipefd[Fd::Write]);
   }
 }
 
@@ -129,7 +127,7 @@ bool CgiHandler::isValidScript(void) const {
 }
 
 void CgiHandler::scriptLoader(void) {
-  cgiError("whatever error");
+  //cgiError("whatever error");
   if (!isValidScript()) {
     cgiError("Could not open script");
   } else if (pipe(pipefd) == -1) {
@@ -143,5 +141,18 @@ void CgiHandler::scriptLoader(void) {
 void CgiHandler::runScript(void) {
   LOG_TRACE("Running new CGI instance");
   Exception::tryCatch(&CgiHandler::scriptLoader, this);
-  /* debugPrintCgiFd(); */
+  //debugPrintCgiFd();
+}
+
+void CgiHandler::executeRequest(Request& req, Response& res) {
+  LOG_TRACE("CgiHandler: executingRequest");
+  (void)req;
+  cgi = res.getReqURI();
+  LOG_TRACE(Utility::getDeconstructor(*this));
+  LOG_TRACE("Using binary:", cgi);
+  args.push_back(cgi);
+  generateEnvpVector();
+  runScript();
+  res.setCgiFd(cgiFd);
+  LOG_DEBUG("CgiFd:", cgiFd);
 }

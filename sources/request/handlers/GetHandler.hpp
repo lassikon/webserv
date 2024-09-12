@@ -3,9 +3,8 @@
 #include <IRequestHandler.hpp>
 #include <Request.hpp>
 #include <Response.hpp>
-
-class ProcessTree;
-class ProcessTreeBuilder;
+#include <ProcessTree.hpp>
+#include <ProcessTreeBuilder.hpp>
 
 class GetHandler : public IRequestHandler {
  public:

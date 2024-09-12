@@ -20,6 +20,7 @@ class Response {
 
  private:  // for response
   int resStatusCode;
+  int cgiFd = -1;
   std::string resStatusMessage;
   std::vector<char> resBody = {};
   std::map<std::string, std::string> resHeaders = {};
@@ -36,6 +37,8 @@ class Response {
   std::string& getReqURI(void) { return reqURI; }
   RouteConfig& getRouteConfig(void) { return routeConfig; }
   ServerConfig& getServerConfig(void) { return serverConfig; }
+  int& getCgiFd(void) { return cgiFd; }
+  void setCgiFd(int fd) { cgiFd = fd; } 
   void setResStatusCode(int code) { resStatusCode = code; }
   void setResStatusMessage(std::string message) { resStatusMessage = message; }
   void addHeader(std::string key, std::string value) { resHeaders[key] = value; }
