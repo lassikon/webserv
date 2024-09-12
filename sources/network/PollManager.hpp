@@ -23,4 +23,5 @@ class PollManager {
   void removeFd(int fd);
   int pollFdsCount(void);
   std::vector<struct pollfd>& getPollFds(void);
+  bool fdExists(int fd);
 };

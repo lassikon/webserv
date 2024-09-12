@@ -1,6 +1,6 @@
 #include <ServerManager.hpp>
 
-ServerManager::ServerManager(void) : pidsMapSize(0) {
+ServerManager::ServerManager(void) {
   LOG_DEBUG(Utility::getConstructor(*this));
 }
 
@@ -108,21 +108,42 @@ void ServerManager::handlePollOutEvent(PollManager& pollManager, struct pollfd& 
   }
 }
 
-void ServerManager::checkChildProcesses(PollManager& pollManager) {
+void ServerManager::checkForNewChildProcesses(PollManager& pollManager) {
   for (auto& cgiParam : g_CgiParams) {
-    if (pidsMapSize < g_CgiParams.size()) {
-      pidsMapSize = g_CgiParams.size();
+    if (!pollManager.fdExists(cgiParam.fd)) {
       pollManager.addFd(cgiParam.fd, POLLIN);
       LOG_DEBUG("Added pipe fd:", cgiParam.fd, "to pollFds");
     }
   }
+}
+
+bool ServerManager::childTimeout(std::chrono::time_point<std::chrono::steady_clock>& start) {
+  auto now = std::chrono::steady_clock::now();
+  if (now - start > std::chrono::seconds(CHILD_TIMEOUT)) {
+    LOG_ERROR("Child process timed out");
+    return true;
+  }
+  return false;
+}
+
+void ServerManager::checkChildProcesses(PollManager& pollManager) {
+  checkForNewChildProcesses(pollManager);
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
     int status;
     pid_t result = waitpid(it->pid, &status, WNOHANG);
-    if (result > 0) {  // Child process has exited
+    if (result == -1) {
+      LOG_ERROR("Failed to wait for child process:", STRERROR);
+      it = g_CgiParams.erase(it);
+      pollManager.removeFd(it->fd);
+      // throw exception?
+    } else if (result > 0) {  // Child process has exited
       LOG_INFO("Child process", it->pid, "exited with status:", status);
-      pollManager.removeFd(it->fd);  // Remove pipe fd from pollManager
-      it = g_CgiParams.erase(it);    // Remove child process from the list
+      pollManager.removeFd(it->fd);
+      it = g_CgiParams.erase(it);
+    } else if (result == 0 && childTimeout(it->start)) {
+      LOG_ERROR("Child process", it->pid, "timed out");
+      pollManager.removeFd(it->fd);
+      it = g_CgiParams.erase(it);
     } else {
       ++it;
     }
