@@ -48,8 +48,8 @@ class Logger {
   static std::string filterClassName(std::string& fileName);
   static bool isFiltered(std::string& fileName) noexcept;
 
- private:
-  template <typename... Args> static void expandArguments(std::ostringstream& log, Args&&... args) {
+ public:
+  template <typename... Args> static void expandLogArgs(std::ostringstream& log, Args&&... args) {
     if (!sizeof...(Args)) {
       return;
     } else {
@@ -67,7 +67,7 @@ class Logger {
       std::ostringstream logEntry;
       logEntry << color << "[" << title << "]";
       insertLogDetails(logEntry, fileName, funcName, lineNbr);
-      expandArguments(logEntry, std::forward<Args>(args)...);
+      expandLogArgs(logEntry, std::forward<Args>(args)...);
       printLogEntry(console, logEntry);
     }
   }

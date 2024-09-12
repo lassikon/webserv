@@ -25,7 +25,7 @@ std::unordered_map<std::string, bool> Logger::classFilter = {
   {"GetHandler", false},
   {"PostHandler", false},
   {"DeleteHandler", false},
-  {"CgiHandler", true},
+  {"CgiHandler", false},
 
   // response
   {"Response", false},
