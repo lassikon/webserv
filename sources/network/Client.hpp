@@ -19,6 +19,7 @@
 #include <map>
 #include <unordered_set>
 #include <vector>
+#include <Exception.hpp>
 
 enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING_DONE};
 

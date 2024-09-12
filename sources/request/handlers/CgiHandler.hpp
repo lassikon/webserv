@@ -1,7 +1,9 @@
 #pragma once
 
 #include <Client.hpp>
+#include <Config.hpp>
 #include <Exception.hpp>
+#include <Global.hpp>
 #include <Logger.hpp>
 #include <Typedef.hpp>
 #include <Utility.hpp>
@@ -10,14 +12,22 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <string>
 #include <vector>
 
+struct CgiParams {
+  pid_t pid;
+  int fd;
+  std::chrono::time_point<std::chrono::steady_clock> start;
+};
+
 class CgiHandler {
  private:
-  static std::vector<pid_t> pids;
+  // static std::vector<pid_t> pids;
+  // static std::map<pid_t, int> pids;
 
  private:
   enum Fd { Read, Write };

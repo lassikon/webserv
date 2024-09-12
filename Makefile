@@ -57,7 +57,7 @@ SOURCES := main \
            Client \
            PollManager \
            Server \
-           ServersManager \
+           ServerManager \
            Socket \
            Config \
            ConfigInitializer \
@@ -79,7 +79,7 @@ SOURCES := main \
            Response \
            Logger \
            Signal \
-           Utility
+           Utility \
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))

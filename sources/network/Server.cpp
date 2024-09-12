@@ -22,7 +22,6 @@ void Server::acceptConnection(PollManager& pollManager) {
 
   socklen_t addrSize = sizeof theirAddr;
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
-  // newFd = -1;  // testing error handling, remove this line
   if (newFd == -1) {
     LOG_WARN("Failed to accept new connection:", STRERROR);
     return;
