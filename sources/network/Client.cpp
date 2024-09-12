@@ -66,6 +66,9 @@ void Client::parseRequest(std::istringstream& iBuf, int nbytes) {
 }
 
 bool Client::handleRequest(void) {
+  // if (state == ClientState::READING_REQLINE) {
+  //   return true;
+  // }
   if (state != ClientState::READING_DONE) {
     LOG_ERROR("Client", getFd(), "state is NOT done reading");
     return false;
@@ -136,10 +139,15 @@ ServerConfig Client::chooseServerConfig(void) {
 }
 
 bool Client::sendResponse(void) {
+  if (res.getResContent().empty()) {
+    LOG_TRACE("No data to send for client fd:", fd);
+    return true;
+  }
   LOG_TRACE("Sending response");
   ssize_t nbytes;
   nbytes = send(getFd(), res.getResContent().data(), res.getResContent().size(), 0);
   if (nbytes == -1) {
+  // TODO: handle send not being able to send all data
     LOG_ERROR("Failed to send response");
     return false;
   }

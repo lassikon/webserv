@@ -1,6 +1,6 @@
 #include <CgiHandler.hpp>
 
-std::vector<pid_t> CgiHandler::pids;
+// static std::map<pid_t, int> pids;
 
 void CgiHandler::debugPrintCgiFd(void) {
   char buffer[256];
@@ -15,10 +15,16 @@ CgiHandler::CgiHandler(const Client& client) {
   args.push_back(cgi);
   generateEnvpVector();
   (void)client;
+  cgiFd = pipefd[Fd::Read];
 }
 
-CgiHandler::CgiHandler(void) : pipefd{-1, -1}, cgiFd(-1) {  // delete this
-  LOG_TRACE(Utility::getConstructor(*this));
+CgiHandler::CgiHandler(void) {  // delete this
+  cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
+  LOG_TRACE(Utility::getDeconstructor(*this));
+  LOG_TRACE("Using binary:", cgi);
+  args.push_back(cgi);
+  generateEnvpVector();
+  cgiFd = pipefd[Fd::Read];
 }
 
 void CgiHandler::generateEnvpVector(void) {
@@ -51,11 +57,8 @@ void CgiHandler::closePipeFds(void) {
 }
 
 void CgiHandler::killAllChildPids(void) {
-  for (const auto& pid : pids) {
-    if (pid != -1) {
-      LOG_DEBUG("Terminating child process:", pid);
-      kill(pid, SIGKILL);
-    }
+  for (auto& cgiParam : g_CgiParams) {
+    kill(cgiParam.pid, SIGKILL);
   }
 }
 
@@ -99,14 +102,15 @@ bool CgiHandler::isChildProcess(void) const {
   return this->pid == 0 ? true : false;
 }
 
-const pid_t& CgiHandler::addNewProcessId(void) noexcept {
-  pids.push_back(fork());
-  return pids[pids.size() - 1];
-}
+// const pid_t& CgiHandler::addNewProcessId(void) noexcept {
+//   g_Pids.insert(std::make_pair(fork(), pipefd[Fd::Read]);
+//   return g_Pids[pids.size() - 1];
+// }
 
 void CgiHandler::forkChildProcess(void) {
   LOG_TRACE("Forking new child process");
-  this->pid = addNewProcessId();
+  // this->pid = addNewProcessId();
+  this->pid = fork();
   if (this->pid == -1) {
     cgiError("Could not create child process");
   } else if (isChildProcess()) {
@@ -114,7 +118,7 @@ void CgiHandler::forkChildProcess(void) {
     executeCgiScript();
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-    cgiFd = pipefd[Fd::Read];
+    g_CgiParams.push_back({this->pid, pipefd[Fd::Read], std::chrono::steady_clock::now()});
   }
 }
 
