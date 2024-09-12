@@ -12,10 +12,13 @@
 #include <vector>
 
 class ServerManager {
+
+#define CHILD_TIMEOUT 10
+
  private:
   std::vector<std::shared_ptr<Server>> servers;
   std::vector<struct pollfd> pollFds;
-  std::size_t pidsMapSize;
+  // std::size_t pidsMapSize;
 
  public:
   ServerManager(void);
@@ -28,6 +31,8 @@ class ServerManager {
   void serverLoop(PollManager& pollManager);
   bool checkServerExists(ServerConfig& serverConfig);
   void checkChildProcesses(PollManager& pollManager);
+  void checkForNewChildProcesses(PollManager& pollManager);
+  bool childTimeout(std::chrono::time_point<std::chrono::steady_clock>& start);
   void initializePollManager(PollManager& pollManager);
   void handleNoEvents(PollManager& pollManager);
   bool handlePollErrors(PollManager& pollManager, struct pollfd& pollFd);
