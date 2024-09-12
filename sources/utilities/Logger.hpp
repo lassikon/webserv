@@ -3,84 +3,81 @@
 #include <Colors.hpp>
 
 #include <array>
+#include <cerrno>
 #include <chrono>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <unordered_map>
+#include <utility>
 
 enum class logLevel { Trace, Debug, Info, Warn, Error, Fatal };
+enum class logOutput { ConsoleOnly, FileOnly, Both };
+enum class logDetail { Time, File, Func, Line };
 
 class Logger {
  private:
-  enum class logOutput { ConsoleOnly, FileOnly, Both };
-  enum class logDetail { Time, File, Func, Line };
+  static std::unordered_map<std::string, bool> classFilter;
 
-  const char* fileName = "webserv.log";
-  std::ofstream logFile;
-
-  std::array<bool, 4> enabledDetail;
-  logOutput currentOutput;
-  logLevel currentLevel;
+ private:
+  static const char* fileName;
+  static std::ofstream logFile;
+  static logOutput currentOutput;
+  static logLevel currentLevel;
+  static std::array<bool, 4> enabledDetail;
 
  public:
-  Logger(void);
-  ~Logger(void);
+  virtual ~Logger(void) noexcept {}
+
+  static void loadDefaults(void);
+  static void setLogOutput(const logOutput& newOutput);
+  static void setLogLevel(const logLevel& newLevel);
+  static void setLogDetails(bool time, bool file, bool func, bool line);
+  static void setLogDetail(logDetail index, bool value);
 
  private:
-  void loadDefaults(void);
-  void createLogFile(void);
-  void closeLogFile(void);
+  static void createLogFile(void) noexcept;
+  static void closeLogFile(void) noexcept;
 
-  void setLogDetails(bool time, bool file, bool func, bool line);
-  void setLogDetail(int index, bool value);
-  std::string getDateTimeStamp(void) const;
-
-  void insertLogDetails(std::ostringstream& log, std::string src, const char* fn, int line);
-  void printLogEntry(std::ostream& console, std::ostringstream& logEntry);
+  static void insertLogDetails(std::ostringstream& log, std::string src, const char* fn, int line);
+  static void printLogEntry(std::ostream& console, std::ostringstream& logEntry);
+  static std::string getDateTimeStamp(void);
+  static std::string filterClassName(std::string& fileName);
+  static bool isFiltered(std::string& fileName) noexcept;
 
  private:
-  template <typename... Args>
-  void create(logLevel level, const char* title, const char* color, std::ostream& console,
-              std::string source, const char* function, int line, Args&&... args) {
-    if (level < currentLevel) {
+  template <typename... Args> static void expandArguments(std::ostringstream& log, Args&&... args) {
+    if (!sizeof...(Args)) {
       return;
     } else {
-      std::ostringstream logEntry;
-      logEntry << color << "[" << title << "]";
-      insertLogDetails(logEntry, source, function, line);
-      ([&] { logEntry << " " << args; }(), ...);
-      printLogEntry(console, logEntry);
+      ([&] { log << " " << args; }(), ...);
     }
-  }
-
- private:
-  static inline Logger& newLogInstance(void) noexcept {
-    static Logger logger;
-    return logger;
   }
 
  public:
   template <typename... Args>
   static void Log(logLevel level, const char* title, const char* color, std::ostream& console,
-                  std::string source, const char* function, int line, Args&&... args) {
-    newLogInstance().create(level, title, color, console, source, function, line, args...);
+                  std::string fileName, const char* funcName, int lineNbr, Args&&... args) {
+    if (level < currentLevel || (level < logLevel::Warn && isFiltered(fileName))) {
+      return;
+    } else {
+      std::ostringstream logEntry;
+      logEntry << color << "[" << title << "]";
+      insertLogDetails(logEntry, fileName, funcName, lineNbr);
+      expandArguments(logEntry, std::forward<Args>(args)...);
+      printLogEntry(console, logEntry);
+    }
   }
 };
 
-#define LOG_TRACE(...)                                                                  \
-  (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, __FILE__, __func__, __LINE__, \
-               __VA_ARGS__))
-#define LOG_DEBUG(...)                                                                   \
-  (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, __FILE__, __func__, __LINE__, \
-               __VA_ARGS__))
-#define LOG_INFO(...) \
-  (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_WARN(...)                                                                      \
-  (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, __FILE__, __func__, __LINE__, \
-               __VA_ARGS__))
-#define LOG_ERROR(...) \
-  (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, __FILE__, __func__, __LINE__, __VA_ARGS__))
-#define LOG_FATAL(...) \
-  (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, __FILE__, __func__, __LINE__, __VA_ARGS__))
+#define DATA __FILE__, __func__, __LINE__
+
+#define LOG_TRACE(...) (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, DATA, __VA_ARGS__))
+#define LOG_DEBUG(...) (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, DATA, __VA_ARGS__))
+#define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, DATA, __VA_ARGS__))
+#define LOG_WARN(...) (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, DATA, __VA_ARGS__))
+#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, DATA, __VA_ARGS__))
+#define LOG_FATAL(...) (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, DATA, __VA_ARGS__))
