@@ -87,6 +87,7 @@ void ServerManager::handlePollInEvent(PollManager& pollManager, struct pollfd& p
   for (auto& server : servers) {
     if (pollFd.fd == server->getSocketFd()) {  // Listening socket, accept a new connection
       server->acceptConnection(pollManager);
+      pollFd.revents = 0;  // Reset revents after handling
       break;
     } else if (server->isClientFd(pollFd.fd)) {  // Client socket, handle communication
       LOG_DEBUG("Handling client communication (POLLIN)");
