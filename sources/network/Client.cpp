@@ -33,20 +33,15 @@ bool Client::handlePollEvents(short revents, int readFd, int writeFd) {
 
 bool Client::receiveData(int readFd) {
   char buf[4096] = {0};
-  sleep(1);
   ssize_t nbytes = read(readFd, buf, sizeof(buf));
   if (nbytes == -1) {
     LOG_WARN("Failed to receive data from client fd:", fd);
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      LOG_DEBUG("EAGAIN or EWOULDBLOCK");
-    }
-    LOG_DEBUG("errno:", errno, strerror(errno));
-    return true;
+    ;
   } else if (nbytes == 0) {  // Connection closed
     LOG_TRACE("Connection closed for client fd:", fd);
     return false;
   } else {
-    LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
+    LOG_INFO("Receiving data from client fd", fd);
     if (isCgiOutput(std::string(buf))) {
       state = ClientState::READING_HEADER;
       LOG_DEBUG("Client", fd, "is CGI output");
@@ -74,16 +69,12 @@ void Client::parseRequest(std::istringstream& iBuf, int nbytes) {
   }
   if (state == ClientState::READING_DONE) {
     LOG_TRACE("Request received from client fd:", fd);
-    for (auto& header : req.getHeaders()) {
-      LOG_DEBUG("header:", header.first, ":", header.second);
-    }
-    LOG_DEBUG("body:", req.getBody().data());
   }
 }
 
 bool Client::handleRequest(int writeFd) {
   if (state != ClientState::READING_DONE) {
-    LOG_WARN("Client", getFd(), "state is NOT done reading");
+    LOG_WARN("Client", getFd(), "state is processing");
     return true;
   }
   LOG_TRACE("Handling request from client fd:", fd);
@@ -92,7 +83,7 @@ bool Client::handleRequest(int writeFd) {
   } else {
     processRequest();
   }
-  if (state == ClientState::PROCESSING_DONE) {
+  if (state == ClientState::DONE) {
     if (!sendResponse(writeFd)) {
       return false;
     }
@@ -101,13 +92,12 @@ bool Client::handleRequest(int writeFd) {
 }
 
 void Client::processCgiOutput(void) {
+  res.setResStatusCode(200);
+  res.setResStatusMessage("OK");
   if (req.getHeaders().find("Status") != req.getHeaders().end()) {
     std::string statusLine = req.getHeaders()["Status"];
     res.setResStatusCode(std::stoi(statusLine.substr(0, 3)));
     res.setResStatusMessage(statusLine.substr(4));
-  } else {
-    res.setResStatusCode(200);
-    res.setResStatusMessage("OK");
   }
   for (auto& header : req.getHeaders()) {
     if (header.first != "Status") {
@@ -120,7 +110,7 @@ void Client::processCgiOutput(void) {
   std::copy(req.getBody().begin(), req.getBody().end(), body.begin());
   res.setResBody(body);
   res.makeResponse();
-  state = ClientState::PROCESSING_DONE;
+  state = ClientState::DONE;
 }
 
 void Client::buildPath(void) {
@@ -146,8 +136,6 @@ void Client::processRequest(void) {
       postHandler.executeRequest(*this);
     } else if (req.getMethod() == "DELETE") {
       deleteHandler.executeRequest(*this);
-    } else if (req.getMethod() == "GET") {
-      getHandler.executeRequest(*this);
     } else {
       LOG_ERROR("Unsupported method in client:", fd);
     }
@@ -156,7 +144,7 @@ void Client::processRequest(void) {
     e.setResponseAttributes();
   }
   res.makeResponse();
-  state = ClientState::PROCESSING_DONE;
+  state = ClientState::DONE;
 }
 
 ServerConfig Client::chooseServerConfig(void) {
@@ -185,13 +173,13 @@ bool Client::sendResponse(int writeFd) {
   LOG_DEBUG("bytes sent:", nbytes);
   LOG_DEBUG("total bytes:", res.getResContent().size());
   LOG_INFO("Response sent to client fd:", fd);
-  LOG_DEBUG("Response:", res.getResContent().data());
   state = ClientState::READING_REQLINE;
   if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
       req.getHeaders()["Connection"] == "close") {
     LOG_DEBUG("Client", fd, " request to close connection");
     return false;
   }
+  resetResponse();
   return true;
 }
 
@@ -220,4 +208,14 @@ void Client::cleanupClient(void) {
     }
     fd = -1;  // Mark as closed
   }
+}
+
+void Client::resetResponse(void) {
+  res.setReqURI("");
+  res.setResStatusCode(0);
+  res.setResStatusMessage("");
+  std::vector<char> body = {};
+  res.setResBody(body);
+  res.getResHeaders().clear();
+  res.getResContent().clear();
 }

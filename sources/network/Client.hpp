@@ -30,8 +30,7 @@ enum struct ClientState {
   READING_HEADER,
   READING_BODY,
   READING_DONE,
-  PROCESSING,
-  PROCESSING_DONE
+  DONE
 };
 
 class Client {
@@ -82,6 +81,7 @@ class Client {
   bool sendResponse(int writeFd);
   void cleanupClient(void);
   ServerConfig chooseServerConfig();
+  void resetResponse(void);
 
  private:
   template <typename... Args> void clientError(Args&&... args) {

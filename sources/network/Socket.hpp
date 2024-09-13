@@ -15,8 +15,8 @@
 
 class Socket {
  private:
-  int sockFd;
-  int port;
+  int sockFd = -1;
+  int port = -1;
 
  public:
   Socket(void);

@@ -34,15 +34,9 @@ class Request {
   void parseChunkedBody(Client* client, std::istringstream& iBuf);
 
   std::string getMethod(void) const { return reqMethod; }
-
   std::string getReqURI(void) const { return reqURI; }
-
   std::string getVersion(void) const { return reqVersion; }
-
   size_t getBodySize(void) const { return reqBodySize; }
-
   std::map<std::string, std::string> getHeaders(void) const { return reqHeaders; }
-
   std::vector<char> getBody(void) const { return reqBody; }
-
 };

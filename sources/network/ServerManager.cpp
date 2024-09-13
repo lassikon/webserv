@@ -91,7 +91,6 @@ void ServerManager::handlePollInEvent(PollManager& pollManager, struct pollfd& p
     } else if (server->isClientFd(pollFd.fd)) {  // Client socket, handle communication
       LOG_DEBUG("Handling client", pollFd.fd, "communication (POLLIN)");
       server->handleClient(pollManager, pollFd.revents, pollFd.fd, pollFd.fd);
-      LOG_DEBUG("Turning on POLLOUT for client fd:", pollFd.fd);
       pollFd.revents = 0;
       pollFd.events &= ~POLLIN;
       pollFd.events |= POLLOUT;
@@ -100,13 +99,7 @@ void ServerManager::handlePollInEvent(PollManager& pollManager, struct pollfd& p
       int clientFd = getClientFdFromCgiParams(pollFd.fd);
       LOG_DEBUG("Handling CGI", pollFd.fd, " communication (POLLIN) clientFd:", clientFd);
       server->handleClient(pollManager, pollFd.revents, pollFd.fd, clientFd);
-       /*  char buffer[256] = {0};
-      LOG_DEBUG("Printing CGI fd contents");
-      int bytes = read(pollFd.fd, &buffer, sizeof(buffer));
-      buffer[bytes] = '\0';
-      write(STDOUT_FILENO, &buffer, sizeof(buffer)); */
-      //pollFd.events &= ~POLLIN;
-      //pollFd.revents = 0;
+      pollFd.revents = 0;
       break;
     }
   }
@@ -118,8 +111,10 @@ void ServerManager::handlePollOutEvent(PollManager& pollManager, struct pollfd& 
       LOG_DEBUG("Handling client", pollFd.fd, " communication (POLLOUT)");
       server->handleClient(pollManager, pollFd.revents, pollFd.fd, pollFd.fd);
       pollFd.revents = 0;
-   /*    pollFd.events &= ~POLLOUT;
-      pollFd.events |= POLLIN; */
+      if (!isCgiFd(getCgiFdFromClientFd(pollFd.fd))) {
+        pollFd.events &= ~POLLOUT;
+      }
+      pollFd.events |= POLLIN;
       break;
     }
   }
@@ -128,6 +123,7 @@ void ServerManager::handlePollOutEvent(PollManager& pollManager, struct pollfd& 
 void ServerManager::checkForNewChildProcesses(PollManager& pollManager) {
   for (auto& cgiParam : g_CgiParams) {
     if (!pollManager.fdExists(cgiParam.fd)) {
+      // set to non blocking
       int flags = fcntl(cgiParam.fd, F_GETFL, 0);
       if (flags == -1) {
         LOG_DEBUG("Failed to get flags for pipe fd:", cgiParam.fd);
@@ -155,20 +151,19 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
     int status;
     pid_t result = waitpid(it->pid, &status, WNOHANG);
-    /* if (result == -1) { */
-    /*       LOG_ERROR("Failed to wait for child process:", STRERROR);
-      it = g_CgiParams.erase(it); */
-    //pollManager.removeFd(it->fd);
-    // throw exception?
-    /* } else  */ if (result > 0) {  // Child process has exited
+    if (result == -1) {
+      LOG_ERROR("Failed to wait for child process:", STRERROR);
+      it = g_CgiParams.erase(it);
+      pollManager.removeFd(it->fd);
+      // throw exception?
+    } else if (result > 0) {  // Child process has exited
       LOG_INFO("Child process", it->pid, "exited with status:", status);
       close(it->write);
-      //pollManager.removeFd(it->fd);
-      //it = g_CgiParams.erase(it);
+      it = g_CgiParams.erase(it);
     } else if (result == 0 && childTimeout(it->start)) {
       LOG_ERROR("Child process", it->pid, "timed out");
-    /*   pollManager.removeFd(it->fd);
-      it = g_CgiParams.erase(it); */
+      pollManager.removeFd(it->fd);
+      it = g_CgiParams.erase(it);
     } else {
       ++it;
     }
@@ -177,16 +172,18 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
 
 void ServerManager::serverLoop(PollManager& pollManager) {
   for (auto& pollFd : pollManager.getPollFds()) {
-    /*     if (handlePollErrors(pollManager, pollFd)) {
-      continue;  // Error handled, move to next pollFd */
-    /* } else  */ if (pollFd.revents & POLLIN) {
+    if (handlePollErrors(pollManager, pollFd)) {
+      continue;  // Error handled, move to next pollFd
+    } else if (pollFd.revents & POLLIN) {
       handlePollInEvent(pollManager, pollFd);
     } else if (pollFd.revents & POLLOUT) {
       handlePollOutEvent(pollManager, pollFd);
     }
   }
-  sleep(1);
   checkChildProcesses(pollManager);
+  for (auto& cgi : g_CgiParams) {
+    LOG_DEBUG("Cgi fd:", cgi.fd, "client fd:", cgi.clientFd);
+  }
 }
 
 //janrau added function for cgi
@@ -203,6 +200,15 @@ int ServerManager::getClientFdFromCgiParams(int fd) const {
   for (auto& cgi : g_CgiParams) {
     if (cgi.fd == fd) {
       return cgi.clientFd;
+    }
+  }
+  return -1;
+}
+
+int ServerManager::getCgiFdFromClientFd(int fd) const {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.clientFd == fd) {
+      return cgi.fd;
     }
   }
   return -1;
