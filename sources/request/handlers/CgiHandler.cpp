@@ -1,4 +1,5 @@
 #include <CgiHandler.hpp>
+#include <Client.hpp>
 
 // static std::map<pid_t, int> pids;
 
@@ -19,12 +20,7 @@ CgiHandler::CgiHandler(const Client& client) {
 }
 
 CgiHandler::CgiHandler(void) {  // delete this
-  cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
-  LOG_TRACE(Utility::getDeconstructor(*this));
-  LOG_TRACE("Using binary:", cgi);
-  args.push_back(cgi);
-  generateEnvpVector();
-  cgiFd = pipefd[Fd::Read];
+  LOG_TRACE(Utility::getConstructor(*this));
 }
 
 void CgiHandler::generateEnvpVector(void) {
@@ -115,10 +111,18 @@ void CgiHandler::forkChildProcess(void) {
     cgiError("Could not create child process");
   } else if (isChildProcess()) {
     LOG_DEBUG("Child pid:", getpid());
+    //close(pipefd[Fd::Read]);
     executeCgiScript();
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-    g_CgiParams.push_back({this->pid, pipefd[Fd::Read], std::chrono::steady_clock::now()});
+   // cgiFd = pipefd[Fd::Read];
+    CgiParams cgiParam;
+    cgiParam.pid = this->pid;
+    cgiParam.fd = pipefd[Fd::Read];
+    cgiParam.write = pipefd[Fd::Write];
+    cgiParam.clientFd = clientFd;
+    cgiParam.start = std::chrono::steady_clock::now();
+    g_CgiParams.push_back(cgiParam);
   }
 }
 
@@ -138,7 +142,7 @@ void CgiHandler::scriptLoader(void) {
     cgiError("Could not create pipe");
   } else {
     forkChildProcess();
-    waitChildProcess();
+   // waitChildProcess();
   }
 }
 
@@ -148,15 +152,12 @@ void CgiHandler::runScript(void) {
   //debugPrintCgiFd();
 }
 
-void CgiHandler::executeRequest(Request& req, Response& res) {
+void CgiHandler::executeRequest(Client& client) {
   LOG_TRACE("CgiHandler: executingRequest");
-  (void)req;
-  cgi = res.getReqURI();
-  LOG_TRACE(Utility::getDeconstructor(*this));
+  cgi = client.getRes().getReqURI();
   LOG_TRACE("Using binary:", cgi);
+  clientFd = client.getFd();
   args.push_back(cgi);
   generateEnvpVector();
   runScript();
-  res.setCgiFd(cgiFd);
-  LOG_DEBUG("CgiFd:", cgiFd);
 }

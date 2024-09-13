@@ -2,8 +2,6 @@
 
 #include <Exception.hpp>
 #include <IRequestHandler.hpp>
-#include <Request.hpp>
-#include <Response.hpp>
 #include <Logger.hpp>
 #include <Typedef.hpp>
 #include <Utility.hpp>
@@ -18,9 +16,13 @@
 #include <string>
 #include <vector>
 
+class Client;
+
 struct CgiParams {
-  pid_t pid;
-  int fd;
+  pid_t pid = -1;
+  int fd = -1;
+  int write = -1;
+  int clientFd = -1;
   std::chrono::time_point<std::chrono::steady_clock> start;
 };
 
@@ -38,6 +40,7 @@ class CgiHandler : public IRequestHandler {
 
   int pipefd[2];
   int cgiFd;
+  int clientFd;
   int wstat;
   pid_t pid;
 
@@ -48,7 +51,7 @@ class CgiHandler : public IRequestHandler {
   virtual ~CgiHandler(void);
 
  public:
-  void executeRequest(Request& req, Response& res) override;
+  void executeRequest(Client& client) override;
   void runScript(void);
 
  private:

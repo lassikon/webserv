@@ -89,9 +89,24 @@ void ServerManager::handlePollInEvent(PollManager& pollManager, struct pollfd& p
       server->acceptConnection(pollManager);
       break;
     } else if (server->isClientFd(pollFd.fd)) {  // Client socket, handle communication
-      LOG_DEBUG("Handling client communication (POLLIN)");
-      server->handleClient(pollManager, pollFd.fd, pollFd.revents);
-      pollFd.revents = 0;  // Reset revents after handling
+      LOG_DEBUG("Handling client", pollFd.fd, "communication (POLLIN)");
+      server->handleClient(pollManager, pollFd.revents, pollFd.fd, pollFd.fd);
+      LOG_DEBUG("Turning on POLLOUT for client fd:", pollFd.fd);
+      pollFd.revents = 0;
+      pollFd.events &= ~POLLIN;
+      pollFd.events |= POLLOUT;
+      break;
+    } else if (isCgiFd(pollFd.fd) && server->isClientFd(getClientFdFromCgiParams(pollFd.fd))) {
+      int clientFd = getClientFdFromCgiParams(pollFd.fd);
+      LOG_DEBUG("Handling CGI", pollFd.fd, " communication (POLLIN) clientFd:", clientFd);
+      server->handleClient(pollManager, pollFd.revents, pollFd.fd, clientFd);
+       /*  char buffer[256] = {0};
+      LOG_DEBUG("Printing CGI fd contents");
+      int bytes = read(pollFd.fd, &buffer, sizeof(buffer));
+      buffer[bytes] = '\0';
+      write(STDOUT_FILENO, &buffer, sizeof(buffer)); */
+      //pollFd.events &= ~POLLIN;
+      //pollFd.revents = 0;
       break;
     }
   }
@@ -100,9 +115,11 @@ void ServerManager::handlePollInEvent(PollManager& pollManager, struct pollfd& p
 void ServerManager::handlePollOutEvent(PollManager& pollManager, struct pollfd& pollFd) {
   for (auto& server : servers) {
     if (server->isClientFd(pollFd.fd)) {  // Client socket ready for writing
-      LOG_DEBUG("Handling client communication (POLLOUT)");
-      server->handleClient(pollManager, pollFd.fd, pollFd.revents);
-      pollFd.revents = 0;  // Reset revents after handling
+      LOG_DEBUG("Handling client", pollFd.fd, " communication (POLLOUT)");
+      server->handleClient(pollManager, pollFd.revents, pollFd.fd, pollFd.fd);
+      pollFd.revents = 0;
+   /*    pollFd.events &= ~POLLOUT;
+      pollFd.events |= POLLIN; */
       break;
     }
   }
@@ -111,6 +128,13 @@ void ServerManager::handlePollOutEvent(PollManager& pollManager, struct pollfd& 
 void ServerManager::checkForNewChildProcesses(PollManager& pollManager) {
   for (auto& cgiParam : g_CgiParams) {
     if (!pollManager.fdExists(cgiParam.fd)) {
+      int flags = fcntl(cgiParam.fd, F_GETFL, 0);
+      if (flags == -1) {
+        LOG_DEBUG("Failed to get flags for pipe fd:", cgiParam.fd);
+      }
+      if (fcntl(cgiParam.fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        LOG_DEBUG("Failed to set pipe fd to non-blocking:", cgiParam.fd);
+      }
       pollManager.addFd(cgiParam.fd, POLLIN);
       LOG_DEBUG("Added pipe fd:", cgiParam.fd, "to pollFds");
     }
@@ -131,19 +155,20 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
     int status;
     pid_t result = waitpid(it->pid, &status, WNOHANG);
-    if (result == -1) {
-      LOG_ERROR("Failed to wait for child process:", STRERROR);
-      it = g_CgiParams.erase(it);
-      pollManager.removeFd(it->fd);
-      // throw exception?
-    } else if (result > 0) {  // Child process has exited
+    /* if (result == -1) { */
+    /*       LOG_ERROR("Failed to wait for child process:", STRERROR);
+      it = g_CgiParams.erase(it); */
+    //pollManager.removeFd(it->fd);
+    // throw exception?
+    /* } else  */ if (result > 0) {  // Child process has exited
       LOG_INFO("Child process", it->pid, "exited with status:", status);
-      pollManager.removeFd(it->fd);
-      it = g_CgiParams.erase(it);
+      close(it->write);
+      //pollManager.removeFd(it->fd);
+      //it = g_CgiParams.erase(it);
     } else if (result == 0 && childTimeout(it->start)) {
       LOG_ERROR("Child process", it->pid, "timed out");
-      pollManager.removeFd(it->fd);
-      it = g_CgiParams.erase(it);
+    /*   pollManager.removeFd(it->fd);
+      it = g_CgiParams.erase(it); */
     } else {
       ++it;
     }
@@ -152,13 +177,33 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
 
 void ServerManager::serverLoop(PollManager& pollManager) {
   for (auto& pollFd : pollManager.getPollFds()) {
-    if (handlePollErrors(pollManager, pollFd)) {
-      continue;  // Error handled, move to next pollFd
-    } else if (pollFd.revents & POLLIN) {
+    /*     if (handlePollErrors(pollManager, pollFd)) {
+      continue;  // Error handled, move to next pollFd */
+    /* } else  */ if (pollFd.revents & POLLIN) {
       handlePollInEvent(pollManager, pollFd);
     } else if (pollFd.revents & POLLOUT) {
       handlePollOutEvent(pollManager, pollFd);
     }
   }
+  sleep(1);
   checkChildProcesses(pollManager);
+}
+
+//janrau added function for cgi
+bool ServerManager::isCgiFd(int fd) const {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.fd == fd) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int ServerManager::getClientFdFromCgiParams(int fd) const {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.fd == fd) {
+      return cgi.clientFd;
+    }
+  }
+  return -1;
 }

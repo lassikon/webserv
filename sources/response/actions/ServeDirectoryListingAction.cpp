@@ -11,7 +11,7 @@ void ServeDirectoryListingAction::execute(Response& res) {
   res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
   res.addHeader("Content-Type", "text/html");
   res.addHeader("Content-Length", std::to_string(ibody.size()));
-  res.addHeader("Connection", "close");
+  res.addHeader("Connection", "keep-alive");
 }
 
 std::string ServeDirectoryListingAction::makeDirectoryListing(std::string path) {

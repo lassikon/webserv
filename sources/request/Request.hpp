@@ -20,7 +20,7 @@ class Request {
   std::map<std::string, std::string> reqHeaders;
   std::vector<char> reqBody;
   size_t reqBodySize = 0;
-  bool transferEncodingChunked;
+  bool isTransferEncodingChunked;
 
  public:
   Request();
@@ -45,5 +45,4 @@ class Request {
 
   std::vector<char> getBody(void) const { return reqBody; }
 
-  bool isTransferEncodingChunked(void) const;
 };

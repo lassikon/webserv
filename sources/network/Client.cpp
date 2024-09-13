@@ -15,34 +15,46 @@ bool Client::operator==(const Client& other) const {
   return fd == other.fd;
 }
 
-bool Client::handlePollEvents(short revents) {
+bool Client::handlePollEvents(short revents, int readFd, int writeFd) {
   if (revents & POLLIN) {
     LOG_INFO("Client fd:", fd, "has POLLIN event");
-    if (!receiveData()) {
+    if (!receiveData(readFd)) {
       return false;
     }
   }
   if (revents & POLLOUT) {
     LOG_INFO("Client fd:", fd, "has POLLOUT event");
-    if (!handleRequest()) {
+    if (!handleRequest(writeFd)) {
       return false;
     }
   }
   return true;
 }
 
-bool Client::receiveData(void) {
+bool Client::receiveData(int readFd) {
   char buf[4096] = {0};
-  ssize_t nbytes = recv(fd, buf, sizeof(buf), 0);
+  sleep(1);
+  ssize_t nbytes = read(readFd, buf, sizeof(buf));
   if (nbytes == -1) {
-    clientError("Failed to recv() from fd:", fd);
+    LOG_WARN("Failed to receive data from client fd:", fd);
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      LOG_DEBUG("EAGAIN or EWOULDBLOCK");
+    }
+    LOG_DEBUG("errno:", errno, strerror(errno));
+    return true;
   } else if (nbytes == 0) {  // Connection closed
     LOG_TRACE("Connection closed for client fd:", fd);
     return false;
   } else {
     LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
-    std::istringstream bufStr(buf);
-    parseRequest(bufStr, nbytes);
+    if (isCgiOutput(std::string(buf))) {
+      state = ClientState::READING_HEADER;
+      LOG_DEBUG("Client", fd, "is CGI output");
+      Request reqCGI;
+      req = reqCGI;
+    }
+    std::istringstream iBuf(buf);
+    parseRequest(iBuf, nbytes);
   }
   return true;
 }
@@ -62,23 +74,53 @@ void Client::parseRequest(std::istringstream& iBuf, int nbytes) {
   }
   if (state == ClientState::READING_DONE) {
     LOG_TRACE("Request received from client fd:", fd);
+    for (auto& header : req.getHeaders()) {
+      LOG_DEBUG("header:", header.first, ":", header.second);
+    }
+    LOG_DEBUG("body:", req.getBody().data());
   }
 }
 
-bool Client::handleRequest(void) {
-  // if (state == ClientState::READING_REQLINE) {
-  //   return true;
-  // }
+bool Client::handleRequest(int writeFd) {
   if (state != ClientState::READING_DONE) {
-    LOG_ERROR("Client", getFd(), "state is NOT done reading");
-    return false;
+    LOG_WARN("Client", getFd(), "state is NOT done reading");
+    return true;
   }
   LOG_TRACE("Handling request from client fd:", fd);
-  processRequest();
-  if (!sendResponse()) {
-    return false;
+  if (isCgi) {
+    processCgiOutput();
+  } else {
+    processRequest();
+  }
+  if (state == ClientState::PROCESSING_DONE) {
+    if (!sendResponse(writeFd)) {
+      return false;
+    }
   }
   return true;
+}
+
+void Client::processCgiOutput(void) {
+  if (req.getHeaders().find("Status") != req.getHeaders().end()) {
+    std::string statusLine = req.getHeaders()["Status"];
+    res.setResStatusCode(std::stoi(statusLine.substr(0, 3)));
+    res.setResStatusMessage(statusLine.substr(4));
+  } else {
+    res.setResStatusCode(200);
+    res.setResStatusMessage("OK");
+  }
+  for (auto& header : req.getHeaders()) {
+    if (header.first != "Status") {
+      res.addHeader(header.first, header.second);
+    }
+  }
+  res.addHeader("Connection", "keep-alive");
+  res.addHeader("Content-Length", std::to_string(req.getBodySize()));
+  std::vector<char> body(req.getBodySize());
+  std::copy(req.getBody().begin(), req.getBody().end(), body.begin());
+  res.setResBody(body);
+  res.makeResponse();
+  state = ClientState::PROCESSING_DONE;
 }
 
 void Client::buildPath(void) {
@@ -95,28 +137,17 @@ void Client::processRequest(void) {
   try {
     buildPath();
     if (res.getReqURI().find("/cgi-bin/") != std::string::npos) {
-      cgiHandler.executeRequest(req, res);
-      res.setResStatusCode(200);
-      res.setResStatusMessage("OK");
-      char buffer[4096] = {0};
-      LOG_DEBUG("Reading from cgiFd:", res.getCgiFd());
-      read(res.getCgiFd(), &buffer, sizeof(buffer));
-      std::cout << "here buffer: " << buffer << std::endl;
-      auto body = std::vector<char>(buffer, buffer + sizeof(buffer));
-      std::cout << "here body: " << body.data() << std::endl;
-      res.addHeader("Content-Type", "text/html");
-      res.addHeader("Content-Length", std::to_string(body.size()));
-      res.addHeader("Server", res.getServerConfig().serverName);
-      res.addHeader("Connection", "close");
-      res.setResBody(body);
+      cgiHandler.executeRequest(*this);
+      state = ClientState::READING_REQLINE;
+      return;
     } else if (req.getMethod() == "GET") {
-      getHandler.executeRequest(req, res);
+      getHandler.executeRequest(*this);
     } else if (req.getMethod() == "POST") {
-      postHandler.executeRequest(req, res);
+      postHandler.executeRequest(*this);
     } else if (req.getMethod() == "DELETE") {
-      deleteHandler.executeRequest(req, res);
+      deleteHandler.executeRequest(*this);
     } else if (req.getMethod() == "GET") {
-      getHandler.executeRequest(req, res);
+      getHandler.executeRequest(*this);
     } else {
       LOG_ERROR("Unsupported method in client:", fd);
     }
@@ -125,6 +156,7 @@ void Client::processRequest(void) {
     e.setResponseAttributes();
   }
   res.makeResponse();
+  state = ClientState::PROCESSING_DONE;
 }
 
 ServerConfig Client::chooseServerConfig(void) {
@@ -138,22 +170,36 @@ ServerConfig Client::chooseServerConfig(void) {
   // throw exception
 }
 
-bool Client::sendResponse(void) {
+bool Client::sendResponse(int writeFd) {
   if (res.getResContent().empty()) {
     LOG_TRACE("No data to send for client fd:", fd);
     return true;
   }
   LOG_TRACE("Sending response");
   ssize_t nbytes;
-  nbytes = send(getFd(), res.getResContent().data(), res.getResContent().size(), 0);
+  nbytes = send(writeFd, res.getResContent().data(), res.getResContent().size(), 0);
   if (nbytes == -1) {
-  // TODO: handle send not being able to send all data
     LOG_ERROR("Failed to send response");
     return false;
   }
   LOG_DEBUG("bytes sent:", nbytes);
   LOG_DEBUG("total bytes:", res.getResContent().size());
+  LOG_INFO("Response sent to client fd:", fd);
+  LOG_DEBUG("Response:", res.getResContent().data());
   state = ClientState::READING_REQLINE;
+  if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
+      req.getHeaders()["Connection"] == "close") {
+    LOG_DEBUG("Client", fd, " request to close connection");
+    return false;
+  }
+  return true;
+}
+
+bool Client::isCgiOutput(std::string buf) {
+  if (buf.find("HTTP/1.1") != std::string::npos) {
+    return false;
+  }
+  isCgi = true;
   return true;
 }
 

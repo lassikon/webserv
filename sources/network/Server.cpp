@@ -33,14 +33,15 @@ void Server::acceptConnection(PollManager& pollManager) {
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
-void Server::handleClient(PollManager& pollManager, int clientFd, short revents) {
+void Server::handleClient(PollManager& pollManager, short revents, int readFd, int clientFd) {
   auto it = std::find_if(
     clients.begin(), clients.end(),
     [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
   if (it == clients.end()) {
+    LOG_ERROR("Client fd:", clientFd, "not found in clients");
     return;
   }
-  if ((*it)->handlePollEvents(revents) == false) {  // connection closed or error
+  if ((*it)->handlePollEvents(revents, readFd, clientFd) == false) {  // connection closed or error
     LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
     clientLastActivity.erase(clientFd);

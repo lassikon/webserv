@@ -1,6 +1,7 @@
 #include <iostream>
 
 int main() {
+  std::cout << "Content-type: text/html\n\n";
   std::cout << "<html>\n";
   std::cout << "<head>\n";
   std::cout << "<title>Hello World CPP</title>\n";

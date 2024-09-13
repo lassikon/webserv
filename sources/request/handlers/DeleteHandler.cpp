@@ -1,8 +1,7 @@
 #include <DeleteHandler.hpp>
+#include <Client.hpp>
 
-void DeleteHandler::executeRequest(Request& req, Response& res) {
-  LOG_INFO("Processing DELETE request for path:", req.getReqURI());
+void DeleteHandler::executeRequest(Client& client) {
+  LOG_INFO("Processing DELETE request for path:", client.getReq().getReqURI());
   LOG_TRACE("DeleteHandler: executingRequest");
-  (void)req;
-    (void)res;
 }
