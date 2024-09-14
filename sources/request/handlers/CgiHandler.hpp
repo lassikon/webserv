@@ -1,8 +1,9 @@
 #pragma once
 
-#include <Exception.hpp>
 #include <IRequestHandler.hpp>
 #include <Logger.hpp>
+#include <NetworkException.hpp>
+#include <RuntimeException.hpp>
 #include <Typedef.hpp>
 #include <Utility.hpp>
 
@@ -23,7 +24,7 @@ struct CgiParams {
   int fd = -1;
   int write = -1;
   int clientFd = -1;
-  std::chrono::time_point<std::chrono::steady_clock> start;
+  steady_time_point_t start;
 };
 
 class CgiHandler : public IRequestHandler {

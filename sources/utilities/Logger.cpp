@@ -1,5 +1,4 @@
 #include <Logger.hpp>
-#include "IException.hpp"
 
 std::unordered_map<std::string, bool> Logger::classFilter = {
   // config
@@ -37,9 +36,6 @@ std::unordered_map<std::string, bool> Logger::classFilter = {
   {"ServeFileAction", false},
   {"ServeIndexAction", false},
   {"ServeRedirectAction", false},
-
-  // exception
-  {"HttpException", false},
 
   // utilities
   {"Logger", false},

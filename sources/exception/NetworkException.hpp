@@ -44,17 +44,17 @@ class NetworkException : public IException {
     if (key == respond.getServerConfig().pagesCustom.end()) {
       key = respond.getServerConfig().pagesDefault.find(errorCode);
     }
-    std::string           path = key->second;
+    std::string path = key->second;
     std::filesystem::path exePath;
     exePath = Utility::getExePath(exePath);
     if (path.front() == '/') {
       path = path.substr(1, path.size());
     }
-    std::filesystem::path errorPath    = exePath / path;
-    std::string           errorPathStr = errorPath.string();
-    std::vector<char>     ibody        = Utility::readFile(errorPathStr);
+    std::filesystem::path errorPath = exePath / path;
+    std::string errorPathStr = errorPath.string();
+    std::vector<char> ibody = Utility::readFile(errorPathStr);
     respond.setResBody(ibody);
-    std::string ext      = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
+    std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
     std::string mimeType = Utility::getMimeType(ext);
     respond.addHeader("Cache-Control", "max-age=3600, must-revalidate");
     respond.addHeader("Content-Type", mimeType);
@@ -63,4 +63,5 @@ class NetworkException : public IException {
   }
 };
 
-#define httpForbidden(...) NetworkException(response, NetworkError::Forbidden, DATA, __VA_ARGS__)
+#define httpForbidden(response, ...) \
+  NetworkException(response, NetworkError::Forbidden, DATA, __VA_ARGS__)

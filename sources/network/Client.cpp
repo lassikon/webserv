@@ -36,7 +36,6 @@ bool Client::receiveData(int readFd) {
   ssize_t nbytes = read(readFd, buf, sizeof(buf));
   if (nbytes == -1) {
     LOG_WARN("Failed to receive data from client fd:", fd);
-    ;
   } else if (nbytes == 0) {  // Connection closed
     LOG_TRACE("Connection closed for client fd:", fd);
     return false;
@@ -81,7 +80,7 @@ bool Client::handleRequest(int writeFd) {
   if (isCgi) {
     processCgiOutput();
   } else {
-    processRequest();
+    NetworkException::tryCatch(&Client::processRequest, this);
   }
   if (state == ClientState::DONE) {
     if (!sendResponse(writeFd)) {
@@ -123,25 +122,20 @@ void Client::buildPath(void) {
 }
 
 void Client::processRequest(void) {
-  res.setServerConfig(chooseServerConfig());  // choose server config
-  try {
-    buildPath();
-    if (res.getReqURI().find("/cgi-bin/") != std::string::npos) {
-      cgiHandler.executeRequest(*this);
-      state = ClientState::READING_REQLINE;
-      return;
-    } else if (req.getMethod() == "GET") {
-      getHandler.executeRequest(*this);
-    } else if (req.getMethod() == "POST") {
-      postHandler.executeRequest(*this);
-    } else if (req.getMethod() == "DELETE") {
-      deleteHandler.executeRequest(*this);
-    } else {
-      LOG_ERROR("Unsupported method in client:", fd);
-    }
-  } catch (HttpException& e) {
-    LOG_ERROR("Exception caught:", e.what());
-    e.setResponseAttributes();
+  res.setServerConfig(chooseServerConfig());
+  buildPath();
+  if (res.getReqURI().find("/cgi-bin/") != std::string::npos) {
+    cgiHandler.executeRequest(*this);
+    state = ClientState::READING_REQLINE;
+    return;
+  } else if (req.getMethod() == "GET") {
+    getHandler.executeRequest(*this);
+  } else if (req.getMethod() == "POST") {
+    postHandler.executeRequest(*this);
+  } else if (req.getMethod() == "DELETE") {
+    deleteHandler.executeRequest(*this);
+  } else {
+    LOG_ERROR("Unsupported method in client:", fd);
   }
   res.makeResponse();
   state = ClientState::DONE;
@@ -155,28 +149,26 @@ ServerConfig Client::chooseServerConfig(void) {
     }
   }
   return *(serverConfigs.front());
-  // throw exception
 }
 
 bool Client::sendResponse(int writeFd) {
+  LOG_TRACE("Sending response");
   if (res.getResContent().empty()) {
-    LOG_TRACE("No data to send for client fd:", fd);
+    LOG_DEBUG("No data to send for client fd:", fd);
     return true;
   }
-  LOG_TRACE("Sending response");
   ssize_t nbytes;
   nbytes = send(writeFd, res.getResContent().data(), res.getResContent().size(), 0);
   if (nbytes == -1) {
     LOG_ERROR("Failed to send response");
     return false;
   }
-  LOG_DEBUG("bytes sent:", nbytes);
-  LOG_DEBUG("total bytes:", res.getResContent().size());
+  LOG_DEBUG("Sent:", nbytes, "bytes, ", res.getResContent().size(), "in total");
   LOG_INFO("Response sent to client fd:", fd);
   state = ClientState::READING_REQLINE;
   if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
       req.getHeaders()["Connection"] == "close") {
-    LOG_DEBUG("Client", fd, " request to close connection");
+    LOG_DEBUG("Client", fd, "request to close connection");
     return false;
   }
   resetResponse();
@@ -191,7 +183,7 @@ bool Client::isCgiOutput(std::string buf) {
   return true;
 }
 
-void Client::setFd(int newFd) {
+void Client::setClientFd(int newFd) {
   if (fd != newFd) {
     LOG_DEBUG("Changing fd from:", fd, "to:", newFd);
     cleanupClient();
@@ -203,19 +195,18 @@ void Client::cleanupClient(void) {
   if (fd > 0) {
     LOG_DEBUG("cleanupClient() closing fd:", fd);
     if (close(fd) == -1) {
-      LOG_ERROR("Failed to close fd:", fd);
-      // throw exception
+      throw clientError("Failed to close fd:", fd);
     }
-    fd = -1;  // Mark as closed
+    closeClientFd();
   }
 }
 
 void Client::resetResponse(void) {
-  res.setReqURI("");
-  res.setResStatusCode(0);
-  res.setResStatusMessage("");
   std::vector<char> body = {};
   res.setResBody(body);
+  res.setResStatusCode(0);
+  res.setResStatusMessage("");
   res.getResHeaders().clear();
   res.getResContent().clear();
+  res.setReqURI("");
 }

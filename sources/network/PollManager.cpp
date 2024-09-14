@@ -1,4 +1,4 @@
-#include "PollManager.hpp"
+#include <PollManager.hpp>
 
 PollManager::PollManager(void) {
   LOG_DEBUG(Utility::getConstructor(*this));

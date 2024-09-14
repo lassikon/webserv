@@ -1,9 +1,7 @@
 #pragma once
 
-#include <HttpException.hpp>
 #include <IServeAction.hpp>
-#include <Logger.hpp>
-#include <MethodNotAllowed.hpp>
+#include <NetworkException.hpp>
 #include <Response.hpp>
 
 class Serve405Action : public IServeAction {
@@ -12,7 +10,6 @@ class Serve405Action : public IServeAction {
   virtual ~Serve405Action() = default;
 
   inline void execute(Response& res) override {
-    LOG_TRACE("Method Not Allowed");
-    throw MethodNotAllowed(res);
+    throw httpForbidden(res, "HTTP Error 403 - Forbidden");
   }
 };

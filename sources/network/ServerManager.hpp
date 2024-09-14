@@ -3,8 +3,10 @@
 #include <CgiHandler.hpp>
 #include <Config.hpp>
 #include <Global.hpp>
+#include <IException.hpp>
 #include <Logger.hpp>
 #include <PollManager.hpp>
+#include <RuntimeException.hpp>
 #include <Server.hpp>
 #include <Typedef.hpp>
 
@@ -35,7 +37,7 @@ class ServerManager {
   bool checkServerExists(ServerConfig& serverConfig);
   void initializePollManager(PollManager& pollManager);
 
- private:  
+ private:
   void checkChildProcesses(PollManager& pollManager);
   void checkForNewChildProcesses(PollManager& pollManager);
   bool childTimeout(steady_time_point_t& start);

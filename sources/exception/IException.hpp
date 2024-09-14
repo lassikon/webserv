@@ -1,14 +1,15 @@
 #pragma once
 
-#include <Colors.hpp>
-#include <Global.hpp>
-#include <Logger.hpp>
 #include <cerrno>
 #include <cstring>
 #include <exception>
 #include <sstream>
 #include <string>
 #include <utility>
+
+#include <Colors.hpp>
+#include <Global.hpp>
+#include <Logger.hpp>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv <path>/<config>"
 #define ERR_MSG_NOSERVER "No valid server found in:"

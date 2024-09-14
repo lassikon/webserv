@@ -53,6 +53,6 @@ void Socket::cleanupSocket(void) {
     if (close(sockFd) == -1) {
       throw socketError("Failed to close fd:", sockFd);
     }
-    setSockFdClosed();
+    closeSockedFd();
   }
 }

@@ -1,9 +1,9 @@
 #include <CgiHandler.hpp>
 #include <Config.hpp>
 #include <ConfigInitializer.hpp>
-#include <Exception.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
+#include <RuntimeException.hpp>
 #include <Server.hpp>
 #include <ServerManager.hpp>
 #include <Signal.hpp>
@@ -15,27 +15,15 @@ int main(int argc, char** argv) {
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
     return (int)RuntimeError::Args;
+  } else {
+    Logger::loadDefaults();
+    Signal::trackSignals();
   }
-  Signal::trackSignals();
-  // (void)argv;
-  /* ======================================================================= */
-  /* Config config; */
-  /* if (argc == 2) { */
-  /*   config.setFilePath(argv[1]); */
-  /* } */
-  /* ======================================================================= */
-
-  //MY TESTING
-  // CgiHandler cgi;
-  // cgi.runScript();
-
-  /* ======================================================================= */
-
   Config config = ConfigInitializer::initializeConfig(argc, argv);
-  Exception::tryCatch(&Config::parseConfigFile, &config);
+  RuntimeException::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers().empty()) {
     LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
-    return (int)Error::Config;
+    return (int)RuntimeError::Config;
   }
 
   config.printServerConfig();

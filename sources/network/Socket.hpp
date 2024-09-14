@@ -28,7 +28,7 @@ class Socket {
   void setupSocket(ServerConfig& serverConfig);
 
  private:
-  void setSockFdClosed(void) { sockFd = 0; }
+  void closeSockedFd(void) { sockFd = 0; }
 
   void cleanupSocket(void);
   void setNonBlocking(void);

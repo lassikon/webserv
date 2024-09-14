@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Colors.hpp>
+#include <IException.hpp>
 
 #include <array>
 #include <cerrno>

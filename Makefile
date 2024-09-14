@@ -70,7 +70,6 @@ SOURCES := main \
            ProcessTree \
            ProcessTreeBuilder \
            Request \
-           HttpException \
            ServeDirectoryListingAction \
            ServeFileAction \
            ServeRedirectAction \
