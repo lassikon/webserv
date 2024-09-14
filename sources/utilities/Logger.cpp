@@ -1,4 +1,5 @@
 #include <Logger.hpp>
+#include "IException.hpp"
 
 std::unordered_map<std::string, bool> Logger::classFilter = {
   // config
@@ -64,7 +65,7 @@ void Logger::loadDefaults(void) {
 void Logger::createLogFile(void) noexcept {
   logFile.open(fileName, std::ios_base::app);
   if (logFile.fail()) {
-    LOG_WARN("Could not open file:", fileName, strerror(errno));
+    LOG_WARN("Could not open file:", fileName, IException::expandErrno());
   }
 }
 

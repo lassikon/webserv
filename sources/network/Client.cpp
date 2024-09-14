@@ -2,12 +2,12 @@
 
 Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
     : fd(socketFd), serverConfigs(serverConfigs) {
-  LOG_DEBUG(Utility::getConstructor(*this));
+  LOG_TRACE(Utility::getConstructor(*this));
   state = ClientState::READING_REQLINE;
 }
 
 Client::~Client(void) {
-  LOG_DEBUG(Utility::getDeconstructor(*this));
+  LOG_TRACE(Utility::getDeconstructor(*this));
   cleanupClient();
 }
 
@@ -69,7 +69,7 @@ bool Client::handleRequest(void) {
     return false;
   }
   LOG_TRACE("Handling request from client fd:", fd);
-    processRequest();
+  processRequest();
   if (!sendResponse()) {
     return false;
   }

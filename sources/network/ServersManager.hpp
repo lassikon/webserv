@@ -1,11 +1,12 @@
 #pragma once
 
-#include <poll.h>
-
 #include <Config.hpp>
 #include <PollManager.hpp>
 #include <Server.hpp>
-#include <string>
+
+#include <poll.h>
+
+#include <memory>
 #include <vector>
 
 class ServersManager {
@@ -23,8 +24,4 @@ class ServersManager {
  private:
   void serverLoop(PollManager& pollManager);
   bool checkServerExists(ServerConfig& serverConfig);
-
-  template <typename... Args> void serverError(Args&&... args) {
-    THROW(Error::Server, std::forward<Args>(args)..., STRERROR);
-  }
 };

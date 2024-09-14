@@ -1,7 +1,8 @@
 #include <Server.hpp>
+#include "Exception.hpp"
 
 Server::Server(ServerConfig& serverConfig) {
-  LOG_DEBUG(Utility::getConstructor(*this));
+  LOG_TRACE(Utility::getConstructor(*this));
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
   port = serverConfig.port;
   ipAddress = serverConfig.ipAddress;
@@ -10,7 +11,7 @@ Server::Server(ServerConfig& serverConfig) {
 }
 
 Server::~Server(void) {
-  LOG_DEBUG(Utility::getDeconstructor(*this));
+  LOG_TRACE(Utility::getDeconstructor(*this));
 }
 
 void Server::addServerConfig(ServerConfig& serverConfig) {
@@ -22,9 +23,8 @@ void Server::acceptConnection(PollManager& pollManager) {
 
   socklen_t addrSize = sizeof theirAddr;
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
-  // newFd = -1;  // testing error handling, remove this line
   if (newFd == -1) {
-    LOG_WARN("Failed to accept new connection:", STRERROR);
+    LOG_WARN("Failed to accept new connection:", Exception::expandErrno());
     return;
   }
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs));
@@ -34,8 +34,8 @@ void Server::acceptConnection(PollManager& pollManager) {
 
 void Server::handleClient(PollManager& pollManager, int clientFd, short revents) {
   auto it = std::find_if(
-      clients.begin(), clients.end(),
-      [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
+    clients.begin(), clients.end(),
+    [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
   if (it == clients.end()) {
     return;
   }

@@ -44,9 +44,9 @@ class Logger {
 
   static void insertLogDetails(std::ostringstream& log, std::string src, const char* fn, int line);
   static void printLogEntry(std::ostream& console, std::ostringstream& logEntry);
-  static std::string getDateTimeStamp(void);
-  static std::string filterClassName(std::string& fileName);
-  static bool isFiltered(std::string& fileName) noexcept;
+  static inline std::string getDateTimeStamp(void);
+  static inline std::string filterClassName(std::string& fileName);
+  static inline bool isFiltered(std::string& fileName) noexcept;
 
  public:
   template <typename... Args> static void expandLogArgs(std::ostringstream& log, Args&&... args) {

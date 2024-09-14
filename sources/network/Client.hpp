@@ -1,26 +1,28 @@
 #pragma once
 
+#include <Config.hpp>
+#include <DeleteHandler.hpp>
+#include <GetHandler.hpp>
+#include <HttpException.hpp>
+#include <Logger.hpp>
+#include <PostHandler.hpp>
+#include <Request.hpp>
+#include <Response.hpp>
+#include <RuntimeException.hpp>
+#include <Utility.hpp>
+
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <Config.hpp>
-#include <DeleteHandler.hpp>
-#include <GetHandler.hpp>
-#include <Logger.hpp>
-#include <PostHandler.hpp>
-#include <Request.hpp>
-#include <Response.hpp>
-#include <Utility.hpp>
-#include <HttpException.hpp>
 #include <cstring>
 #include <iostream>
 #include <map>
 #include <unordered_set>
 #include <vector>
 
-enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING_DONE};
+enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING_DONE };
 
 class Client {
  private:
@@ -59,9 +61,4 @@ class Client {
   bool sendResponse(void);
   void cleanupClient(void);
   ServerConfig chooseServerConfig();
-
- private:
-  template <typename... Args> void clientError(Args&&... args) {
-    THROW(Error::Client, std::forward<Args>(args)...);
-  }
 };

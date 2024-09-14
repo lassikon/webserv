@@ -1,19 +1,22 @@
 #pragma once
 
+#include <Client.hpp>
+#include <Config.hpp>
+#include <Exception.hpp>
+#include <Logger.hpp>
+#include <PollManager.hpp>
+#include <Socket.hpp>
+
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <Client.hpp>
-#include <Config.hpp>
-#include <Logger.hpp>
-#include <PollManager.hpp>
-#include <Socket.hpp>
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <string>
 #include <vector>
 
 class Server {

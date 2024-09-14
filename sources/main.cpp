@@ -13,7 +13,7 @@ sig_atomic_t g_ExitStatus;
 int main(int argc, char** argv) {
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
-    return (int)Error::Args;
+    return (int)RuntimeError::Args;
   }
   Signal::trackSignals();
   (void)argv;
@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
   /* } */
   /* ======================================================================= */
 
-  //MY TESTING
+  // MY TESTING
   CgiHandler cgi;
   cgi.runScript();
 

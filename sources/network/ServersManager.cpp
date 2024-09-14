@@ -1,11 +1,11 @@
 #include <ServersManager.hpp>
 
 ServersManager::ServersManager(void) {
-  LOG_DEBUG(Utility::getConstructor(*this));
+  LOG_TRACE(Utility::getConstructor(*this));
 }
 
 ServersManager::~ServersManager(void) {
-  LOG_DEBUG(Utility::getDeconstructor(*this));
+  LOG_TRACE(Utility::getDeconstructor(*this));
 }
 
 bool ServersManager::checkServerExists(ServerConfig& serverConfig) {
@@ -18,10 +18,11 @@ bool ServersManager::checkServerExists(ServerConfig& serverConfig) {
 }
 
 void ServersManager::configServers(Config& config) {
-  LOG_DEBUG("Initializing servers");
+  LOG_TRACE("Initializing servers");
   for (auto& serverConfig : config.getServers()) {
     if (checkServerExists(serverConfig.second)) {
-      LOG_DEBUG("Server already exists, adding config to existing server in port:", serverConfig.second.port);
+      LOG_DEBUG("Server already exists, adding config to existing server in port:",
+                serverConfig.second.port);
       for (auto& server : servers) {
         if (server->getPort() == serverConfig.second.port) {
           server->addServerConfig(serverConfig.second);
@@ -36,7 +37,7 @@ void ServersManager::configServers(Config& config) {
 }
 
 void ServersManager::runServers(void) {
-  LOG_DEBUG("Running servers");
+  LOG_TRACE("Running servers");
   PollManager pollManager;
   for (auto& server : servers) {
     pollManager.addFd(server->getSocketFd(), POLLIN | POLLOUT);
@@ -45,7 +46,7 @@ void ServersManager::runServers(void) {
   while (true) {
     int pollCount = pollManager.pollFdsCount();
     if (pollCount == -1) {
-      serverError("Failed to poll fds:");
+      serverError("Failed to poll fds");
 
     } else if (pollCount == 0) {
       LOG_DEBUG("Timeout");
@@ -70,7 +71,7 @@ void ServersManager::serverLoop(PollManager& pollManager) {
           server->acceptConnection(pollManager);
           break;
         } else if (server->isClientFd(
-                       pollFd.fd)) {  // It's a client socket, handle client communication
+                     pollFd.fd)) {  // It's a client socket, handle client communication
           server->handleClient(pollManager, pollFd.fd, pollFd.revents);
           break;
         }
