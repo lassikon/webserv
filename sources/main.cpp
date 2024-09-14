@@ -1,4 +1,3 @@
-#include <CgiHandler.hpp>
 #include <Config.hpp>
 #include <ConfigInitializer.hpp>
 #include <Global.hpp>
@@ -14,7 +13,7 @@ std::vector<struct CgiParams> g_CgiParams;
 int main(int argc, char** argv) {
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
-    return (int)RuntimeError::Args;
+    return EXIT_FAILURE;
   } else {
     Logger::loadDefaults();
     Signal::trackSignals();
