@@ -8,10 +8,8 @@
 #include <Serve404Action.hpp>
 #include <Serve405Action.hpp>
 #include <Serve413Action.hpp>
-#include <ServeDefaultFileAction.hpp>
 #include <ServeDirectoryListingAction.hpp>
 #include <ServeFileAction.hpp>
-#include <ServeIndexAction.hpp>
 #include <ServeRedirectAction.hpp>
 #include <filesystem>
 #include <memory>
@@ -30,7 +28,8 @@ class ProcessTreeBuilder : public std::enable_shared_from_this<ProcessTreeBuilde
  public:
   ProcessTreeBuilder(Request& req ,Response& res, ServerConfig& serverConfig);
   ~ProcessTreeBuilder() = default;
-  std::shared_ptr<ProcessTree> buildProcessTree();
+  std::shared_ptr<ProcessTree> buildGetProcessTree();
+  std::shared_ptr<ProcessTree> buildPathTree();
 
  private:
   bool isDIrectoryListingOn(std::string& path);

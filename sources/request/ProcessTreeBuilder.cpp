@@ -1,21 +1,19 @@
 #include <ProcessTreeBuilder.hpp>
-#include <Response.hpp>
 #include <Request.hpp>
+#include <Response.hpp>
 
 ProcessTreeBuilder::ProcessTreeBuilder(Request& req, Response& res, ServerConfig& ServerConfig)
     : req(req), res(res), serverConfig(ServerConfig) {
   LOG_TRACE(Utility::getConstructor(*this));
 }
 
-std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildProcessTree() {
+std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildGetProcessTree() {
   // ProcessTreeBuilder class for constructing the decision tree
   // Define actions
   auto serveRedirect = std::make_shared<ProcessTree>(std::make_shared<ServeRedirectAction>());
-  //auto serveDefaultFile = std::make_shared<ProcessTree>(std::make_shared<ServeDefaultFileAction>());
   auto serveDirectoryListing =
     std::make_shared<ProcessTree>(std::make_shared<ServeDirectoryListingAction>());
   auto serveFile = std::make_shared<ProcessTree>(std::make_shared<ServeFileAction>());
-  //auto serveIndex = std::make_shared<ProcessTree>(std::make_shared<ServeIndexAction>());
   auto serve403 = std::make_shared<ProcessTree>(std::make_shared<Serve403Action>());
   auto serve404 = std::make_shared<ProcessTree>(std::make_shared<Serve404Action>());
   auto serve405 = std::make_shared<ProcessTree>(std::make_shared<Serve405Action>());
@@ -44,8 +42,18 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildProcessTree() {
     [self](std::string& path) { return self->isXPermOn(path); }, isDefaultFileExist, serve403);
   auto isDirectory = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isDirectory(path); }, isXPermOn, isFileRPermOn);
+  return isDirectory;
+};
+
+std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildPathTree() {
+  auto serveFile = std::make_shared<ProcessTree>(std::make_shared<ServeFileAction>());
+  auto serveRedirect = std::make_shared<ProcessTree>(std::make_shared<ServeRedirectAction>());
+  auto serve404 = std::make_shared<ProcessTree>(std::make_shared<Serve404Action>());
+  auto serve405 = std::make_shared<ProcessTree>(std::make_shared<Serve405Action>());
+  auto serve413 = std::make_shared<ProcessTree>(std::make_shared<Serve413Action>());
+  auto self = shared_from_this();
   auto isPathExist = std::make_shared<ProcessTree>(
-    [self](std::string& path) { return self->isPathExist(path); }, isDirectory, serve404);
+    [self](std::string& path) { return self->isPathExist(path); }, nullptr, serve404);
   auto isRedirect = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isRedirect(path); }, serveRedirect, isPathExist);
   auto isMethodAllowed = std::make_shared<ProcessTree>(
@@ -57,9 +65,9 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildProcessTree() {
     std::make_shared<ProcessTree>([self](std::string& path) { return self->isRouteMatch(path); },
                                   isClientBodySizeAllowed, serve404);
   auto isErrorAsset = std::make_shared<ProcessTree>(
-    [self](std::string& path) { return self->isErrorAsset(path); }, serveFile, isRouteMatch);
+    [self](std::string& path) { return self->isErrorAsset(path); }, nullptr, isRouteMatch);
   return isErrorAsset;
-};
+}
 
 bool ProcessTreeBuilder::isDIrectoryListingOn(std::string& path) {
   LOG_TRACE("Checking directory listing on");
@@ -129,6 +137,7 @@ bool ProcessTreeBuilder::isPathExist(std::string& path) {
   std::filesystem::path rootPath = res.getRouteConfig().root;
   std::filesystem::path fullpath = rootPath / path;
   path = fullpath.string();
+  LOG_TRACE("Full path:", path);
   return std::filesystem::exists(path);
 }
 
@@ -149,8 +158,7 @@ bool ProcessTreeBuilder::isMethodAllowed(std::string& path) {
 bool ProcessTreeBuilder::isClientBodySizeAllowed(std::string& path) {
   LOG_TRACE("Checking client body size limit");
   (void)path;
-  if (req.getBodySize() >
-      Utility::convertSizetoBytes(res.getServerConfig().clientBodySizeLimit)) {
+  if (req.getBodySize() > Utility::convertSizetoBytes(res.getServerConfig().clientBodySizeLimit)) {
     return false;
   }
   return true;
@@ -186,14 +194,17 @@ bool ProcessTreeBuilder::isRouteMatch(std::string reqURI) {
 bool ProcessTreeBuilder::isErrorAsset(std::string& reqURI) {
   LOG_TRACE("Checking for error asset");
   std::filesystem::path path(reqURI);
-  if (path.parent_path().string() == "/pagesDefault/assets" ||
-      path.parent_path().string() == "/pagesCustom/assets") {
+  auto it = reqURI.find("/pagesDefault/assets");
+  if (it == std::string::npos) {
+    it = reqURI.find("/pagesCustom/assets");
+    if (it == std::string::npos) {
+      return false;
+    }
+  }
     std::filesystem::path exePath;
     exePath = Utility::getExePath(exePath);
-    reqURI = reqURI.substr(1, reqURI.size());
+    reqURI = reqURI.substr(it + 1, reqURI.size());
     std::filesystem::path errorPath = exePath / reqURI;
     reqURI = errorPath.string();
     return true;
-  }
-  return false;
 }

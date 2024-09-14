@@ -12,5 +12,5 @@ void ServeFileAction::execute(Response& res) {
   res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
   res.addHeader("Content-Type", mimeType);
   res.addHeader("Content-Length", std::to_string(ibody.size()));
-  res.addHeader("Connection", "close");
+  res.addHeader("Connection", "keep-alive");
 }

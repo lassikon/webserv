@@ -10,7 +10,7 @@
 
 class PollManager {
 #define MAX_CLIENTS 100
-#define TIMEOUT -1
+#define TIMEOUT 5000
 
  private:
   std::vector<struct pollfd> pollFds;
@@ -23,4 +23,5 @@ class PollManager {
   void removeFd(int fd);
   int pollFdsCount(void);
   std::vector<struct pollfd>& getPollFds(void);
+  bool fdExists(int fd);
 };

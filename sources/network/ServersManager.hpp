@@ -2,6 +2,7 @@
 
 #include <Config.hpp>
 #include <PollManager.hpp>
+#include <RuntimeException.hpp>
 #include <Server.hpp>
 
 #include <poll.h>

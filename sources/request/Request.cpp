@@ -3,7 +3,7 @@
 
 Request::Request() {
   LOG_DEBUG(Utility::getConstructor(*this));
-  transferEncodingChunked = false;
+  isTransferEncodingChunked = false;
 }
 
 Request::~Request() {
@@ -22,8 +22,7 @@ void Request::parseHeaders(Client* client, std::istringstream& iBuf) {
   LOG_TRACE("Parsing headers");
   std::string header;
   while (std::getline(iBuf, header)) {
-    if (header.find("\r\n\r") != std::string::npos || header.empty() ||
-        header == "\r") {
+    if (header.find("\r\n\r") != std::string::npos || header.empty() || header == "\r") {
       client->setState(ClientState::READING_BODY);
       break;
     }
@@ -38,23 +37,22 @@ void Request::parseHeaders(Client* client, std::istringstream& iBuf) {
       value = Utility::trimWhitespaces(value);
       reqHeaders[key] = value;
       if (key == "Transfer-Encoding" && value == "chunked") {
-        transferEncodingChunked = true;
+        isTransferEncodingChunked = true;
       }
     }
   }
 }
 
 void Request::parseBody(Client* client, std::istringstream& iBuf, int nbytes) {
-  if (reqMethod != "POST") {
+  if (reqMethod != "POST" && !client->getIsCgi()) {
     client->setState(ClientState::READING_DONE);
     return;
   }
-  if (transferEncodingChunked) {
+  if (isTransferEncodingChunked) {
     parseChunkedBody(client, iBuf);
   } else {
     LOG_TRACE("Parsing body");
-    if (reqHeaders.find("Content-Length") !=
-        reqHeaders.end()) {  // 400 bad request
+    if (reqHeaders.find("Content-Length") != reqHeaders.end()) {  // 400 bad request
       int contentLength = std::stoi(reqHeaders["Content-Length"]);
       reqBodySize += contentLength;
       std::vector<char> bodyData(contentLength);
@@ -70,6 +68,7 @@ void Request::parseBody(Client* client, std::istringstream& iBuf, int nbytes) {
       std::vector<char> bodyData(nbytes);
       iBuf.read(bodyData.data(), nbytes);
       reqBody.insert(reqBody.end(), bodyData.begin(), bodyData.end());
+      client->setState(ClientState::READING_DONE);
     }
   }
 }

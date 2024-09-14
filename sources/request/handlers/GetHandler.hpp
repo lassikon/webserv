@@ -1,17 +1,16 @@
 #pragma once
 
 #include <IRequestHandler.hpp>
-#include <Request.hpp>
-#include <Response.hpp>
+#include <ProcessTree.hpp>
+#include <ProcessTreeBuilder.hpp>
 
-class ProcessTree;
-class ProcessTreeBuilder;
+class Client;
 
 class GetHandler : public IRequestHandler {
  public:
   GetHandler() = default;
   virtual ~GetHandler() = default;
-  void executeRequest(Request& req, Response& res) override;
+  void executeRequest(Client& client) override;
 
  private:
   std::shared_ptr<ProcessTree> root;

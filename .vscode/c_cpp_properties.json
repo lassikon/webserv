@@ -4,15 +4,15 @@
         "name": "mine",
         "includePath": [
           "${workspaceFolder}/sources",
-          "${workspaceFolder}/sources/utils",
+          "${workspaceFolder}/sources/utilities",
 		      "${workspaceFolder}/sources/network",
-          "${workspaceFolder}/sources/network/response",
-          "${workspaceFolder}/sources/network/response/actions",
-          "${workspaceFolder}/sources/network/request",
-          "${workspaceFolder}/sources/network/httpException",
+          "${workspaceFolder}/sources/response",
+          "${workspaceFolder}/sources/response/actions",
+          "${workspaceFolder}/sources/request",
+          "${workspaceFolder}/sources/request/handlers",
+          "${workspaceFolder}/sources/exception",
           "${workspaceFolder}/sources/config",
-          "${workspaceFolder}/sources/cgi"
-
+          "${workspaceFolder}/sources/config/setters"
         ],
         "defines": [],
         "compilerPath": "/usr/bin/gcc",

@@ -1,13 +1,15 @@
 #include <GetHandler.hpp>
-#include <ProcessTree.hpp>
-#include <ProcessTreeBuilder.hpp>
-#include <Response.hpp>
+#include <Client.hpp>
 
-void GetHandler::executeRequest(Request& req, Response& res) {
+void GetHandler::executeRequest(Client& client) {
+  if (client.getRes().getResStatusCode() != 0) {
+    return;
+  }
+  LOG_INFO("Processing GET request for path:", client.getReq().getReqURI());
   LOG_TRACE("GetHandler: executingRequest");
-  std::shared_ptr<ProcessTreeBuilder> ptb =
-    std::make_shared<ProcessTreeBuilder>(req, res, res.getServerConfig());
-  res.setReqURI(req.getReqURI());
-  root = ptb->buildProcessTree();
-  root->process(res);
+  std::shared_ptr<ProcessTreeBuilder> ptb = std::make_shared<ProcessTreeBuilder>(
+    client.getReq(), client.getRes(), client.getRes().getServerConfig());
+  //client.getRes().setReqURI(client.getReq().getReqURI());
+  root = ptb->buildGetProcessTree();
+  root->process(client.getRes());
 }

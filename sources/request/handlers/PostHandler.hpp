@@ -1,12 +1,12 @@
 #pragma once
 
 #include <IRequestHandler.hpp>
-#include <Request.hpp>
-#include <Response.hpp>
+
+class Client;
 
 class PostHandler : public IRequestHandler {
  public:
   PostHandler() = default;
   virtual ~PostHandler() = default;
-  void executeRequest(Request& req, Response& res) override;
+  void executeRequest(Client& client) override;
 };

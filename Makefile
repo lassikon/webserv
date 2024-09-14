@@ -57,7 +57,7 @@ SOURCES := main \
            Client \
            PollManager \
            Server \
-           ServersManager \
+           ServerManager \
            Socket \
            Config \
            ConfigInitializer \
@@ -71,15 +71,13 @@ SOURCES := main \
            ProcessTreeBuilder \
            Request \
            HttpException \
-           ServeDefaultFileAction \
            ServeDirectoryListingAction \
            ServeFileAction \
-           ServeIndexAction \
            ServeRedirectAction \
            Response \
            Logger \
            Signal \
-           Utility
+           Utility \
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))

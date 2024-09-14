@@ -7,5 +7,5 @@ void ServeRedirectAction::execute(Response& res) {
   res.setResStatusCode(301);
   res.setResStatusMessage("Moved Permanently");
   res.addHeader("Location", res.getRouteConfig().redirect);
-  res.addHeader("Connection", "close");
+  res.addHeader("Connection", "keep-alive");
 }

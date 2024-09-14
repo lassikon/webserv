@@ -1,10 +1,9 @@
 #pragma once
 
-#include <Request.hpp>
-#include <Response.hpp>
+class Client;
 
 class IRequestHandler {
  public:
-  virtual void executeRequest(Request& req, Response& res) = 0;
+  virtual void executeRequest(Client& client) = 0;
   virtual ~IRequestHandler() {}
 };

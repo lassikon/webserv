@@ -19,8 +19,8 @@ class ProcessTree {
   void process(Response& res);
 
  private:
-  Validate validate;
-  std::shared_ptr<ProcessTree> trueBranch;
-  std::shared_ptr<ProcessTree> falseBranch;
-  std::shared_ptr<IServeAction> action;
+  Validate validate = nullptr;
+  std::shared_ptr<ProcessTree> trueBranch = nullptr;
+  std::shared_ptr<ProcessTree> falseBranch = nullptr;
+  std::shared_ptr<IServeAction> action = nullptr;
 };

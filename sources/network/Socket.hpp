@@ -1,21 +1,23 @@
 #pragma once
 
+#include <Client.hpp>
+#include <Logger.hpp>
+#include <PollManager.hpp>
+#include <RuntimeException.hpp>
+
 #include <fcntl.h>
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <Client.hpp>
-#include <PollManager.hpp>
-#include <RuntimeException.hpp>
+class Socket {
 
 #define BACKLOG 10
 
-class Socket {
  private:
-  int sockFd;
-  int port;
+  int sockFd = -1;
+  int port = -1;
 
  public:
   Socket(void);

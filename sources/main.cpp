@@ -5,10 +5,11 @@
 #include <Global.hpp>
 #include <Logger.hpp>
 #include <Server.hpp>
-#include <ServersManager.hpp>
+#include <ServerManager.hpp>
 #include <Signal.hpp>
 
 sig_atomic_t g_ExitStatus;
+std::vector<struct CgiParams> g_CgiParams;
 
 int main(int argc, char** argv) {
   if (argc > 2) {
@@ -16,7 +17,7 @@ int main(int argc, char** argv) {
     return (int)RuntimeError::Args;
   }
   Signal::trackSignals();
-  (void)argv;
+  // (void)argv;
   /* ======================================================================= */
   /* Config config; */
   /* if (argc == 2) { */
@@ -24,32 +25,32 @@ int main(int argc, char** argv) {
   /* } */
   /* ======================================================================= */
 
-  // MY TESTING
-  CgiHandler cgi;
-  cgi.runScript();
+  //MY TESTING
+  // CgiHandler cgi;
+  // cgi.runScript();
 
   /* ======================================================================= */
 
-  /* Config config = ConfigInitializer::initializeConfig(argc, argv); */
-  /* Exception::tryCatch(&Config::parseConfigFile, &config); */
-  /* if (config.getServers().empty()) { */
-  /*   LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath()); */
-  /*   return (int)Error::Config; */
-  /* } */
+  Config config = ConfigInitializer::initializeConfig(argc, argv);
+  Exception::tryCatch(&Config::parseConfigFile, &config);
+  if (config.getServers().empty()) {
+    LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
+    return (int)Error::Config;
+  }
 
-  /* config.printServerConfig(); */
-  /* ServersManager serversManager; */
-  /* serversManager.configServers(config); */
-  /* serversManager.runServers(); */
+  config.printServerConfig();
+  ServerManager serverManager;
+  serverManager.configServers(config);
+  serverManager.runServers();
 
   /* ======================================================================= */
-  /* ServersManager server; */
-  /* Exception::tryCatch(&ServersManager::configServers, &server, config); */
+  /* ServerManager server; */
+  /* Exception::tryCatch(&ServerManager::configServers, &server, config); */
   /* if (config.getServers().empty()) { */
   /*   LOG_FATAL(ERR_MSG_SERVER, config.getFileName); */
   /*   return (int)Error::Server; */
   /* } */
-  /* Exception::tryCatch(&ServersManager::runServers, &server); */
+  /* Exception::tryCatch(&ServerManager::runServers, &server); */
   /* ======================================================================= */
 
   return g_ExitStatus;
