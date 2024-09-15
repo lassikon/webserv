@@ -48,6 +48,7 @@ MODULES := network \
 		   config/setters \
 		   request \
 		   request/handlers \
+		   request/states \
 		   response \
 		   response/actions \
 		   exception \
@@ -70,6 +71,10 @@ SOURCES := main \
            ProcessTree \
            ProcessTreeBuilder \
            Request \
+           ReadState \
+           ParseState \
+           ProcessState \
+           SendState \
            HttpException \
            ServeDirectoryListingAction \
            ServeFileAction \

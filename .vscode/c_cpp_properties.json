@@ -10,6 +10,7 @@
           "${workspaceFolder}/sources/response/actions",
           "${workspaceFolder}/sources/request",
           "${workspaceFolder}/sources/request/handlers",
+          "${workspaceFolder}/sources/request/states",
           "${workspaceFolder}/sources/exception",
           "${workspaceFolder}/sources/config",
           "${workspaceFolder}/sources/config/setters"

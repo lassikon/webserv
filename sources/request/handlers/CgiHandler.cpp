@@ -121,6 +121,7 @@ void CgiHandler::forkChildProcess(void) {
     cgiParam.fd = pipefd[Fd::Read];
     cgiParam.write = pipefd[Fd::Write];
     cgiParam.clientFd = clientFd;
+    cgiParam.isExited = false;
     cgiParam.start = std::chrono::steady_clock::now();
     g_CgiParams.push_back(cgiParam);
   }

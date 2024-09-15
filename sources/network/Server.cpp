@@ -50,6 +50,20 @@ void Server::handleClient(PollManager& pollManager, short revents, int readFd, i
   } else {
     updateClientLastActivity(clientFd);
   }
+  for (auto& pollFd : pollManager.getPollFds()) {
+    if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::DONE) {
+      LOG_WARN("disabling POLLOUT for client fd:", clientFd);
+      pollFd.events &= ~POLLOUT;
+      break;
+    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::READING) {
+      LOG_WARN("disabling POLLOUT for client fd:", clientFd);
+      pollFd.events &= ~POLLOUT;
+      break;
+    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::PROCESSING) {
+      pollFd.events |= POLLOUT;
+      break;
+    }
+  }
 }
 
 void Server::checkIdleClients(PollManager& pollManager) {

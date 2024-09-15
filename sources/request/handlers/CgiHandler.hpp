@@ -23,6 +23,7 @@ struct CgiParams {
   int fd = -1;
   int write = -1;
   int clientFd = -1;
+  bool isExited = false;
   std::chrono::time_point<std::chrono::steady_clock> start;
 };
 
