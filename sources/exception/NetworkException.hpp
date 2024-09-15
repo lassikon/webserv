@@ -3,7 +3,17 @@
 #include <IException.hpp>
 #include <Response.hpp>
 
+#include <string>
+#include <unordered_map>
+
 class NetworkException : public IException {
+ private:
+  std::unordered_map<NetworkError, std::string> errMsgMap = {
+    {NetworkError::BadRequest, "Bad Request"},    {NetworkError::Forbidden, "Forbidden"},
+    {NetworkError::Notfound, "Not Found"},        {NetworkError::Method, "Method Not Allowed"},
+    {NetworkError::Payload, "Payload Too Large"},
+  };
+
  public:
   NetworkException() = delete;
 
