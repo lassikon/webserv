@@ -1,5 +1,6 @@
 #include <CgiHandler.hpp>
 #include <Client.hpp>
+#include "IException.hpp"
 
 // static std::map<pid_t, int> pids;
 
@@ -62,7 +63,7 @@ void CgiHandler::waitChildProcess(void) {
   //waitpid(this->pid, &wstat, WNOHANG);
   waitpid(this->pid, &wstat, 0);
   if (WIFSIGNALED(wstat) != 0) {
-    g_ExitStatus = (int)Error::Signal + WTERMSIG(wstat);
+    g_ExitStatus = (int)RuntimeError::Signal + WTERMSIG(wstat);
   } else if (WIFEXITED(wstat)) {
     g_ExitStatus = WEXITSTATUS(wstat);
     close(pipefd[Fd::Write]);
@@ -115,7 +116,7 @@ void CgiHandler::forkChildProcess(void) {
     executeCgiScript();
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-   // cgiFd = pipefd[Fd::Read];
+    // cgiFd = pipefd[Fd::Read];
     CgiParams cgiParam;
     cgiParam.pid = this->pid;
     cgiParam.fd = pipefd[Fd::Read];
@@ -142,13 +143,13 @@ void CgiHandler::scriptLoader(void) {
     cgiError("Could not create pipe");
   } else {
     forkChildProcess();
-   // waitChildProcess();
+    // waitChildProcess();
   }
 }
 
 void CgiHandler::runScript(void) {
   LOG_TRACE("Running new CGI instance");
-  Exception::tryCatch(&CgiHandler::scriptLoader, this);
+  RuntimeException::tryCatch(&CgiHandler::scriptLoader, this);
   //debugPrintCgiFd();
 }
 

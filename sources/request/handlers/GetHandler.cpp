@@ -1,5 +1,5 @@
-#include <GetHandler.hpp>
 #include <Client.hpp>
+#include <GetHandler.hpp>
 
 void GetHandler::executeRequest(Client& client) {
   if (client.getRes().getResStatusCode() != 0) {

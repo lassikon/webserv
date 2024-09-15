@@ -1,8 +1,6 @@
 #pragma once
 
 #include <IServeAction.hpp>
-#include <NetworkException.hpp>
-#include <Response.hpp>
 
 class Serve404Action : public IServeAction {
  public:

@@ -2,11 +2,11 @@
 
 #include <IServeAction.hpp>
 #include <Logger.hpp>
-#include <Response.hpp>
-#include <string>
+
 #include <algorithm>
 #include <filesystem>
 #include <sstream>
+#include <string>
 
 class ServeDirectoryListingAction : public IServeAction {
  public:
@@ -14,5 +14,4 @@ class ServeDirectoryListingAction : public IServeAction {
   virtual ~ServeDirectoryListingAction() = default;
   void execute(Response& res) override;
   std::string makeDirectoryListing(std::string path);
-
 };

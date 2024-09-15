@@ -1,6 +1,8 @@
 #pragma once
+
 #include <IServeAction.hpp>
 #include <Logger.hpp>
+
 #include <functional>
 #include <iostream>
 #include <memory>

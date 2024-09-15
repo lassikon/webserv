@@ -15,7 +15,7 @@ void Socket::setupSocket(ServerConfig& serverConfig) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  if (int s = getaddrinfo(NULL, std::to_string(serverConfig.port).c_str(), &hints, &res) != 0) {
+  if (int s = getaddrinfo(NULL, std::to_string(serverConfig.port).c_str(), &hints, &addr) != 0) {
     throw socketError("Failed to get address info:", gai_strerror(s));
   }
   sockFd = socket(AF_INET, SOCK_STREAM, 0);

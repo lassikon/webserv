@@ -61,7 +61,7 @@ void Logger::loadDefaults(void) {
 void Logger::createLogFile(void) noexcept {
   logFile.open(fileName, std::ios_base::app);
   if (logFile.fail()) {
-    LOG_WARN("Could not open file:", fileName, IException::expandErrno());
+    LOG_WARN("Could not open file:", fileName, strerror(errno));
   }
 }
 

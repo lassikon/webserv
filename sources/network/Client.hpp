@@ -1,15 +1,12 @@
 #pragma once
 
 #include <CgiHandler.hpp>
-#include <Config.hpp>
 #include <DeleteHandler.hpp>
 #include <GetHandler.hpp>
-#include <IRequestHandler.hpp>
-#include <Logger.hpp>
-#include <NetworkException.hpp>
 #include <PostHandler.hpp>
-#include <ProcessTree.hpp>
-#include <ProcessTreeBuilder.hpp>
+
+#include <Config.hpp>
+#include <Logger.hpp>
 #include <Request.hpp>
 #include <Response.hpp>
 #include <RuntimeException.hpp>
@@ -32,12 +29,12 @@ enum struct ClientState { READING_REQLINE, READING_HEADER, READING_BODY, READING
 
 class Client {
  private:
-  std::vector<std::shared_ptr<ServerConfig>>& serverConfigs;
-
- private:
   ClientState state;
   bool isCgi = false;
   int fd;
+
+ private:
+  std::vector<std::shared_ptr<ServerConfig>>& serverConfigs;
 
  private:
   Request req;

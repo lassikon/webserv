@@ -1,6 +1,5 @@
 #include <ServeRedirectAction.hpp>
 
-
 void ServeRedirectAction::execute(Response& res) {
   LOG_TRACE("ServeRedirectAction execute called");
   LOG_DEBUG("Redirecting to: ", res.getRouteConfig().redirect);
