@@ -20,7 +20,7 @@ class NetworkException : public IException {
   // Note: If called inside class, reference to class should be 'this'
   // Example: NetworkException::tryCatch(&MyClass::fn, &example, 42);
   template <typename Func, typename Cref, typename... Args>
-  static void tryCatch(Func fn, Cref ref, Args&&... args) {
+  static auto tryCatch(Func fn, Cref ref, Args&&... args) {
     try {
       return (ref->*fn)(std::forward<Args>(args)...);
     } catch (const NetworkException& e) {

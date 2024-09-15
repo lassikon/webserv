@@ -24,6 +24,7 @@ struct CgiParams {
   int fd = -1;
   int write = -1;
   int clientFd = -1;
+  bool isExited = false;
   steady_time_point_t start;
 };
 
