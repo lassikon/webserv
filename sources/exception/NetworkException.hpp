@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Client.hpp>
 #include <IException.hpp>
 #include <Response.hpp>
 
@@ -18,10 +19,11 @@ class NetworkException : public IException {
   NetworkException() = delete;
 
   template <typename... Args>
-  NetworkException(Response& respond, NetworkError errCode, const char* fileName,
-                   const char* funcName, const size_t line, Args&&... args)
+  NetworkException(Client& client, NetworkError errCode, const char* fileName, const char* funcName,
+                   const size_t line, Args&&... args)
       : IException(errCode, fileName, funcName, line, std::forward<Args>(args)...) {
-    setResponseAttributes(respond, (int)errCode, "Forbidden");
+    setResponseAttributes(client.getRes(), (int)errCode, getErrorMessage(errCode));
+    client.setClientState(ClientState::SENDING);
   }
 
   // Template to create new try-catch block, can create multiple blocks inside each other
@@ -45,6 +47,15 @@ class NetworkException : public IException {
       LOG_FATAL("[STD] Unexpected Error: ", e.what());
     } catch (const std::exception& e) {
       LOG_FATAL("[STD] Skill issues: ", e.what());
+    }
+  }
+
+ private:
+  const char* getErrorMessage(NetworkError errCode) {
+    for (const auto& [code, message] : errMsgMap) {
+      if (code == errCode) {
+        return message.c_str();
+      }
     }
   }
 
@@ -75,5 +86,12 @@ class NetworkException : public IException {
   }
 };
 
-#define httpForbidden(response, ...) \
-  NetworkException(response, NetworkError::Forbidden, DATA, __VA_ARGS__)
+#define httpForbidden(client, ...) \
+  NetworkException(client, NetworkError::Forbidden, LOGDATA, __VA_ARGS__)
+#define httpNotFound(client, ...) \
+  NetworkException(client, NetworkError::Notfound, LOGDATA, __VA_ARGS__)
+#define httpBadRequest(client, ...) \
+  NetworkException(client, NetworkError::BadRequest, LOGDATA, __VA_ARGS__)
+#define httpMethod(client, ...) NetworkException(client, NetworkError::Method, LOGDATA, __VA_ARGS__)
+#define httpPayload(client, ...) \
+  NetworkException(client, NetworkError::Payload, LOGDATA, __VA_ARGS__)

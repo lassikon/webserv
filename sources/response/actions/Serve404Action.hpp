@@ -8,7 +8,7 @@ class Serve404Action : public IServeAction {
 
   virtual ~Serve404Action() = default;
 
-  inline void execute(Response& res) override {
-    throw httpForbidden(res, "HTTP Error 403 - Forbidden");
+  inline void execute(Client& client) override {
+    throw httpForbidden(client, "HTTP Error 404 - Page not found");
   }
 };

@@ -8,7 +8,7 @@ class Serve413Action : public IServeAction {
 
   virtual ~Serve413Action() = default;
 
-  inline void execute(Response& res) override {
-    throw httpForbidden(res, "HTTP Error 403 - Forbidden");
+  inline void execute(Client& client) override {
+    throw httpPayload(client, "HTTP Error 413 - Payload too large");
   }
 };

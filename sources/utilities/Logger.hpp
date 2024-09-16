@@ -73,11 +73,14 @@ class Logger {
   }
 };
 
-#define DATA __FILE__, __func__, __LINE__
+#define LOGDATA __FILE__, __func__, __LINE__
 
-#define LOG_TRACE(...) (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, DATA, __VA_ARGS__))
-#define LOG_DEBUG(...) (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, DATA, __VA_ARGS__))
-#define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, DATA, __VA_ARGS__))
-#define LOG_WARN(...) (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, DATA, __VA_ARGS__))
-#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, DATA, __VA_ARGS__))
-#define LOG_FATAL(...) (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, DATA, __VA_ARGS__))
+#define LOG_TRACE(...) \
+  (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_DEBUG(...) \
+  (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_WARN(...) \
+  (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, LOGDATA, __VA_ARGS__))
+#define LOG_FATAL(...) (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, LOGDATA, __VA_ARGS__))
