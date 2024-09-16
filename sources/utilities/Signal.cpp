@@ -15,6 +15,7 @@ void Signal::signalHandler(int sigNum) noexcept {
   LOG_INFO("Server interrupted by signal:", sigNum, sigmap.at(sigNum));
   g_ExitStatus = (int)Error::Signal + sigNum;
   CgiHandler::killAllChildPids();
+  exit(g_ExitStatus);
 }
 
 void Signal::trackSignals(void) noexcept {

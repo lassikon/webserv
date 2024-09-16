@@ -1,4 +1,5 @@
 #include <CgiHandler.hpp>
+#include <Client.hpp>
 
 // static std::map<pid_t, int> pids;
 
@@ -19,12 +20,7 @@ CgiHandler::CgiHandler(const Client& client) {
 }
 
 CgiHandler::CgiHandler(void) {  // delete this
-  cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
-  LOG_TRACE(Utility::getDeconstructor(*this));
-  LOG_TRACE("Using binary:", cgi);
-  args.push_back(cgi);
-  generateEnvpVector();
-  cgiFd = pipefd[Fd::Read];
+  LOG_TRACE(Utility::getConstructor(*this));
 }
 
 void CgiHandler::generateEnvpVector(void) {
@@ -63,11 +59,13 @@ void CgiHandler::killAllChildPids(void) {
 }
 
 void CgiHandler::waitChildProcess(void) {
-  waitpid(this->pid, &wstat, WNOHANG);
+  //waitpid(this->pid, &wstat, WNOHANG);
+  waitpid(this->pid, &wstat, 0);
   if (WIFSIGNALED(wstat) != 0) {
     g_ExitStatus = (int)Error::Signal + WTERMSIG(wstat);
   } else if (WIFEXITED(wstat)) {
     g_ExitStatus = WEXITSTATUS(wstat);
+    close(pipefd[Fd::Write]);
   }
 }
 
@@ -113,10 +111,19 @@ void CgiHandler::forkChildProcess(void) {
     cgiError("Could not create child process");
   } else if (isChildProcess()) {
     LOG_DEBUG("Child pid:", getpid());
+    //close(pipefd[Fd::Read]);
     executeCgiScript();
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-    g_CgiParams.push_back({this->pid, pipefd[Fd::Read], std::chrono::steady_clock::now()});
+   // cgiFd = pipefd[Fd::Read];
+    CgiParams cgiParam;
+    cgiParam.pid = this->pid;
+    cgiParam.fd = pipefd[Fd::Read];
+    cgiParam.write = pipefd[Fd::Write];
+    cgiParam.clientFd = clientFd;
+    cgiParam.isExited = false;
+    cgiParam.start = std::chrono::steady_clock::now();
+    g_CgiParams.push_back(cgiParam);
   }
 }
 
@@ -129,19 +136,29 @@ bool CgiHandler::isValidScript(void) const {
 }
 
 void CgiHandler::scriptLoader(void) {
-  cgiError("whatever error");
+  //cgiError("whatever error");
   if (!isValidScript()) {
     cgiError("Could not open script");
   } else if (pipe(pipefd) == -1) {
     cgiError("Could not create pipe");
   } else {
     forkChildProcess();
-    waitChildProcess();
+   // waitChildProcess();
   }
 }
 
 void CgiHandler::runScript(void) {
   LOG_TRACE("Running new CGI instance");
   Exception::tryCatch(&CgiHandler::scriptLoader, this);
-  /* debugPrintCgiFd(); */
+  //debugPrintCgiFd();
+}
+
+void CgiHandler::executeRequest(Client& client) {
+  LOG_TRACE("CgiHandler: executingRequest");
+  cgi = client.getRes().getReqURI();
+  LOG_TRACE("Using binary:", cgi);
+  clientFd = client.getFd();
+  args.push_back(cgi);
+  generateEnvpVector();
+  runScript();
 }

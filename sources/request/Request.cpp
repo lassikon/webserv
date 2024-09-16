@@ -3,7 +3,6 @@
 
 Request::Request() {
   LOG_DEBUG(Utility::getConstructor(*this));
-  transferEncodingChunked = false;
 }
 
 Request::~Request() {

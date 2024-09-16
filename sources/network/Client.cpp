@@ -3,7 +3,7 @@
 Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
     : fd(socketFd), serverConfigs(serverConfigs) {
   LOG_DEBUG(Utility::getConstructor(*this));
-  state = ClientState::READING_REQLINE;
+  clientState = ClientState::READING;
 }
 
 Client::~Client(void) {
@@ -15,116 +15,50 @@ bool Client::operator==(const Client& other) const {
   return fd == other.fd;
 }
 
-bool Client::handlePollEvents(short revents) {
+bool Client::handlePollEvents(short revents, int readFd, int writeFd) {
   if (revents & POLLIN) {
-    if (!receiveData()) {
-      return false;
-    }
+    handlePollInEvent(readFd);
   }
   if (revents & POLLOUT) {
-    if (!handleRequest()) {
+    handlePollOutEvent(writeFd);
+    if (shouldCloseConnection()) {
       return false;
     }
   }
   return true;
 }
 
-bool Client::receiveData(void) {
-  char buf[4096] = {0};
-  int nbytes = recv(fd, buf, sizeof(buf), 0);
-  if (nbytes == -1) {
-    clientError("Failed to recv() from fd:", fd);
-  } else if (nbytes == 0) {  // Connection closed
-    LOG_TRACE("Connection closed for client fd:", fd);
-    return false;
-  } else {
-    LOG_INFO("Receiving data from client fd", fd, ", buffer:", buf);
-    std::istringstream bufStr(buf);
-    parseRequest(bufStr, nbytes);
-  }
-  return true;
-}
-
-void Client::parseRequest(std::istringstream& iBuf, int nbytes) {
-  LOG_TRACE("Processing request from client fd:", fd);
-  if (state == ClientState::READING_REQLINE) {
-    std::string requestLine;
-    std::getline(iBuf, requestLine);
-    req.parseRequestLine(this, requestLine);
-  }
-  if (state == ClientState::READING_HEADER) {
-    req.parseHeaders(this, iBuf);
-  }
-  if (state == ClientState::READING_BODY) {
-    req.parseBody(this, iBuf, nbytes);
-  }
-  if (state == ClientState::READING_DONE) {
-    LOG_TRACE("Request received from client fd:", fd);
+void Client::handlePollInEvent(int readFd) {
+  LOG_INFO("Client fd:", fd, "has POLLIN event");
+  setReadFd(readFd);
+  if (clientState == ClientState::READING) {
+    readState.execute(*this);
+    parseState.execute(*this);
   }
 }
 
-bool Client::handleRequest(void) {
-  // if (state == ClientState::READING_REQLINE) {
-  //   return true;
-  // }
-  if (state != ClientState::READING_DONE) {
-    LOG_ERROR("Client", getFd(), "state is NOT done reading");
-    return false;
-  }
-  LOG_TRACE("Handling request from client fd:", fd);
-  processRequest();
-  if (!sendResponse()) {
-    return false;
-  }
-  return true;
-}
-
-void Client::processRequest(void) {
-  res.setServerConfig(chooseServerConfig());  // choose server config
-  try {
-    if (req.getMethod() == "GET") {
-      LOG_INFO("Processing GET request for path:", req.getReqURI());
-      getHandler.executeRequest(req, res);
-    } else if (req.getMethod() == "POST") {
-      LOG_INFO("Processing POST request for path:", req.getReqURI());
-      postHandler.executeRequest(req, res);
-    } else if (req.getMethod() == "DELETE") {
-      LOG_INFO("Processing DELETE request for path:", req.getReqURI());
-      deleteHandler.executeRequest(req, res);
-    } else {
-      LOG_ERROR("Unsupported method:", req.getMethod());
-    }
-  } catch (HttpException& e) {
-    LOG_ERROR("Exception caught:", e.what());
-    e.setResponseAttributes();
-  }
-  res.makeResponse();
-}
-
-ServerConfig Client::chooseServerConfig(void) {
-  LOG_TRACE("Choosing server config for client fd:", fd);
-  for (auto& serverConfig : serverConfigs) {
-    if (serverConfig->serverName == req.getHeaders()["Host"]) {
-      return *serverConfig;
+void Client::handlePollOutEvent(int writeFd) {
+  LOG_INFO("Client fd:", fd, "has POLLOUT event");
+  setWriteFd(writeFd);
+  if (clientState == ClientState::PROCESSING) {
+    try {
+      processState.execute(*this);
+    } catch (HttpException& e) {
+      LOG_ERROR("Exception caught:", e.what());
+      e.setResponseAttributes();
+      clientState = ClientState::SENDING;
     }
   }
-  return *(serverConfigs.front());
-  // throw exception
-}
-
-bool Client::sendResponse(void) {
-  if (res.getResContent().empty()) {
-    LOG_TRACE("No data to send for client fd:", fd);
-    return true;
+  if (clientState == ClientState::SENDING) {
+    res.makeResponse();
+    sendState.execute(*this);
   }
-  LOG_TRACE("Sending response");
-  // TODO: handle send not being able to send all data
-  if (send(getFd(), res.getResContent().data(), res.getResContent().size(), 0) == -1) {
-    LOG_ERROR("Failed to send response");
-    return false;
+  if (clientState == ClientState::DONE) {
+    LOG_INFO("Client fd:", fd, "is done");
+    LOG_DEBUG("Cleaning up client fd:", fd);
+    initClient();
+    clientState = ClientState::READING;
   }
-  state = ClientState::READING_REQLINE;
-  return true;
 }
 
 void Client::setFd(int newFd) {
@@ -144,4 +78,45 @@ void Client::cleanupClient(void) {
     }
     fd = -1;  // Mark as closed
   }
+}
+
+void Client::resetResponse(void) {
+  res.setReqURI("");
+  res.setResStatusCode(0);
+  res.setResStatusMessage("");
+  std::vector<char> body = {};
+  res.setResBody(body);
+  res.getResHeaders().clear();
+  res.getResContent().clear();
+}
+
+void Client::resetRequest(void) {
+  req.setMethod("");
+  req.setReqURI("");
+  req.setVersion("");
+  req.getHeaders().clear();
+  req.getBody().clear();
+  req.setBodySize(0);
+}
+
+void Client::initClient(void) {
+  resetRequest();
+  resetResponse();
+  isCgi = false;
+  readBuf = nullptr;
+  readNBytes = 0;
+  writeNBytes = 0;
+  clientState = ClientState::READING;
+  parsingState = ParsingState::REQLINE;
+}
+
+bool Client::shouldCloseConnection(void) {
+  if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
+      req.getHeaders()["Connection"] == "close") {
+    return true;
+  }
+  if (writeNBytes == -1) {
+    return true;
+  }
+  return false;
 }

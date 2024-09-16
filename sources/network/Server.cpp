@@ -33,14 +33,15 @@ void Server::acceptConnection(PollManager& pollManager) {
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
-void Server::handleClient(PollManager& pollManager, int clientFd, short revents) {
+void Server::handleClient(PollManager& pollManager, short revents, int readFd, int clientFd) {
   auto it = std::find_if(
     clients.begin(), clients.end(),
     [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
   if (it == clients.end()) {
+    LOG_ERROR("Client fd:", clientFd, "not found in clients");
     return;
   }
-  if ((*it)->handlePollEvents(revents) == false) {  // connection closed or error
+  if ((*it)->handlePollEvents(revents, readFd, clientFd) == false) {  // connection closed or error
     LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
     clientLastActivity.erase(clientFd);
@@ -48,6 +49,20 @@ void Server::handleClient(PollManager& pollManager, int clientFd, short revents)
     clients.erase(it);
   } else {
     updateClientLastActivity(clientFd);
+  }
+  for (auto& pollFd : pollManager.getPollFds()) {
+    if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::DONE) {
+      LOG_WARN("disabling POLLOUT for client fd:", clientFd);
+      pollFd.events &= ~POLLOUT;
+      break;
+    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::READING) {
+      LOG_WARN("disabling POLLOUT for client fd:", clientFd);
+      pollFd.events &= ~POLLOUT;
+      break;
+    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::PROCESSING) {
+      pollFd.events |= POLLOUT;
+      break;
+    }
   }
 }
 

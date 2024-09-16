@@ -39,6 +39,10 @@ class ServerManager {
   void handlePollInEvent(PollManager& pollManager, struct pollfd& pollFd);
   void handlePollOutEvent(PollManager& pollManager, struct pollfd& pollFd);
 
+  bool isCgiFd(int fd) const;
+  int getClientFdFromCgiParams(int fd) const;
+  int getCgiFdFromClientFd(int fd) const;
+
   template <typename... Args> void serverError(Args&&... args) {
     THROW(Error::Server, std::forward<Args>(args)..., STRERROR);
   }

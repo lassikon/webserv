@@ -19,8 +19,8 @@ void HttpException::setResponseAttributes(void) {
   res.setResBody(ibody);
   std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
   std::string mimeType = Utility::getMimeType(ext);
-  res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
+  //res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
   res.addHeader("Content-Type", mimeType);
   res.addHeader("Content-Length", std::to_string(ibody.size()));
-  res.addHeader("Connection", "close");
+  res.addHeader("Connection", "keep-alive");
 }

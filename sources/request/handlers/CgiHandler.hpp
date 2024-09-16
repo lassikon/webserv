@@ -1,9 +1,7 @@
 #pragma once
 
-#include <Client.hpp>
-#include <Config.hpp>
 #include <Exception.hpp>
-#include <Global.hpp>
+#include <IRequestHandler.hpp>
 #include <Logger.hpp>
 #include <Typedef.hpp>
 #include <Utility.hpp>
@@ -18,13 +16,18 @@
 #include <string>
 #include <vector>
 
+class Client;
+
 struct CgiParams {
-  pid_t pid;
-  int fd;
+  pid_t pid = -1;
+  int fd = -1;
+  int write = -1;
+  int clientFd = -1;
+  bool isExited = false;
   std::chrono::time_point<std::chrono::steady_clock> start;
 };
 
-class CgiHandler {
+class CgiHandler : public IRequestHandler {
  private:
   // static std::vector<pid_t> pids;
   // static std::map<pid_t, int> pids;
@@ -38,6 +41,7 @@ class CgiHandler {
 
   int pipefd[2];
   int cgiFd;
+  int clientFd;
   int wstat;
   pid_t pid;
 
@@ -45,9 +49,10 @@ class CgiHandler {
   /* CgiHandler(void) = delete; */
   CgiHandler();  // delete this
   CgiHandler(const Client& client);
-  ~CgiHandler(void);
+  virtual ~CgiHandler(void);
 
  public:
+  void executeRequest(Client& client) override;
   void runScript(void);
 
  private:

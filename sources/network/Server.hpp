@@ -43,8 +43,9 @@ class Server {
 
   void addServerConfig(ServerConfig& serverConfig);
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& pollManager, int clientFd, short revents);
+  void handleClient(PollManager& pollManager, short revents, int readFd, int clientFd);
   void checkIdleClients(PollManager& pollManager);
   void updateClientLastActivity(int clientFd);
   bool isClientFd(int fd) const;
+  
 };
