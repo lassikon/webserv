@@ -1,3 +1,4 @@
+#include <Client.hpp>
 #include <ServeRedirectAction.hpp>
 
 void ServeRedirectAction::execute(Client& client) {

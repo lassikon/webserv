@@ -1,5 +1,7 @@
-#include <Client.hpp>
 #include <ProcessState.hpp>
+#include <Client.hpp>
+
+
 
 void ProcessState::execute(Client& client) {
   if (client.getReadBuf() == nullptr) {
@@ -68,7 +70,7 @@ ServerConfig ProcessState::chooseServerConfig(Client& client) {
 void ProcessState::buildPath(Client& client) {
   LOG_TRACE("Building path for client fd:", client.getFd());
   std::shared_ptr<ProcessTreeBuilder> ptb = std::make_shared<ProcessTreeBuilder>(
-    client.getReq(), client.getRes(), client.getRes().getServerConfig());
+    client, client.getRes().getServerConfig());
   client.getRes().setReqURI(client.getReq().getReqURI());
   root = ptb->buildPathTree();
   root->process(client);

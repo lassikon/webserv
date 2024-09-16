@@ -5,6 +5,7 @@
 #include <ProcessTreeBuilder.hpp>
 
 class Client;
+class ServerConfig;
 
 class ProcessState : public IStateHandler {
  public:

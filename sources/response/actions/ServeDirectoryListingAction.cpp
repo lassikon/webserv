@@ -1,4 +1,7 @@
+#include <Client.hpp>
 #include <ServeDirectoryListingAction.hpp>
+
+
 
 void ServeDirectoryListingAction::execute(Client& client) {
   LOG_TRACE("Serving directory listing");

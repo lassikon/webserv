@@ -2,8 +2,8 @@
 
 #include <IServeAction.hpp>
 #include <Logger.hpp>
-#include <Client.hpp>
 
+class Client;
 class ServeRedirectAction : public IServeAction {
  public:
   ServeRedirectAction() = default;

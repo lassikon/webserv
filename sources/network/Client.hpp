@@ -16,8 +16,6 @@
 #include <Response.hpp>
 #include <Utility.hpp>
 
-#include <ProcessTree.hpp>
-#include <ProcessTreeBuilder.hpp>
 #include <RuntimeException.hpp>
 
 #include <netdb.h>
@@ -45,7 +43,6 @@ class Client {
 
  private:
   std::vector<std::shared_ptr<ServerConfig>>& serverConfigs;
-  std::shared_ptr<ProcessTree> root;
 
  private:  // handlers
   PostHandler postHandler;

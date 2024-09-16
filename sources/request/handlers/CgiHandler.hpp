@@ -2,6 +2,7 @@
 
 #include <IRequestHandler.hpp>
 #include <Logger.hpp>
+#include <RuntimeException.hpp>
 
 #include <Typedef.hpp>
 #include <Utility.hpp>

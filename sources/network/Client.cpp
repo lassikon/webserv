@@ -1,4 +1,5 @@
 #include <Client.hpp>
+#include <NetworkException.hpp>
 
 Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
     : fd(socketFd), serverConfigs(serverConfigs) {
@@ -57,7 +58,7 @@ void Client::handlePollOutEvent(int writeFd) {
   }
   if (clientState == ClientState::DONE) {
     LOG_INFO("Client fd:", fd, "is done");
-    LOG_DEBUG("Cleaning up client fd:", fd);
+    LOG_DEBUG("Reinitializing client fd:", fd);
     initClient();
     clientState = ClientState::READING;
   }
@@ -85,8 +86,7 @@ void Client::resetResponse(void) {
   res.setReqURI("");
   res.setResStatusCode(0);
   res.setResStatusMessage("");
-  std::vector<char> body = {};
-  res.setResBody(body);
+  res.getResBody().clear();
   res.getResHeaders().clear();
   res.getResContent().clear();
 }

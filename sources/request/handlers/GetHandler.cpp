@@ -1,5 +1,7 @@
 #include <Client.hpp>
 #include <GetHandler.hpp>
+#include <ProcessTree.hpp>
+#include <ProcessTreeBuilder.hpp>
 
 void GetHandler::executeRequest(Client& client) {
   if (client.getRes().getResStatusCode() != 0) {

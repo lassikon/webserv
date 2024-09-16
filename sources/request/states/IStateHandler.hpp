@@ -1,6 +1,6 @@
 #pragma once
-#include "Client.hpp"
 
+class Client;
 class IStateHandler {
  public:
   virtual void execute(Client& client) = 0;

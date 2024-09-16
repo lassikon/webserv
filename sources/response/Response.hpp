@@ -30,6 +30,7 @@ class Response {
 
   void makeResponse(void);
   std::vector<char>& getResContent(void) { return resContent; }
+  std::vector<char>& getResBody(void) { return resBody; }
   std::string& getReqURI(void) { return reqURI; }
   RouteConfig& getRouteConfig(void) { return routeConfig; }
   ServerConfig& getServerConfig(void) { return serverConfig; }

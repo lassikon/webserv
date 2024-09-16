@@ -11,6 +11,4 @@ class SendState : public IStateHandler {
   virtual ~SendState() = default;
   void execute(Client& client) override;
 
- private:
-  bool shouldCloseConnection(Client& client);
 };

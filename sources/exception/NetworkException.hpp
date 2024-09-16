@@ -1,10 +1,10 @@
 #pragma once
 
+#include <Client.hpp>
 #include <IException.hpp>
 #include <Response.hpp>
 #include <string>
 #include <unordered_map>
-#include <Client.hpp>
 
 
 class NetworkException : public IException {
@@ -57,6 +57,7 @@ class NetworkException : public IException {
         return message.c_str();
       }
     }
+    return "Unknown Error";
   }
 
  private:

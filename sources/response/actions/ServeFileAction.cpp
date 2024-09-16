@@ -1,3 +1,4 @@
+#include <Client.hpp>
 #include <ServeFileAction.hpp>
 
 void ServeFileAction::execute(Client& client) {

@@ -1,10 +1,10 @@
 #pragma once
 
 #include <IRequestHandler.hpp>
-#include <ProcessTree.hpp>
-#include <ProcessTreeBuilder.hpp>
 
 class Client;
+class ProcessTree;
+class ProcessTreeBuilder;
 
 class GetHandler : public IRequestHandler {
  public:

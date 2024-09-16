@@ -1,7 +1,5 @@
 #include <CgiHandler.hpp>
 #include <Client.hpp>
-#include <NetworkException.hpp>
-#include <RuntimeException.hpp>
 
 // static std::map<pid_t, int> pids;
 

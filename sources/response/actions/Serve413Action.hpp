@@ -1,15 +1,10 @@
 #pragma once
 
-#include <NetworkException.hpp>
 #include <IServeAction.hpp>
-#include <Client.hpp>
+class Client;
 class Serve413Action : public IServeAction {
  public:
   Serve413Action() = default;
-
   virtual ~Serve413Action() = default;
-
-  inline void execute(Client& client) override {
-    throw httpPayload(client, "HTTP Error 413 - Payload too large");
-  }
+  void execute(Client& client) override;
 };

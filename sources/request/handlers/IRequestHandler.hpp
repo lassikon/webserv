@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Logger.hpp>
-
 class Client;
 
 class IRequestHandler {

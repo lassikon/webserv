@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
-#include <Client.hpp>
 
+class Client;
 class ServeDirectoryListingAction : public IServeAction {
  public:
   ServeDirectoryListingAction() = default;
