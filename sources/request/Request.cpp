@@ -1,4 +1,3 @@
-#include <Client.hpp>
 #include <Request.hpp>
 
 Request::Request() {

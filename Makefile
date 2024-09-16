@@ -75,7 +75,6 @@ SOURCES := main \
            ParseState \
            ProcessState \
            SendState \
-           HttpException \
            ServeDirectoryListingAction \
            ServeFileAction \
            ServeRedirectAction \

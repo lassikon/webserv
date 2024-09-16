@@ -1,8 +1,10 @@
 #pragma once
-#include <Response.hpp>
+
+#include <Client.hpp>
 
 class IServeAction {
  public:
-  virtual void execute(Response& res) = 0;
+  virtual void execute(Client& client) = 0;
+
   virtual ~IServeAction() {}
 };

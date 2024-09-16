@@ -1,4 +1,5 @@
 #pragma once
+
 #include <IServeAction.hpp>
 #include <Logger.hpp>
 #include <functional>
@@ -6,8 +7,7 @@
 #include <memory>
 #include <string>
 
-class Response;
-class ProcessTreeBuilder;
+class Client;
 
 class ProcessTree {
  public:
@@ -16,7 +16,7 @@ class ProcessTree {
               std::shared_ptr<ProcessTree> falseBranch);
   ProcessTree(std::shared_ptr<IServeAction> action);
   ~ProcessTree();
-  void process(Response& res);
+  void process(Client& client);
 
  private:
   Validate validate = nullptr;

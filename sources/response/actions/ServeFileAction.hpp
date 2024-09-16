@@ -1,13 +1,12 @@
 #pragma once
 
 #include <IServeAction.hpp>
-#include <Response.hpp>
 #include <Logger.hpp>
-#include <string>
+#include <Client.hpp>
 
 class ServeFileAction : public IServeAction {
  public:
   ServeFileAction() = default;
   virtual ~ServeFileAction() = default;
-  void execute(Response& res) override;
+  void execute(Client& client) override;
 };

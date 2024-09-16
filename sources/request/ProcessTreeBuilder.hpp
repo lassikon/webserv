@@ -1,7 +1,6 @@
 #pragma once
-#include <sys/stat.h>
+
 #include <Config.hpp>
-#include <IServeAction.hpp>
 #include <Logger.hpp>
 #include <ProcessTree.hpp>
 #include <Serve403Action.hpp>
@@ -11,22 +10,23 @@
 #include <ServeDirectoryListingAction.hpp>
 #include <ServeFileAction.hpp>
 #include <ServeRedirectAction.hpp>
+
+#include <sys/stat.h>
+
 #include <filesystem>
 #include <memory>
 #include <string>
 
-class Response;
-class Request;
+class Client;
 
 class ProcessTreeBuilder : public std::enable_shared_from_this<ProcessTreeBuilder> {
  private:
-  Request& req;
-  Response& res;
+  Client& client;
   ServerConfig& serverConfig;
   RouteConfig routeConfig;
 
  public:
-  ProcessTreeBuilder(Request& req ,Response& res, ServerConfig& serverConfig);
+  ProcessTreeBuilder(Client& client, ServerConfig& serverConfig);
   ~ProcessTreeBuilder() = default;
   std::shared_ptr<ProcessTree> buildGetProcessTree();
   std::shared_ptr<ProcessTree> buildPathTree();

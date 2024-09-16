@@ -1,16 +1,16 @@
 #include <ServeFileAction.hpp>
 
-void ServeFileAction::execute(Response& res) {
+void ServeFileAction::execute(Client& client) {
   LOG_TRACE("Serving file");
-  std::string path = res.getReqURI();
-  res.setResStatusCode(200);
-  res.setResStatusMessage("OK");
+  std::string path = client.getRes().getReqURI();
+  client.getRes().setResStatusCode(200);
+  client.getRes().setResStatusMessage("OK");
   std::vector<char> ibody = Utility::readFile(path);
-  res.setResBody(ibody);
+  client.getRes().setResBody(ibody);
   std::string ext = path.substr(path.find_last_of(".") + 1);
   std::string mimeType = Utility::getMimeType(ext);
-  res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
-  res.addHeader("Content-Type", mimeType);
-  res.addHeader("Content-Length", std::to_string(ibody.size()));
-  res.addHeader("Connection", "keep-alive");
+  client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
+  client.getRes().addHeader("Content-Type", mimeType);
+  client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
+  client.getRes().addHeader("Connection", "keep-alive");
 }

@@ -10,7 +10,7 @@ ServerManager::~ServerManager(void) {
 
 bool ServerManager::checkServerExists(ServerConfig& serverConfig) {
   for (auto& server : servers) {
-    if (server->getPort() == serverConfig.port) {  // check ip as well?
+    if (server->getPort() == serverConfig.port) {
       return true;
     }
   }
@@ -18,11 +18,10 @@ bool ServerManager::checkServerExists(ServerConfig& serverConfig) {
 }
 
 void ServerManager::configServers(Config& config) {
-  LOG_DEBUG("Initializing servers");
+  LOG_TRACE("Initializing servers");
   for (auto& serverConfig : config.getServers()) {
     if (checkServerExists(serverConfig.second)) {
-      LOG_DEBUG("Server already exists, adding config to existing server in port:",
-                serverConfig.second.port);
+      LOG_DEBUG("Server already exists, adding config to its port:", serverConfig.second.port);
       for (auto& server : servers) {
         if (server->getPort() == serverConfig.second.port) {
           server->addServerConfig(serverConfig.second);
@@ -30,16 +29,9 @@ void ServerManager::configServers(Config& config) {
         }
       }
     } else {
-      LOG_DEBUG("Creating new server in port:", serverConfig.second.port);
+      LOG_DEBUG("Creating new server config in port:", serverConfig.second.port);
       servers.emplace_back(std::make_shared<Server>(serverConfig.second));
     }
-  }
-}
-
-void ServerManager::initializePollManager(PollManager& pollManager) {
-  for (auto& server : servers) {
-    pollManager.addFd(server->getSocketFd(), POLLIN);
-    LOG_DEBUG("Added server", server->getServerName(), "to pollFds");
   }
 }
 
@@ -50,14 +42,21 @@ void ServerManager::handleNoEvents(PollManager& pollManager) {
   }
 }
 
+void ServerManager::initializePollManager(PollManager& pollManager) {
+  for (auto& server : servers) {
+    pollManager.addFd(server->getSocketFd(), POLLIN);
+    LOG_DEBUG("Added server", server->getServerName(), "to pollFds");
+  }
+}
+
 void ServerManager::runServers(void) {
   PollManager pollManager;
-  initializePollManager(pollManager);  // Add server sockets to pollManager
-
+  LOG_TRACE("Adding server sockets to pollManager");
+  initializePollManager(pollManager);
   while (true) {
-    int pollCount = pollManager.pollFdsCount();  // Poll for events
+    int pollCount = pollManager.pollFdsCount();
     if (pollCount == -1) {
-      serverError("Failed to poll fds:");
+      throw serverError("Failed to poll fds");
     } else if (pollCount == 0) {
       handleNoEvents(pollManager);
     } else {
@@ -102,19 +101,20 @@ bool ServerManager::handlePollErrors(PollManager& pollManager, struct pollfd& po
 
 void ServerManager::handlePollInEvent(PollManager& pollManager, struct pollfd& pollFd) {
   for (auto& server : servers) {
-    if (pollFd.fd == server->getSocketFd()) {  // Listening socket, accept a new connection
+    if (pollFd.fd == server->getSocketFd()) {
+      LOG_TRACE("Listening socket, accept new connection");
       server->acceptConnection(pollManager);
       pollFd.revents = 0;  // Reset revents after handling
       break;
-    } else if (server->isClientFd(pollFd.fd)) {  // Client socket, handle communication
-      LOG_DEBUG("Handling client", pollFd.fd, "communication (POLLIN)");
+    } else if (server->isClientFd(pollFd.fd)) {
+      LOG_DEBUG("Handling client", pollFd.fd, "POLLIN communication");
       server->handleClient(pollManager, pollFd.revents, pollFd.fd, pollFd.fd);
       pollFd.events &= ~POLLIN;
       pollFd.revents = 0;
       break;
     } else if (isCgiFd(pollFd.fd) && server->isClientFd(getClientFdFromCgiParams(pollFd.fd))) {
       int clientFd = getClientFdFromCgiParams(pollFd.fd);
-      LOG_DEBUG("Handling CGI", pollFd.fd, " communication (POLLIN) clientFd:", clientFd);
+      LOG_DEBUG("Handling CGI", pollFd.fd, " POLLIN communication with clientFd:", clientFd);
       server->handleClient(pollManager, pollFd.revents, pollFd.fd, clientFd);
       pollFd.revents = 0;
       break;
@@ -124,8 +124,9 @@ void ServerManager::handlePollInEvent(PollManager& pollManager, struct pollfd& p
 
 void ServerManager::handlePollOutEvent(PollManager& pollManager, struct pollfd& pollFd) {
   for (auto& server : servers) {
-    if (server->isClientFd(pollFd.fd)) {  // Client socket ready for writing
-      LOG_DEBUG("Handling client", pollFd.fd, " communication (POLLOUT)");
+    if (server->isClientFd(pollFd.fd)) {
+      LOG_TRACE("Client socket ready for writing");
+      LOG_DEBUG("Handling client", pollFd.fd, "POLLOUT communication");
       server->handleClient(pollManager, pollFd.revents, pollFd.fd, pollFd.fd);
       if (!isCgiFd(getCgiFdFromClientFd(pollFd.fd))) {
         pollFd.events &= ~POLLOUT;
@@ -140,7 +141,6 @@ void ServerManager::handlePollOutEvent(PollManager& pollManager, struct pollfd& 
 void ServerManager::checkForNewChildProcesses(PollManager& pollManager) {
   for (auto& cgiParam : g_CgiParams) {
     if (!pollManager.fdExists(cgiParam.fd)) {
-      // set to non blocking
       int flags = fcntl(cgiParam.fd, F_GETFL, 0);
       if (flags == -1) {
         LOG_DEBUG("Failed to get flags for pipe fd:", cgiParam.fd);
@@ -154,7 +154,7 @@ void ServerManager::checkForNewChildProcesses(PollManager& pollManager) {
   }
 }
 
-bool ServerManager::childTimeout(std::chrono::time_point<std::chrono::steady_clock>& start) {
+bool ServerManager::childTimeout(steady_time_point_t& start) {
   auto now = std::chrono::steady_clock::now();
   if (now - start > std::chrono::seconds(CHILD_TIMEOUT)) {
     LOG_ERROR("Child process timed out");
@@ -170,7 +170,7 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
     if (!it->isExited) {
       pid_t result = waitpid(it->pid, &status, WNOHANG);
       if (result == -1) {
-        LOG_ERROR("Failed to wait for child process:", STRERROR);
+        LOG_ERROR("Failed to wait for child process:", IException::expandErrno());
         it = g_CgiParams.erase(it);
         pollManager.removeFd(it->fd);
         // throw exception?
@@ -192,7 +192,7 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
 void ServerManager::serverLoop(PollManager& pollManager) {
   for (auto& pollFd : pollManager.getPollFds()) {
     if (handlePollErrors(pollManager, pollFd)) {
-      continue;  // Error handled, move to next pollFd
+      continue;
     } else if (pollFd.revents & POLLIN) {
       handlePollInEvent(pollManager, pollFd);
     } else if (pollFd.revents & POLLOUT) {
@@ -205,7 +205,6 @@ void ServerManager::serverLoop(PollManager& pollManager) {
   }
 }
 
-//janrau added function for cgi
 bool ServerManager::isCgiFd(int fd) const {
   for (auto& cgi : g_CgiParams) {
     if (cgi.fd == fd) {

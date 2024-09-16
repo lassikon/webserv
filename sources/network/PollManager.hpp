@@ -1,6 +1,5 @@
 #pragma once
 
-// #include <Server.hpp>
 #include <poll.h>
 
 #include <Client.hpp>
@@ -9,6 +8,7 @@
 #include <vector>
 
 class PollManager {
+
 #define MAX_CLIENTS 100
 #define TIMEOUT 5000
 
@@ -19,9 +19,11 @@ class PollManager {
   PollManager(void);
   ~PollManager(void);
 
-  void addFd(int fd, short events);
-  void removeFd(int fd);
   int pollFdsCount(void);
   std::vector<struct pollfd>& getPollFds(void);
+
+ public:
+  void addFd(int fd, short events);
+  void removeFd(int fd);
   bool fdExists(int fd);
 };

@@ -71,7 +71,7 @@ void ProcessState::buildPath(Client& client) {
     client.getReq(), client.getRes(), client.getRes().getServerConfig());
   client.getRes().setReqURI(client.getReq().getReqURI());
   root = ptb->buildPathTree();
-  root->process(client.getRes());
+  root->process(client);
 }
 
 bool ProcessState::isWithStatusCode(Client& client) {

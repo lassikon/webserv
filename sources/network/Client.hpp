@@ -1,37 +1,36 @@
 #pragma once
 
-#include <netdb.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
-#include <Config.hpp>
-#include <Exception.hpp>
-#include <HttpException.hpp>
-#include <Logger.hpp>
-#include <ProcessTree.hpp>
-#include <ProcessTreeBuilder.hpp>
-#include <Utility.hpp>
-
-#include <Request.hpp>
-#include <Response.hpp>
-
 #include <CgiHandler.hpp>
 #include <DeleteHandler.hpp>
 #include <GetHandler.hpp>
-#include <IRequestHandler.hpp>
 #include <PostHandler.hpp>
 
-#include <IStateHandler.hpp>
 #include <ParseState.hpp>
 #include <ProcessState.hpp>
 #include <ReadState.hpp>
 #include <SendState.hpp>
 
+#include <Config.hpp>
+#include <Logger.hpp>
+#include <Request.hpp>
+#include <Response.hpp>
+#include <Utility.hpp>
+
+#include <ProcessTree.hpp>
+#include <ProcessTreeBuilder.hpp>
+#include <RuntimeException.hpp>
+
+#include <netdb.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <cstring>
 #include <iostream>
 #include <map>
-#include <unordered_set>
+#include <memory>
+#include <sstream>
+#include <string>
 #include <vector>
 
 enum struct ClientState { READING, PROCESSING, SENDING, DONE };
@@ -39,14 +38,16 @@ enum struct ParsingState { REQLINE, HEADER, BODY, DONE };
 
 class Client {
  private:
-  int fd;
-  bool isCgi = false;
-  std::vector<std::shared_ptr<ServerConfig>>& serverConfigs;
   Request req;
   Response res;
+  bool isCgi = false;
+  int fd;
+
+ private:
+  std::vector<std::shared_ptr<ServerConfig>>& serverConfigs;
+  std::shared_ptr<ProcessTree> root;
 
  private:  // handlers
-  std::shared_ptr<ProcessTree> root;
   PostHandler postHandler;
   DeleteHandler deleteHandler;
   CgiHandler cgiHandler;
@@ -95,7 +96,13 @@ class Client {
   void initClient(void);
   bool handlePollEvents(short revents, int readFd, int writeFd);
 
- public:  // getters and setters
+ private:
+  void handlePollInEvent(int readFd);
+  void handlePollOutEvent(int writeFd);
+  bool shouldCloseConnection(void);
+  void cleanupClient(void);
+
+ public:  // getters
   int getFd(void) const { return fd; }
   bool getIsCgi(void) { return isCgi; }
   Request& getReq(void) { return req; }
@@ -107,19 +114,10 @@ class Client {
   std::vector<std::shared_ptr<ServerConfig>>& getServerConfigs(void) { return serverConfigs; }
   ClientState getClientState(void) const { return clientState; }
   ParsingState getParsingState(void) const { return parsingState; }
+
+ public:  //  setters
   void setFd(int fd);
   void setClientState(ClientState state) { clientState = state; }
   void setParsingState(ParsingState state) { parsingState = state; }
   void setIsCgi(bool isCgi) { this->isCgi = isCgi; }
-
- private:
-  void handlePollInEvent(int readFd);
-  void handlePollOutEvent(int writeFd);
-  bool shouldCloseConnection(void);
-  void cleanupClient(void);
-
- private:
-  template <typename... Args> void clientError(Args&&... args) {
-    THROW(Error::Client, std::forward<Args>(args)...);
-  }
 };

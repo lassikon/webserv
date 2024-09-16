@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-class Client;
-
 class Response {
  private:  // from request
   RouteConfig routeConfig;

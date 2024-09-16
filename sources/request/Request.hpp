@@ -10,8 +10,6 @@
 #include <Logger.hpp>
 #include <Utility.hpp>
 
-class Client;
-
 class Request {
  private:
   std::string reqMethod;

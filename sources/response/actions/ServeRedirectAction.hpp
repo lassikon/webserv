@@ -1,13 +1,12 @@
 #pragma once
 
 #include <IServeAction.hpp>
-#include <Response.hpp>
 #include <Logger.hpp>
-#include <string>
+#include <Client.hpp>
 
 class ServeRedirectAction : public IServeAction {
  public:
   ServeRedirectAction() = default;
   virtual ~ServeRedirectAction() = default;
-  void execute(Response& res) override;
+  void execute(Client& client) override;
 };

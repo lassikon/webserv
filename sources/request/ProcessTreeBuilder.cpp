@@ -1,9 +1,8 @@
 #include <ProcessTreeBuilder.hpp>
-#include <Request.hpp>
-#include <Response.hpp>
+#include <Client.hpp>
 
-ProcessTreeBuilder::ProcessTreeBuilder(Request& req, Response& res, ServerConfig& ServerConfig)
-    : req(req), res(res), serverConfig(ServerConfig) {
+ProcessTreeBuilder::ProcessTreeBuilder(Client& client, ServerConfig& ServerConfig)
+    : client(client), serverConfig(ServerConfig) {
   LOG_TRACE(Utility::getConstructor(*this));
 }
 
@@ -72,7 +71,7 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildPathTree() {
 bool ProcessTreeBuilder::isDIrectoryListingOn(std::string& path) {
   LOG_TRACE("Checking directory listing on");
   (void)path;
-  return res.getRouteConfig().directoryListing;
+  return client.getRes().getRouteConfig().directoryListing;
 }
 
 bool ProcessTreeBuilder::isIndexExist(std::string& path) {
@@ -87,7 +86,7 @@ bool ProcessTreeBuilder::isIndexExist(std::string& path) {
 
 bool ProcessTreeBuilder::isDefaultFileExist(std::string& path) {
   LOG_TRACE("Checking default file exist");
-  for (auto& defFile : res.getRouteConfig().defaultFile) {
+  for (auto& defFile : client.getRes().getRouteConfig().defaultFile) {
     if (std::filesystem ::exists(path + defFile)) {
       path = path + defFile;
       return true;
@@ -134,7 +133,7 @@ bool ProcessTreeBuilder::isPathExist(std::string& path) {
       path = "";
     }
   }
-  std::filesystem::path rootPath = res.getRouteConfig().root;
+  std::filesystem::path rootPath = client.getRes().getRouteConfig().root;
   std::filesystem::path fullpath = rootPath / path;
   path = fullpath.string();
   LOG_TRACE("Full path:", path);
@@ -144,21 +143,22 @@ bool ProcessTreeBuilder::isPathExist(std::string& path) {
 bool ProcessTreeBuilder::isRedirect(std::string& path) {
   LOG_TRACE("Checking redirect");
   (void)path;
-  return !res.getRouteConfig().redirect.empty();
+  return !client.getRes().getRouteConfig().redirect.empty();
 }
 
 bool ProcessTreeBuilder::isMethodAllowed(std::string& path) {
   LOG_TRACE("Checking method allowed");
   (void)path;
-  auto it = std::find(res.getRouteConfig().methods.begin(), res.getRouteConfig().methods.end(),
-                      req.getMethod());
-  return it != res.getRouteConfig().methods.end();
+  auto it = std::find(client.getRes().getRouteConfig().methods.begin(),
+                      client.getRes().getRouteConfig().methods.end(), client.getReq().getMethod());
+  return it != client.getRes().getRouteConfig().methods.end();
 }
 
 bool ProcessTreeBuilder::isClientBodySizeAllowed(std::string& path) {
   LOG_TRACE("Checking client body size limit");
   (void)path;
-  if (req.getBodySize() > Utility::convertSizetoBytes(res.getServerConfig().clientBodySizeLimit)) {
+  if (client.getReq().getBodySize() >
+      Utility::convertSizetoBytes(client.getRes().getServerConfig().clientBodySizeLimit)) {
     return false;
   }
   return true;
@@ -181,12 +181,13 @@ bool ProcessTreeBuilder::isRouteMatch(std::string reqURI) {
   }
   if (maxMatchingLen == 0) {
     LOG_WARN("No matching route found for URI:", reqURI);
-    res.addHeader("Server", res.getServerConfig().serverName);
+    client.getRes().addHeader("Server", client.getRes().getServerConfig().serverName);
     return false;
   } else {
-    LOG_TRACE("Route found at location: ", res.getServerConfig().routes[routeIndex].location);
-    res.setRouteConfig(res.getServerConfig().routes[routeIndex]);
-    res.addHeader("Server", res.getServerConfig().serverName);
+    LOG_TRACE("Route found at location: ",
+              client.getRes().getServerConfig().routes[routeIndex].location);
+    client.getRes().setRouteConfig(client.getRes().getServerConfig().routes[routeIndex]);
+    client.getRes().addHeader("Server", client.getRes().getServerConfig().serverName);
     return true;
   }
 }
@@ -201,10 +202,10 @@ bool ProcessTreeBuilder::isErrorAsset(std::string& reqURI) {
       return false;
     }
   }
-    std::filesystem::path exePath;
-    exePath = Utility::getExePath(exePath);
-    reqURI = reqURI.substr(it + 1, reqURI.size());
-    std::filesystem::path errorPath = exePath / reqURI;
-    reqURI = errorPath.string();
-    return true;
+  std::filesystem::path exePath;
+  exePath = Utility::getExePath(exePath);
+  reqURI = reqURI.substr(it + 1, reqURI.size());
+  std::filesystem::path errorPath = exePath / reqURI;
+  reqURI = errorPath.string();
+  return true;
 }

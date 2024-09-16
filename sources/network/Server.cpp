@@ -1,7 +1,7 @@
 #include <Server.hpp>
 
 Server::Server(ServerConfig& serverConfig) {
-  LOG_DEBUG(Utility::getConstructor(*this));
+  LOG_TRACE(Utility::getConstructor(*this));
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
   port = serverConfig.port;
   ipAddress = serverConfig.ipAddress;
@@ -10,7 +10,7 @@ Server::Server(ServerConfig& serverConfig) {
 }
 
 Server::~Server(void) {
-  LOG_DEBUG(Utility::getDeconstructor(*this));
+  LOG_TRACE(Utility::getDeconstructor(*this));
 }
 
 void Server::addServerConfig(ServerConfig& serverConfig) {
@@ -23,7 +23,7 @@ void Server::acceptConnection(PollManager& pollManager) {
   socklen_t addrSize = sizeof theirAddr;
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
   if (newFd == -1) {
-    LOG_WARN("Failed to accept new connection:", STRERROR);
+    LOG_WARN("Failed to accept new connection:", IException::expandErrno());
     return;
   }
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs));
@@ -41,7 +41,8 @@ void Server::handleClient(PollManager& pollManager, short revents, int readFd, i
     LOG_ERROR("Client fd:", clientFd, "not found in clients");
     return;
   }
-  if ((*it)->handlePollEvents(revents, readFd, clientFd) == false) {  // connection closed or error
+  if ((*it)->handlePollEvents(revents, readFd, clientFd) == false) {
+    LOG_TRACE("Connection closed or error occured");
     LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
     clientLastActivity.erase(clientFd);
@@ -74,7 +75,7 @@ void Server::checkIdleClients(PollManager& pollManager) {
       pollManager.removeFd(it->first);
       it = clientLastActivity.erase(it);
     } else {
-      ++it;
+      it++;
     }
   }
 }

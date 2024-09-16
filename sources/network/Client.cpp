@@ -41,14 +41,16 @@ void Client::handlePollOutEvent(int writeFd) {
   LOG_INFO("Client fd:", fd, "has POLLOUT event");
   setWriteFd(writeFd);
   if (clientState == ClientState::PROCESSING) {
-    try {
-      processState.execute(*this);
-    } catch (HttpException& e) {
-      LOG_ERROR("Exception caught:", e.what());
-      e.setResponseAttributes();
-      clientState = ClientState::SENDING;
-    }
+    NetworkException::tryCatch(&ProcessState::execute, &this->processState, *this);
   }
+  //   try {
+  //     processState.execute(*this);
+  //   } catch (HttpException& e) {
+  //     LOG_ERROR("Exception caught:", e.what());
+  //     e.setResponseAttributes();
+  //     clientState = ClientState::SENDING;
+  //   }
+  // }
   if (clientState == ClientState::SENDING) {
     res.makeResponse();
     sendState.execute(*this);
@@ -73,8 +75,7 @@ void Client::cleanupClient(void) {
   if (fd > 0) {
     LOG_DEBUG("cleanupClient() closing fd:", fd);
     if (close(fd) == -1) {
-      LOG_ERROR("Failed to close fd:", fd);
-      // throw exception
+      throw clientError("Failed to close fd:", fd);
     }
     fd = -1;  // Mark as closed
   }

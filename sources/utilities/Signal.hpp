@@ -1,7 +1,7 @@
 #pragma once
 
 #include <CgiHandler.hpp>
-#include <Exception.hpp>
+#include <RuntimeException.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
 #include <Typedef.hpp>

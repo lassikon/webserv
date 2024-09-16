@@ -1,4 +1,4 @@
-#include "Config.hpp"
+#include <Config.hpp>
 
 int Config::_lineNumber = 0;
 

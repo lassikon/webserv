@@ -1,14 +1,20 @@
 #pragma once
 
-#include <poll.h>
-#include <sys/wait.h>
-
 #include <CgiHandler.hpp>
 #include <Config.hpp>
 #include <Global.hpp>
+#include <IException.hpp>
+#include <Logger.hpp>
 #include <PollManager.hpp>
+#include <RuntimeException.hpp>
 #include <Server.hpp>
-#include <string>
+#include <Typedef.hpp>
+
+#include <poll.h>
+#include <sys/wait.h>
+
+#include <chrono>
+#include <memory>
 #include <vector>
 
 class ServerManager {
@@ -18,7 +24,6 @@ class ServerManager {
  private:
   std::vector<std::shared_ptr<Server>> servers;
   std::vector<struct pollfd> pollFds;
-  // std::size_t pidsMapSize;
 
  public:
   ServerManager(void);
@@ -30,20 +35,21 @@ class ServerManager {
  private:
   void serverLoop(PollManager& pollManager);
   bool checkServerExists(ServerConfig& serverConfig);
+  void initializePollManager(PollManager& pollManager);
+
+ private:
   void checkChildProcesses(PollManager& pollManager);
   void checkForNewChildProcesses(PollManager& pollManager);
-  bool childTimeout(std::chrono::time_point<std::chrono::steady_clock>& start);
-  void initializePollManager(PollManager& pollManager);
-  void handleNoEvents(PollManager& pollManager);
+  bool childTimeout(steady_time_point_t& start);
+
+ private:
   bool handlePollErrors(PollManager& pollManager, struct pollfd& pollFd);
   void handlePollInEvent(PollManager& pollManager, struct pollfd& pollFd);
   void handlePollOutEvent(PollManager& pollManager, struct pollfd& pollFd);
+  void handleNoEvents(PollManager& pollManager);
 
+ private:
   bool isCgiFd(int fd) const;
   int getClientFdFromCgiParams(int fd) const;
   int getCgiFdFromClientFd(int fd) const;
-
-  template <typename... Args> void serverError(Args&&... args) {
-    THROW(Error::Server, std::forward<Args>(args)..., STRERROR);
-  }
 };

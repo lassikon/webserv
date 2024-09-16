@@ -13,7 +13,7 @@ void Signal::createSigMap(void) noexcept {
 void Signal::signalHandler(int sigNum) noexcept {
   std::cout << std::endl;
   LOG_INFO("Server interrupted by signal:", sigNum, sigmap.at(sigNum));
-  g_ExitStatus = (int)Error::Signal + sigNum;
+  g_ExitStatus = (int)RuntimeError::Signal + sigNum;
   CgiHandler::killAllChildPids();
   exit(g_ExitStatus);
 }

@@ -1,17 +1,17 @@
 #include <ServeDirectoryListingAction.hpp>
 
-void ServeDirectoryListingAction::execute(Response& res) {
+void ServeDirectoryListingAction::execute(Client& client) {
   LOG_TRACE("Serving directory listing");
-  std::string path = res.getReqURI();
+  std::string path = client.getRes().getReqURI();
   std::string html = makeDirectoryListing(path);
-  res.setResStatusCode(200);
-  res.setResStatusMessage("OK");
+  client.getRes().setResStatusCode(200);
+  client.getRes().setResStatusMessage("OK");
   std::vector<char> ibody = std::vector<char>(html.begin(), html.end());
-  res.setResBody(ibody);
-  res.addHeader("Cache-Control", "max-age=3600, must-revalidate");
-  res.addHeader("Content-Type", "text/html");
-  res.addHeader("Content-Length", std::to_string(ibody.size()));
-  res.addHeader("Connection", "keep-alive");
+  client.getRes().setResBody(ibody);
+  client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
+  client.getRes().addHeader("Content-Type", "text/html");
+  client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
+  client.getRes().addHeader("Connection", "keep-alive");
 }
 
 std::string ServeDirectoryListingAction::makeDirectoryListing(std::string path) {
