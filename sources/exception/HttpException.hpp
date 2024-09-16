@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <sys/stat.h>
 
 class HttpException : public std::exception {
  public:
@@ -24,4 +25,6 @@ class HttpException : public std::exception {
   Response& res;
   int errorCode;
   std::string message;
+
+  bool HttpException::isValid(std::string path) const;
 };
