@@ -92,7 +92,7 @@ void Utility::isValidFile(mode_t mode, int perm, const std::string& file, Client
   struct stat s;
   if (stat(file.c_str(), &s) == -1) {
     throw httpNotFound(client, "HTTP Error 404 - Page not found");
-  } else if ((s.st_mode & mode) == -1) {
+  } else if ((s.st_mode & mode) != 0) {
     throw httpBadRequest(client, "HTTP Error 400 - Bad request");
   } else if (access(file.c_str(), perm) == -1) {
     throw httpForbidden(client, "HTTP Error 403 - Forbidden");
