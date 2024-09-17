@@ -2,8 +2,8 @@
 #include <ReadState.hpp>
 
 void ReadState::execute(Client& client) {
-  char buffer[4096] = {0};
-  ssize_t nbytes = read(client.getReadFd(), buffer, sizeof(buffer));
+  std::vector<char> buffer(4096);
+  ssize_t nbytes = read(client.getReadFd(), buffer.data(), buffer.size());
   client.setReadNBytes(nbytes);
   if (nbytes == -1) {
     LOG_WARN("Failed to receive data from client fd:", client.getFd());
@@ -21,10 +21,11 @@ void ReadState::execute(Client& client) {
     client.setClientState(ClientState::PROCESSING);
     return;
   }
-  client.setReadBuf(buffer);
+  buffer[nbytes] = '\0';
+  client.setReadBuf(std::make_shared<std::vector<char>>(buffer));
   LOG_INFO("Receiving data from client fd", client.getFd());
   LOG_INFO("Received", nbytes, "bytes from client fd", client.getFd());
-  LOG_INFO("Data received:", client.getReadBuf());
+  LOG_INFO("Data received:", client.getReadBuf()->data());
   client.setParsingState(ParsingState::REQLINE);
   if (client.getIsCgi()) {
     LOG_DEBUG("Client", client.getFd(), "is CGI output");

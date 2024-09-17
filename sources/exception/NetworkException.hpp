@@ -6,7 +6,6 @@
 #include <string>
 #include <unordered_map>
 
-
 class NetworkException : public IException {
  private:
   std::unordered_map<NetworkError, std::string> errMsgMap = {
@@ -76,6 +75,10 @@ class NetworkException : public IException {
     }
     std::filesystem::path errorPath = exePath / path;
     std::string errorPathStr = errorPath.string();
+    if (!std::filesystem::exists(errorPath) || !isValid(errorPathStr)) {
+      setBasicErrorPage(respond);
+      return;
+    }
     std::vector<char> ibody = Utility::readFile(errorPathStr);
     respond.setResBody(ibody);
     std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
@@ -84,6 +87,26 @@ class NetworkException : public IException {
     respond.addHeader("Content-Type", mimeType);
     respond.addHeader("Content-Length", std::to_string(ibody.size()));
     respond.addHeader("Connection", "close");
+  }
+
+  bool isValid(std::string path) const {
+    struct stat s;
+    if (!stat(path.c_str(), &s) && S_ISREG(s.st_mode) && !access(path.c_str(), X_OK)) {
+      return true;
+    }
+    return false;
+  }
+
+  void setBasicErrorPage(Response& res) {
+    std::string body("<html><body><h1>404 Not Found, error page not found!</h1></body></html>");
+    std::vector<char> ibody(body.begin(), body.end());
+    res.setResStatusCode(404);
+    res.setResStatusMessage("Not Found");
+    res.setResBody(ibody);
+    res.addHeader("Content-Type", "text/html");
+    res.addHeader("Connection", "keep-alive");
+    res.addHeader("Content-Length", std::to_string(ibody.size()));
+    return;
   }
 };
 

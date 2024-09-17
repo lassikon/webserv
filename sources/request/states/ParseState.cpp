@@ -6,7 +6,7 @@ void ParseState::execute(Client& client) {
     return;
   }
   LOG_TRACE("Parsing request from client fd:", client.getFd());
-  std::istringstream iBuf(client.getReadBuf());
+  std::istringstream iBuf(client.getReadBuf()->data());
   if (client.getParsingState() == ParsingState::REQLINE) {
     parseRequestLine(client, iBuf);
   }

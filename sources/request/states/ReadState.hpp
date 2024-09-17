@@ -2,6 +2,7 @@
 
 #include <IStateHandler.hpp>
 #include <Logger.hpp>
+#include <vector>
 
 class client;
 

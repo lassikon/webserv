@@ -60,16 +60,16 @@ class Client {
 
  private:  //read
   int readFd;
-  char* readBuf = nullptr;
+  std::shared_ptr<std::vector<char>> readBuf = nullptr;
   ssize_t readNBytes = 0;
 
  public:  //read
   int getReadFd(void) { return readFd; }
-  char* getReadBuf(void) { return readBuf; }
+  std::shared_ptr<std::vector<char>> getReadBuf(void) { return readBuf; }
   ssize_t getReadNBytes(void) { return readNBytes; }
   void setReadFd(int fd) { readFd = fd; }
   void setReadNBytes(ssize_t nBytes) { readNBytes = nBytes; }
-  void setReadBuf(char* buf) { readBuf = buf; }
+  void setReadBuf(std::shared_ptr<std::vector<char>> buf) { readBuf = buf; }
 
  private:  //write
   int writeFd;

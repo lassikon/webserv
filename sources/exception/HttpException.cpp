@@ -24,7 +24,7 @@ void HttpException::setResponseAttributes(void) {
     res.setResBody(ibody);
     res.addHeader("Content-Type", "text/html");
     res.addHeader("Connection", "keep-alive");
-    res.addHeader("Content-Length", "0");
+    res.addHeader("Content-Length", std::to_string(ibody.size()));
     return;
   }
   std::vector<char> ibody = Utility::readFile(errorPathStr);

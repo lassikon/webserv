@@ -1,7 +1,5 @@
-#include <ProcessState.hpp>
 #include <Client.hpp>
-
-
+#include <ProcessState.hpp>
 
 void ProcessState::execute(Client& client) {
   if (client.getReadBuf() == nullptr) {
@@ -51,9 +49,8 @@ void ProcessState::processCgiOutput(Client& client) {
   }
   client.getRes().addHeader("Connection", "keep-alive");
   client.getRes().addHeader("Content-Length", std::to_string(client.getReq().getBodySize()));
-  std::vector<char> body(client.getReq().getBodySize());
-  std::copy(client.getReq().getBody().begin(), client.getReq().getBody().end(), body.begin());
-  client.getRes().setResBody(body);
+  std::vector<char> reqBody = client.getReq().getBody();
+  client.getRes().setResBody(reqBody);
   client.setClientState(ClientState::SENDING);
 }
 
@@ -69,8 +66,8 @@ ServerConfig ProcessState::chooseServerConfig(Client& client) {
 
 void ProcessState::buildPath(Client& client) {
   LOG_TRACE("Building path for client fd:", client.getFd());
-  std::shared_ptr<ProcessTreeBuilder> ptb = std::make_shared<ProcessTreeBuilder>(
-    client, client.getRes().getServerConfig());
+  std::shared_ptr<ProcessTreeBuilder> ptb =
+    std::make_shared<ProcessTreeBuilder>(client, client.getRes().getServerConfig());
   client.getRes().setReqURI(client.getReq().getReqURI());
   root = ptb->buildPathTree();
   root->process(client);

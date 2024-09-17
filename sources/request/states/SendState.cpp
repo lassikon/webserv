@@ -19,5 +19,6 @@ void SendState::execute(Client& client) {
   LOG_DEBUG("bytes sent:", nbytes);
   LOG_DEBUG("total bytes:", client.getRes().getResContent().size());
   LOG_INFO("Response sent to client fd:", client.getFd());
+  LOG_INFO("Response:", client.getRes().getResContent().data());
   client.setClientState(ClientState::DONE);
 }
