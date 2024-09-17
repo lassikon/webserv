@@ -3,8 +3,6 @@
 #include <Global.hpp>
 #include <Logger.hpp>
 
-#include <NetworkException.hpp>
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -15,6 +13,8 @@
 
 #include <fcntl.h>
 #include <sys/types.h>
+
+class Client;
 
 class Utility {
  public:

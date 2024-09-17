@@ -1,7 +1,6 @@
 #include <Utility.hpp>
-#include "IException.hpp"
-#include "NetworkException.hpp"
-#include "Serve404Action.hpp"
+
+#include <NetworkException.hpp>
 
 static std::map<std::string, std::string> mimeTypes = {
   {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
