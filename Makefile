@@ -59,12 +59,14 @@ SOURCES := main \
            PollManager \
            Server \
            ServerManager \
+           SessionManager \
            Socket \
            Config \
            ConfigInitializer \
            RouteDirectiveSetter \
            ServerDirectiveSetter \
            CgiHandler \
+           FileHandler \
            DeleteHandler \
            GetHandler \
            PostHandler \
