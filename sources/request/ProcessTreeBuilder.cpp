@@ -1,5 +1,5 @@
-#include <ProcessTreeBuilder.hpp>
 #include <Client.hpp>
+#include <ProcessTreeBuilder.hpp>
 
 ProcessTreeBuilder::ProcessTreeBuilder(Client& client, ServerConfig& ServerConfig)
     : client(client), serverConfig(ServerConfig) {
