@@ -1,7 +1,9 @@
 #pragma once
 
 #include <IServeAction.hpp>
+
 class Client;
+
 class Serve404Action : public IServeAction {
  public:
   Serve404Action() = default;

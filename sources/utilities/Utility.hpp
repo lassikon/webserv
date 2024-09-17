@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Global.hpp>
+#include <Logger.hpp>
+
+#include <NetworkException.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -9,6 +12,9 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+
+#include <fcntl.h>
+#include <sys/types.h>
 
 class Utility {
  public:
@@ -19,6 +25,7 @@ class Utility {
   static std::string getMimeType(std::string& extension);
   static bool statusOk(void) noexcept;
   static size_t convertSizetoBytes(std::string& size);
+  void isValidFile(mode_t mode, int permission, const std::string& file, Client& client) const;
 
   template <class T> static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";

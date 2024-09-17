@@ -1,10 +1,12 @@
-#include <Logger.hpp>
 #include <Utility.hpp>
+#include "IException.hpp"
+#include "NetworkException.hpp"
+#include "Serve404Action.hpp"
 
 static std::map<std::string, std::string> mimeTypes = {
-    {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
-    {"png", "image/png"},  {"jpg", "image/jpeg"}, {"jpeg", "image/jpeg"},
-    {"gif", "image/gif"},  {"txt", "text/plain"},
+  {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
+  {"png", "image/png"},  {"jpg", "image/jpeg"}, {"jpeg", "image/jpeg"},
+  {"gif", "image/gif"},  {"txt", "text/plain"},
 };
 
 std::string Utility::trimWhitespaces(std::string& line) {
@@ -73,13 +75,27 @@ size_t Utility::convertSizetoBytes(std::string& size) {
     size.pop_back();
   }
   try {
-        bytes = std::stoull(size) * multiplier;
-    } catch (const std::invalid_argument&) {
-        // Handle invalid argument
-        bytes = 0;
-    } catch (const std::out_of_range&) {
-        // Handle out of range
-        bytes = SIZE_MAX;
-    }
+    bytes = std::stoull(size) * multiplier;
+  } catch (const std::invalid_argument&) {
+    // Handle invalid argument
+    bytes = 0;
+  } catch (const std::out_of_range&) {
+    // Handle out of range
+    bytes = SIZE_MAX;
+  }
   return bytes;
+}
+
+// this function should be called only in conjuction with NetworkException::tryCatch
+// mode should be mostly S_IFDIR for directories or S_IFREG for regular files
+// perm can be R_OK, W_OK or X_OK, note: F_OK is already checked by stat()
+void Utility::isValidFile(mode_t mode, int perm, const std::string& file, Client& client) const {
+  struct stat s;
+  if (stat(file.c_str(), &s) == -1) {
+    throw httpNotFound(client, "HTTP Error 404 - Page not found");
+  } else if ((s.st_mode & mode) == -1) {
+    throw httpBadRequest(client, "HTTP Error 400 - Bad request");
+  } else if (access(file.c_str(), perm) == -1) {
+    throw httpForbidden(client, "HTTP Error 403 - Forbidden");
+  }
 }
