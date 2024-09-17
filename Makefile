@@ -66,7 +66,7 @@ SOURCES := main \
            RouteDirectiveSetter \
            ServerDirectiveSetter \
            CgiHandler \
-           FileHandler \
+           UploadHandler \
            DeleteHandler \
            GetHandler \
            PostHandler \
