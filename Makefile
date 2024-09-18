@@ -5,6 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
+RUNCONFIG   := ./confDefault/default.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 
@@ -115,7 +116,7 @@ debug: re
 
 run: all
 	$(SCREENCLEAR)
-	./$(NAME)
+	./$(NAME) $(RUNCONFIG)
 
 leaks: all
 	valgrind $(VLGFLAGS) ./$(NAME)

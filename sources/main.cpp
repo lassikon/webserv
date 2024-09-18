@@ -5,12 +5,14 @@
 #include <RuntimeException.hpp>
 #include <Server.hpp>
 #include <ServerManager.hpp>
+#include <SessionManager.hpp>
 #include <Signal.hpp>
 
 sig_atomic_t g_ExitStatus;
 std::vector<struct CgiParams> g_CgiParams;
 
 int main(int argc, char** argv) {
+  (void)argv;
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
     return EXIT_FAILURE;
@@ -18,6 +20,12 @@ int main(int argc, char** argv) {
     Logger::loadDefaults();
     Signal::trackSignals();
   }
+
+  {
+    SessionManager s;
+    std::cout << s.generateSessionId() << std::endl;
+  }
+
   Config config = ConfigInitializer::initializeConfig(argc, argv);
   RuntimeException::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers().empty()) {
@@ -25,7 +33,7 @@ int main(int argc, char** argv) {
     return (int)RuntimeError::Config;
   }
 
-  config.printServerConfig();
+  // config.printServerConfig();
   ServerManager serverManager;
   serverManager.configServers(config);
   serverManager.runServers();

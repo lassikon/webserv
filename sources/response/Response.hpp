@@ -29,6 +29,8 @@ class Response {
   ~Response();
 
   void makeResponse(void);
+
+ public:  //get
   std::vector<char>& getResContent(void) { return resContent; }
   std::vector<char>& getResBody(void) { return resBody; }
   std::string& getReqURI(void) { return reqURI; }
@@ -36,6 +38,8 @@ class Response {
   ServerConfig& getServerConfig(void) { return serverConfig; }
   int getResStatusCode(void) { return resStatusCode; }
   std::map<std::string, std::string>& getResHeaders(void) { return resHeaders; }
+
+ public:  //set
   void setResStatusCode(int code) { resStatusCode = code; }
   void setResStatusMessage(std::string message) { resStatusMessage = message; }
   void addHeader(std::string key, std::string value) { resHeaders[key] = value; }
