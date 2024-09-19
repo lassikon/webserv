@@ -80,8 +80,7 @@ void ParseState::parseBody(Client& client, std::istringstream& iBuf) {
   } else {
     parseBodyWithoutContentLength(client, iBuf);
   }
-  LOG_DEBUG("Body:",
-            std::string(client.getReq().getBody().begin(), client.getReq().getBody().end()));
+  client.setParsingState(ParsingState::DONE);
 }
 
 void ParseState::parseBodyWithoutContentLength(Client& client, std::istringstream& iBuf) {
@@ -100,16 +99,16 @@ void ParseState::parseBodyWithoutContentLength(Client& client, std::istringstrea
 void ParseState::parseBodyWithContentLength(Client& client, std::istringstream& iBuf) {
   LOG_DEBUG("Parsing body with content length");
   int contentLength = std::stoi(client.getReq().getHeaders()["Content-Length"]);
-  int bodySize = client.getReq().getBodySize();
-  bodySize += contentLength;
-  client.getReq().setBodySize(bodySize);
+  LOG_DEBUG("contentLength:", contentLength);
+  client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);
   iBuf.read(bodyData.data(), contentLength);
-  std::vector<char> body = client.getReq().getBody();
-  body.insert(body.end(), bodyData.begin(), bodyData.end());
-
-  client.getReq().setBody(body);
-  LOG_DEBUG("body:", std::string(body.begin(), body.end()));
+  if (iBuf.gcount() != contentLength) {
+    LOG_ERROR("Failed to read body data");
+    return;
+  }
+  client.getReq().setBody(bodyData);
+  // LOG_DEBUG("bodyData:", std::string(bodyData.begin(), bodyData.end()));
   client.setClientState(ClientState::PROCESSING);
 }
 
