@@ -33,17 +33,19 @@ void Server::acceptConnection(PollManager& pollManager) {
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
-void Server::handleClient(PollManager& pollManager, short revents, int readFd, int clientFd) {
+void Server::handleClient(PollManager& pollManager, uint32_t revents, int readFd, int clientFd) {
   auto it = std::find_if(
     clients.begin(), clients.end(),
     [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
+
   if (it == clients.end()) {
     LOG_ERROR("Client fd:", clientFd, "not found in clients");
     return;
   }
-  if ((*it)->handlePollEvents(revents, readFd, clientFd) == false) {
-    LOG_TRACE("Connection closed or error occured");
-    LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
+
+  if ((*it)->handleEpollEvents(revents, readFd, clientFd) == false) {
+    LOG_TRACE("Connection closed or error occurred");
+    LOG_DEBUG("Removing client fd:", clientFd, "from epoll");
     pollManager.removeFd(clientFd);
     clientLastActivity.erase(clientFd);
     LOG_DEBUG("Erasing client fd:", (*it)->getFd(), "from clients");
@@ -51,20 +53,19 @@ void Server::handleClient(PollManager& pollManager, short revents, int readFd, i
   } else {
     updateClientLastActivity(clientFd);
   }
-  for (auto& pollFd : pollManager.getPollFds()) {
-    if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::DONE) {
-      LOG_WARN("disabling POLLOUT for client fd:", clientFd);
-      pollFd.events &= ~POLLOUT;
-      break;
-    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::READING) {
-      LOG_WARN("disabling POLLOUT for client fd:", clientFd);
-      pollFd.events &= ~POLLOUT;
-      break;
-    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::PROCESSING) {
-      pollFd.events |= POLLOUT;
-      break;
-    }
+
+  uint32_t newEvents = EPOLLIN;  // Default to listening for input
+  if ((*it)->getClientState() == ClientState::DONE) {
+    LOG_WARN("Disabling POLLOUT for client fd:", clientFd);
+    newEvents &= ~EPOLLOUT;
+  } else if ((*it)->getClientState() == ClientState::READING) {
+    LOG_WARN("Disabling POLLOUT for client fd:", clientFd);
+    newEvents &= ~EPOLLOUT;
+  } else if ((*it)->getClientState() == ClientState::PROCESSING) {
+    LOG_TRACE("Enabling POLLOUT for client fd:", clientFd);
+    newEvents |= EPOLLOUT;
   }
+  pollManager.modifyFd(clientFd, newEvents);
 }
 
 void Server::checkIdleClients(PollManager& pollManager) {

@@ -16,11 +16,11 @@ bool Client::operator==(const Client& other) const {
   return fd == other.fd;
 }
 
-bool Client::handlePollEvents(short revents, int readFd, int writeFd) {
-  if (revents & POLLIN) {
+bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
+  if (revents & EPOLLIN) {
     handlePollInEvent(readFd);
   }
-  if (revents & POLLOUT) {
+  if (revents & EPOLLOUT) {
     handlePollOutEvent(writeFd);
     if (shouldCloseConnection()) {
       return false;

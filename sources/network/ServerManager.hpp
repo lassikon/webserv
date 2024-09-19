@@ -10,7 +10,7 @@
 #include <Server.hpp>
 #include <Typedef.hpp>
 
-#include <poll.h>
+#include <sys/epoll.h>
 #include <sys/wait.h>
 
 #include <chrono>
@@ -23,7 +23,6 @@ class ServerManager {
 
  private:
   std::vector<std::shared_ptr<Server>> servers;
-  std::vector<struct pollfd> pollFds;
 
  public:
   ServerManager(void);
@@ -43,9 +42,9 @@ class ServerManager {
   bool childTimeout(steady_time_point_t& start);
 
  private:
-  bool handlePollErrors(PollManager& pollManager, struct pollfd& pollFd);
-  void handlePollInEvent(PollManager& pollManager, struct pollfd& pollFd);
-  void handlePollOutEvent(PollManager& pollManager, struct pollfd& pollFd);
+  bool handlePollErrors(PollManager& pollManager, struct epoll_event& event);
+  void handlePollInEvent(PollManager& pollManager, struct epoll_event& event);
+  void handlePollOutEvent(PollManager& pollManager, struct epoll_event& event);
   void handleNoEvents(PollManager& pollManager);
 
  private:
