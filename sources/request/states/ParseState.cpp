@@ -2,7 +2,7 @@
 #include <ParseState.hpp>
 
 void ParseState::execute(Client& client) {
-  if (client.getClientState() != ClientState::READING) {
+  if (client.getClientState() != ClientState::READING || client.getReadBuf() == nullptr) {
     return;
   }
   LOG_TRACE("Parsing request from client fd:", client.getFd());
@@ -18,6 +18,7 @@ void ParseState::execute(Client& client) {
   }
   if (client.getParsingState() == ParsingState::DONE) {
     LOG_TRACE("Request received from client fd:", client.getFd());
+    client.setClientState(ClientState::PROCESSING);
   }
 }
 
@@ -67,7 +68,6 @@ void ParseState::parseHeaders(Client& client, std::istringstream& iBuf) {
 void ParseState::parseBody(Client& client, std::istringstream& iBuf) {
   if (!isWithBody(client)) {
     client.setParsingState(ParsingState::DONE);
-    client.setClientState(ClientState::PROCESSING);
     return;
   }
   LOG_TRACE("Parsing body");
@@ -75,9 +75,9 @@ void ParseState::parseBody(Client& client, std::istringstream& iBuf) {
     parseChunkedBody(client, iBuf);
   } else if (isWithContentLength(client)) {
     parseBodyWithContentLength(client, iBuf);
-  } else if (isConnectionClose(client)) {
+    /*  } else if (isConnectionClose(client)) {
     parseBodyWithoutContentLength(client, iBuf);
-    client.setClientState(ClientState::PROCESSING);
+    client.setClientState(ClientState::PROCESSING); */
   } else {
     parseBodyWithoutContentLength(client, iBuf);
   }
@@ -93,20 +93,15 @@ void ParseState::parseBodyWithoutContentLength(Client& client, std::istringstrea
   std::vector<char> body = client.getReq().getBody();
   body.insert(body.end(), bodyData.begin(), bodyData.end());
   client.getReq().setBody(body);
-  //client.setClientState(ClientState::PROCESSING);
 }
 
 void ParseState::parseBodyWithContentLength(Client& client, std::istringstream& iBuf) {
   int contentLength = std::stoi(client.getReq().getHeaders()["Content-Length"]);
-  int bodySize = client.getReq().getBodySize();
-  bodySize += contentLength;
-  client.getReq().setBodySize(bodySize);
+  client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);
   iBuf.read(bodyData.data(), contentLength);
-  std::vector<char> body = client.getReq().getBody();
-  body.insert(body.end(), bodyData.begin(), bodyData.end());
-  client.getReq().setBody(body);
-  client.setClientState(ClientState::PROCESSING);
+  client.getReq().setBody(bodyData);
+  client.setParsingState(ParsingState::DONE);
 }
 
 void ParseState::parseChunkedBody(Client& client, std::istringstream& iBuf) {
@@ -121,7 +116,7 @@ void ParseState::parseChunkedBody(Client& client, std::istringstream& iBuf) {
     bodySize += chunkSize;
     client.getReq().setBodySize(bodySize);
     if (chunkSize == 0) {
-      client.setClientState(ClientState::PROCESSING);
+      client.setParsingState(ParsingState::DONE);
       break;
     }
     std::vector<char> chunkData(chunkSize);
@@ -152,7 +147,7 @@ bool ParseState::isHeaderEnd(std::string header) {
 }
 
 bool ParseState::isWithBody(Client& client) {
-  return client.getReq().getMethod() == "POST" || client.getIsCgi();
+  return client.getReq().getMethod() == "POST" || client.getReadFd() != client.getFd();
 }
 
 bool ParseState::isWithContentLength(Client& client) {

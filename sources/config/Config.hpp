@@ -52,6 +52,7 @@ struct ServerConfig {
     {501, "/pagesDefault/501.html"}};  // not implemented
 
   std::map<int, std::string> pagesCustom;
+  std::map<std::string, std::string> cgiInterpreters;
   std::string clientBodySizeLimit;
   std::vector<RouteConfig> routes;
 };

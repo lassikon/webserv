@@ -20,3 +20,7 @@ void Response::makeResponse(void) {
   resContent = std::vector<char>(oBufStr.begin(), oBufStr.end());
   resContent.insert(resContent.end(), resBody.begin(), resBody.end());
 }
+
+void Response::makeBodytoCgi(void) {
+  resContent.insert(resContent.end(), resBody.begin(), resBody.end());
+}

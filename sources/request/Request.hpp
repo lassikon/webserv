@@ -28,12 +28,14 @@ class Request {
   std::string getMethod(void) const { return reqMethod; }
   std::string getReqURI(void) const { return reqURI; }
   std::string getVersion(void) const { return reqVersion; }
+  std::string getQuery(void) const { return reqQuery; }
   size_t getBodySize(void) const { return reqBodySize; }
   std::map<std::string, std::string> getHeaders(void) const { return reqHeaders; }
   std::vector<char> getBody(void) const { return reqBody; }
   void setMethod(std::string method) { reqMethod = method; }
   void setReqURI(std::string uri) { reqURI = uri; }
   void setVersion(std::string version) { reqVersion = version; }
-  void setBody(std::vector<char>& body) { reqBody = body; }
+  void setBody(std::vector<char> body) { reqBody = std::move(body); }
   void setBodySize(size_t size) { reqBodySize = size; }
+  void setQuery(std::string query) { reqQuery = query; }
 };

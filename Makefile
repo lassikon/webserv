@@ -78,6 +78,7 @@ SOURCES := main \
            ServeDirectoryListingAction \
            ServeFileAction \
            ServeRedirectAction \
+           ServeQueryAction \
            Serve403Action \
            Serve404Action \
            Serve405Action \

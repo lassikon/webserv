@@ -5,6 +5,7 @@ Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverC
     : fd(socketFd), serverConfigs(serverConfigs) {
   LOG_DEBUG(Utility::getConstructor(*this));
   clientState = ClientState::READING;
+  cgiState = CgiState::READING;
 }
 
 Client::~Client(void) {
@@ -44,23 +45,19 @@ void Client::handlePollOutEvent(int writeFd) {
   if (clientState == ClientState::PROCESSING) {
     NetworkException::tryCatch(&ProcessState::execute, &this->processState, *this);
   }
-  //   try {
-  //     processState.execute(*this);
-  //   } catch (HttpException& e) {
-  //     LOG_ERROR("Exception caught:", e.what());
-  //     e.setResponseAttributes();
-  //     clientState = ClientState::SENDING;
-  //   }
-  // }
+  if (clientState == ClientState::PREPARING) {
+    if (writeNBytes == 0) {
+      res.makeResponse();
+    }
+    clientState = ClientState::SENDING;
+  }
   if (clientState == ClientState::SENDING) {
-    res.makeResponse();
     sendState.execute(*this);
   }
   if (clientState == ClientState::DONE) {
     LOG_INFO("Client fd:", fd, "is done");
     LOG_DEBUG("Reinitializing client fd:", fd);
     initClient();
-    clientState = ClientState::READING;
   }
 }
 
@@ -92,6 +89,7 @@ void Client::resetResponse(void) {
 }
 
 void Client::resetRequest(void) {
+  req.setQuery("");
   req.setMethod("");
   req.setReqURI("");
   req.setVersion("");
@@ -103,12 +101,14 @@ void Client::resetRequest(void) {
 void Client::initClient(void) {
   resetRequest();
   resetResponse();
-  isCgi = false;
   readBuf = nullptr;
   readNBytes = 0;
   writeNBytes = 0;
   clientState = ClientState::READING;
   parsingState = ParsingState::REQLINE;
+  if (cgiState == CgiState::DONE) {
+    cgiState = CgiState::READING;
+  }
 }
 
 bool Client::shouldCloseConnection(void) {

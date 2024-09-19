@@ -1,5 +1,5 @@
-#include <ProcessTreeBuilder.hpp>
 #include <Client.hpp>
+#include <ProcessTreeBuilder.hpp>
 
 ProcessTreeBuilder::ProcessTreeBuilder(Client& client, ServerConfig& ServerConfig)
     : client(client), serverConfig(ServerConfig) {
@@ -17,6 +17,7 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildGetProcessTree() {
   auto serve404 = std::make_shared<ProcessTree>(std::make_shared<Serve404Action>());
   auto serve405 = std::make_shared<ProcessTree>(std::make_shared<Serve405Action>());
   auto serve413 = std::make_shared<ProcessTree>(std::make_shared<Serve413Action>());
+  auto serveQuery = std::make_shared<ProcessTree>(std::make_shared<ServeQueryAction>());
 
   // define process tree
   auto self = shared_from_this();
@@ -41,7 +42,13 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildGetProcessTree() {
     [self](std::string& path) { return self->isXPermOn(path); }, isDefaultFileExist, serve403);
   auto isDirectory = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isDirectory(path); }, isXPermOn, isFileRPermOn);
-  return isDirectory;
+  auto isQuery = std::make_shared<ProcessTree>(
+    [self](std::string& path) {
+      (void)path;
+      return !self->client.getReq().getQuery().empty();
+    },
+    serveQuery, isDirectory);
+  return isQuery;
 };
 
 std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildPathTree() {
@@ -53,8 +60,10 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildPathTree() {
   auto self = shared_from_this();
   auto isPathExist = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isPathExist(path); }, nullptr, serve404);
+  auto isQuery = std::make_shared<ProcessTree>(
+    [self](std::string& path) { return self->isQuery(path); }, isPathExist, isPathExist);
   auto isRedirect = std::make_shared<ProcessTree>(
-    [self](std::string& path) { return self->isRedirect(path); }, serveRedirect, isPathExist);
+    [self](std::string& path) { return self->isRedirect(path); }, serveRedirect, isQuery);
   auto isMethodAllowed = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isMethodAllowed(path); }, isRedirect, serve405);
   auto isClientBodySizeAllowed = std::make_shared<ProcessTree>(
@@ -138,6 +147,20 @@ bool ProcessTreeBuilder::isPathExist(std::string& path) {
   path = fullpath.string();
   LOG_TRACE("Full path:", path);
   return std::filesystem::exists(path);
+}
+
+bool ProcessTreeBuilder::isQuery(std::string& path) {
+  LOG_TRACE("Checking query");
+  auto it = path.find("?");
+  if (it == std::string::npos) {
+    return false;
+  }
+  std::string pathSub = path.substr(0, it);
+  client.getReq().setQuery(path.substr(it + 1, path.size() - it));
+  path = pathSub;
+  LOG_INFO("Query:", client.getReq().getQuery());
+  LOG_INFO("Path:", path);
+  return true;
 }
 
 bool ProcessTreeBuilder::isRedirect(std::string& path) {

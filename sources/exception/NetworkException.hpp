@@ -22,7 +22,7 @@ class NetworkException : public IException {
                    const size_t line, Args&&... args)
       : IException(errCode, fileName, funcName, line, std::forward<Args>(args)...) {
     setResponseAttributes(client.getRes(), (int)errCode, getErrorMessage(errCode));
-    client.setClientState(ClientState::SENDING);
+    client.setClientState(ClientState::PREPARING);
   }
 
   // Template to create new try-catch block, can create multiple blocks inside each other
@@ -75,6 +75,7 @@ class NetworkException : public IException {
     }
     std::filesystem::path errorPath = exePath / path;
     std::string errorPathStr = errorPath.string();
+    LOG_ERROR("Error page path:", errorPathStr);
     if (!std::filesystem::exists(errorPath) || !isValid(errorPathStr)) {
       setBasicErrorPage(respond);
       return;
@@ -91,7 +92,7 @@ class NetworkException : public IException {
 
   bool isValid(std::string path) const {
     struct stat s;
-    if (!stat(path.c_str(), &s) && S_ISREG(s.st_mode) && !access(path.c_str(), X_OK)) {
+    if (!stat(path.c_str(), &s) && S_ISREG(s.st_mode) && !access(path.c_str(), R_OK)) {
       return true;
     }
     return false;
