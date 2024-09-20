@@ -103,8 +103,8 @@ void ServerDirectiveSetter::setCgiInterpreters(ServerConfig& server, std::string
   std::stringstream ss(value);
   std::string interpreter;
   std::string extension;
-  std::getline(ss, interpreter, ' ');
   std::getline(ss, extension, ' ');
+  std::getline(ss, interpreter, ' ');
   if (interpreter.empty() || extension.empty()) {
     LOG_WARN("Parse: Invalid CGI interpreter,", value, " at line", lineNumber);
     return;

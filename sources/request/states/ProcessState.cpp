@@ -27,7 +27,7 @@ void ProcessState::processRequest(Client& client) {
   if (client.getRes().getReqURI().find("/cgi-bin/") != std::string::npos) {
     client.getCgiHandler().executeRequest(client);
     client.setClientState(ClientState::READING);
-    client.setCgiState(CgiState::DONE);
+    client.setCgiState(CgiState::WRITING);
     if (client.getReq().getMethod() == "POST") {
       client.setCgiState(CgiState::READING);
       client.setClientState(ClientState::PROCESSING);
@@ -62,6 +62,7 @@ void ProcessState::processCgiOutput(Client& client) {
   client.getRes().addHeader("Content-Length", std::to_string(client.getReq().getBodySize()));
   std::vector<char> reqBody = client.getReq().getBody();
   client.getRes().setResBody(reqBody);
+  client.setCgiState(CgiState::DONE);
   client.setClientState(ClientState::PREPARING);
 }
 

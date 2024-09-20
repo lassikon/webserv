@@ -75,9 +75,6 @@ void ParseState::parseBody(Client& client, std::istringstream& iBuf) {
     parseChunkedBody(client, iBuf);
   } else if (isWithContentLength(client)) {
     parseBodyWithContentLength(client, iBuf);
-    /*  } else if (isConnectionClose(client)) {
-    parseBodyWithoutContentLength(client, iBuf);
-    client.setClientState(ClientState::PROCESSING); */
   } else {
     parseBodyWithoutContentLength(client, iBuf);
   }
@@ -96,6 +93,7 @@ void ParseState::parseBodyWithoutContentLength(Client& client, std::istringstrea
 }
 
 void ParseState::parseBodyWithContentLength(Client& client, std::istringstream& iBuf) {
+  LOG_DEBUG("Parsing body with content length");
   int contentLength = std::stoi(client.getReq().getHeaders()["Content-Length"]);
   client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);

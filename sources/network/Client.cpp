@@ -4,8 +4,8 @@
 Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
     : fd(socketFd), serverConfigs(serverConfigs) {
   LOG_DEBUG(Utility::getConstructor(*this));
-  clientState = ClientState::READING;
-  cgiState = CgiState::READING;
+  clientState = ClientState::IDLE;
+  cgiState = CgiState::IDLE;
 }
 
 Client::~Client(void) {
@@ -17,11 +17,11 @@ bool Client::operator==(const Client& other) const {
   return fd == other.fd;
 }
 
-bool Client::handlePollEvents(short revents, int readFd, int writeFd) {
-  if (revents & POLLIN) {
+bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
+  if (revents & EPOLLIN) {
     handlePollInEvent(readFd);
   }
-  if (revents & POLLOUT) {
+  if (revents & EPOLLOUT) {
     handlePollOutEvent(writeFd);
     if (shouldCloseConnection()) {
       return false;
@@ -33,6 +33,9 @@ bool Client::handlePollEvents(short revents, int readFd, int writeFd) {
 void Client::handlePollInEvent(int readFd) {
   LOG_INFO("Client fd:", fd, "has POLLIN event");
   setReadFd(readFd);
+  if (clientState == ClientState::IDLE) {
+    clientState = ClientState::READING;
+  }
   if (clientState == ClientState::READING) {
     readState.execute(*this);
     parseState.execute(*this);
@@ -104,10 +107,10 @@ void Client::initClient(void) {
   readBuf = nullptr;
   readNBytes = 0;
   writeNBytes = 0;
-  clientState = ClientState::READING;
+  clientState = ClientState::IDLE;
   parsingState = ParsingState::REQLINE;
   if (cgiState == CgiState::DONE) {
-    cgiState = CgiState::READING;
+    cgiState = CgiState::IDLE;
   }
 }
 

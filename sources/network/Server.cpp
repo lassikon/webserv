@@ -28,27 +28,28 @@ void Server::acceptConnection(PollManager& pollManager) {
   }
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs));
   LOG_DEBUG("Accepted new client fd:", newFd);
-  pollManager.addFd(newFd, POLLIN);
+  pollManager.addFd(newFd, EPOLLIN);
   clientLastActivity[newFd] = std::chrono::steady_clock::now();
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
-void Server::handleClient(PollManager& pollManager, short revents, int pollFd, int clientFd) {
+void Server::handleClient(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd) {
   auto it = std::find_if(
     clients.begin(), clients.end(),
     [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
+
   if (it == clients.end()) {
     LOG_ERROR("Client fd:", clientFd, "not found in clients");
     return;
   }
   if (it != clients.end()) {
-    if (pollFd == Utility::getInWriteFdFromClientFd(clientFd)) {
-      LOG_DEBUG("Handling POLLOUT event for cgi,", pollFd, " to client fd:", clientFd);
-      (*it)->handlePollEvents(revents, clientFd, pollFd);
+    if (eventFd == Utility::getInWriteFdFromClientFd(clientFd)) {
+      LOG_DEBUG("Handling POLLOUT event for cgi,", eventFd, " to client fd:", clientFd);
+      (*it)->handleEpollEvents(revents, clientFd, eventFd);
       updateClientLastActivity(clientFd);
     } else {
-      LOG_DEBUG("Handling POLLIN event for cgi,", pollFd, " to client fd:", clientFd);
-      (*it)->handlePollEvents(revents, pollFd, clientFd);
+      LOG_DEBUG("Handling POLLIN event for fd:,", eventFd, " to client fd:", clientFd);
+      (*it)->handleEpollEvents(revents, eventFd, clientFd);
       updateClientLastActivity(clientFd);
     }
     /*     if ((*it)->handlePollEvents(revents, pollFd, clientFd) == false) {
@@ -62,38 +63,84 @@ void Server::handleClient(PollManager& pollManager, short revents, int pollFd, i
       updateClientLastActivity(clientFd);
     } */
   }
-  for (auto& pollFd : pollManager.getPollFds()) {
-    if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::DONE) {
-      LOG_TRACE("disabling POLLOUT for client fd:", clientFd);
-      pollFd.events &= ~POLLOUT;
-      pollFd.events &= ~POLLIN;
-      break;
-    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::READING) {
-      LOG_TRACE("disabling POLLOUT for client fd:", clientFd);
-      pollFd.events &= ~POLLOUT;
-      pollFd.events |= POLLIN;
-      break;
-    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::PROCESSING) {
-      pollFd.events &= ~POLLIN;
-      pollFd.events |= POLLOUT;
-      break;
-    } else if (pollFd.fd == clientFd && (*it)->getClientState() == ClientState::SENDING) {
-      pollFd.events &= ~POLLIN;
-      pollFd.events |= POLLOUT;
-      break;
-    } else if (pollFd.fd == Utility::getInWriteFdFromClientFd(clientFd) &&
-               (*it)->getCgiState() == CgiState::WRITING) {
-      pollFd.events &= ~POLLOUT;
-      break;
-    } else if (pollFd.fd == clientFd && (*it)->getCgiState() == CgiState::DONE) {
-      pollFd.events |= POLLOUT;
-      break;
-    } /* else if (pollFd.fd == Utility::getInWriteFdFromClientFd(clientFd) &&
-               (*it)->getCgiState() == CgiState::READING) {
-      pollFd.events |= POLLOUT;
-      break;
-    } */
+
+  uint32_t newEvents = 0;  // Default to listening for input
+  int fd;
+  if (eventFd == clientFd && (*it)->getClientState() == ClientState::IDLE &&
+      (*it)->getCgiState() == CgiState::IDLE) {
+    LOG_WARN("Triggering Edge for fd:", clientFd);
+    newEvents &= ~EPOLLOUT;
+    newEvents |= EPOLLIN;
+    fd = eventFd;
   }
+  if (eventFd == clientFd && (*it)->getClientState() == ClientState::READING &&
+      (*it)->getCgiState() == CgiState::IDLE) {
+    LOG_WARN("Disabling POLLOUT for client fd:", clientFd);
+    newEvents &= ~EPOLLOUT;
+    newEvents |= EPOLLIN ;
+    fd = eventFd;
+  }
+  if (eventFd == clientFd && (*it)->getClientState() == ClientState::READING &&
+      (*it)->getCgiState() ==
+        CgiState::WRITING) {  //Client events after client poll out for cgi bin/get request
+    LOG_WARN("Disabling EVENTS for client fd:", clientFd);
+    newEvents = 0;
+    fd = eventFd;
+  }
+  if (eventFd == clientFd && (*it)->getClientState() == ClientState::PROCESSING &&
+      (*it)->getCgiState() == CgiState::IDLE) {
+    LOG_TRACE("Enabling POLLOUT for client fd:",
+              clientFd);  //Client events after client poll in simple request
+    newEvents &= ~EPOLLIN;
+    newEvents |= EPOLLOUT;
+    fd = eventFd;
+  }
+  if (Utility::isCgiFd(eventFd) && (*it)->getClientState() == ClientState::READING &&
+      (*it)->getCgiState() == CgiState::WRITING) {
+    LOG_TRACE("Enabling POLLIN event in CGI:", eventFd,
+              " for client fd:", clientFd);  //CGI events after cgi poll in  for bin/get request
+    newEvents = EPOLLIN;
+    fd = eventFd;
+  }
+  if (Utility::isCgiFd(eventFd) && (*it)->getClientState() == ClientState::PROCESSING &&
+      (*it)->getCgiState() == CgiState::DONE) {
+    LOG_TRACE("Enabling POLLOUT for client fd:", clientFd,
+              "after CGI fd:", eventFd);  //CGI events after cgi poll in  for bin/get request
+    newEvents |= EPOLLOUT;
+    fd = Utility::getClientFdFromCgiParams(eventFd);
+  }
+  if (eventFd == clientFd && (*it)->getClientState() == ClientState::SENDING) {
+    LOG_TRACE("Enabling POLLOUT for client fd:", clientFd);
+    newEvents &= ~EPOLLIN;
+    newEvents |= EPOLLOUT;
+    fd = eventFd;
+  }
+  if (eventFd == clientFd && (*it)->getClientState() == ClientState::SENDING &&
+      (*it)->getCgiState() == CgiState::DONE) {
+    LOG_TRACE("Enabling POLLOUT for client fd:", clientFd);
+    newEvents &= ~EPOLLIN;
+    newEvents |= EPOLLOUT;
+    fd = eventFd;
+  }
+  if (eventFd == Utility::getInWriteFdFromClientFd(clientFd) &&
+      (*it)->getCgiState() == CgiState::WRITING) {
+    LOG_TRACE("disabling POLLOUT for cgi fd:", eventFd);
+    newEvents &= ~EPOLLOUT;
+    fd = eventFd;
+  }
+  if (eventFd == clientFd && (*it)->getCgiState() == CgiState::DONE &&
+      (*it)->getClientState() == ClientState::PROCESSING) {
+    LOG_TRACE("Enabling POLLOUT for client fd:", clientFd);
+    newEvents |= EPOLLOUT;
+    fd = eventFd;
+  }
+  if (eventFd == Utility::getInWriteFdFromClientFd(clientFd) &&
+      (*it)->getCgiState() == CgiState::READING) {
+    LOG_TRACE("Enabling POLLOUT for cgi fd:", eventFd);
+    newEvents |= EPOLLOUT;
+    fd = eventFd;
+  }
+  pollManager.modifyFd(fd, newEvents);
 }
 
 void Server::checkIdleClients(PollManager& pollManager) {

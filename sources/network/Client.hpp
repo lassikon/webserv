@@ -19,7 +19,7 @@
 #include <RuntimeException.hpp>
 
 #include <netdb.h>
-#include <poll.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -31,9 +31,9 @@
 #include <string>
 #include <vector>
 
-enum struct ClientState { READING, PROCESSING, PREPARING ,SENDING, DONE };
+enum struct ClientState {IDLE, READING, PROCESSING, PREPARING ,SENDING, DONE };
 enum struct ParsingState { REQLINE, HEADER, BODY, DONE };
-enum struct CgiState { READING, WRITING, DONE};
+enum struct CgiState {IDLE, READING, WRITING, DONE};
 
 class Client {
  private:
@@ -92,7 +92,7 @@ class Client {
   void resetRequest(void);
   void resetResponse(void);
   void initClient(void);
-  bool handlePollEvents(short revents, int readFd, int writeFd);
+  bool handleEpollEvents(uint32_t revents, int readFd, int writeFd);
 
  private:
   void handlePollInEvent(int readFd);

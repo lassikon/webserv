@@ -9,7 +9,7 @@
 #include <Socket.hpp>
 
 #include <netdb.h>
-#include <poll.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -43,7 +43,7 @@ class Server {
 
   void addServerConfig(ServerConfig& serverConfig);
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& pollManager, short revents, int pollFd, int clientFd);
+  void handleClient(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd);
   void checkIdleClients(PollManager& pollManager);
   void updateClientLastActivity(int clientFd);
 
