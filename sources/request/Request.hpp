@@ -38,6 +38,6 @@ class Request {
   void setMethod(std::string method) { reqMethod = method; }
   void setReqURI(std::string uri) { reqURI = uri; }
   void setVersion(std::string version) { reqVersion = version; }
-  void setBody(std::vector<char>& body) { reqBody = body; }
+  void setBody(std::vector<char> body) { reqBody = body; }
   void setBodySize(size_t size) { reqBodySize = size; }
 };

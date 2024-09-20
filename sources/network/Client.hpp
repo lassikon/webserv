@@ -20,7 +20,7 @@
 #include <RuntimeException.hpp>
 
 #include <netdb.h>
-#include <poll.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -93,7 +93,7 @@ class Client {
   void resetRequest(void);
   void resetResponse(void);
   void initClient(void);
-  bool handlePollEvents(short revents, int readFd, int writeFd);
+  bool handleEpollEvents(uint32_t revents, int readFd, int writeFd);
 
  private:
   void handlePollInEvent(int readFd);

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Multipart Form Data Test</title>
+</head>
+<body>
+	<h1>Multipart Form Data Test</h1>
+	<form action="/upload" method="post" enctype="multipart/form-data">
+		<label for="file">Select a file:</label>
+		<input type="file" id="file" name="file" accept=".jpg, .png, .gif" required><br><br>
+		<br>
+		<input type="submit" value="Upload">
+	</form>
+</body>
+</html>
