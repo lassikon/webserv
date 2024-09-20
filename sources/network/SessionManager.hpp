@@ -18,7 +18,7 @@ class SessionManager {
   const int tokenLength = 20;
 
   std::fstream sessions;
-  std::unordered_map<std::string, std::string> sessionIds;
+  std::unordered_map<std::string, std::string> sessionIds{};
 
  public:
   SessionManager(void);
@@ -30,5 +30,9 @@ class SessionManager {
 
  public:
   std::string generateSessionId(void);
-  std::string sessionIdExists(void);
+  bool sessionIdExists(std::string);
+
+ public:  // getters
+  SessionManager& getSessionManager(void) { return *this; }
+  std::string getSessionId(std::string);
 };

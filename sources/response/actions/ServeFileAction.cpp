@@ -14,4 +14,5 @@ void ServeFileAction::execute(Client& client) {
   client.getRes().addHeader("Content-Type", mimeType);
   client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
   client.getRes().addHeader("Connection", "keep-alive");
+  client.getRes().addHeader("Set-Cookie", client.getCookie().generateSessionId());
 }

@@ -16,6 +16,7 @@ class Request {
   std::string reqURI;
   std::string reqVersion;
   std::string reqQuery;
+  std::string reqCookie;
   std::map<std::string, std::string> reqHeaders;
   std::vector<char> reqBody;
   size_t reqBodySize = 0;
@@ -24,6 +25,7 @@ class Request {
   Request();
   ~Request();
 
+ public:  // getters
   std::map<std::string, std::string>& getHeaders(void) { return reqHeaders; }
   std::string getMethod(void) const { return reqMethod; }
   std::string getReqURI(void) const { return reqURI; }
@@ -31,6 +33,8 @@ class Request {
   size_t getBodySize(void) const { return reqBodySize; }
   std::map<std::string, std::string> getHeaders(void) const { return reqHeaders; }
   std::vector<char> getBody(void) const { return reqBody; }
+
+ public:  // setters
   void setMethod(std::string method) { reqMethod = method; }
   void setReqURI(std::string uri) { reqURI = uri; }
   void setVersion(std::string version) { reqVersion = version; }

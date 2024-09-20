@@ -5,7 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
-RUNCONFIG   := ./confDefault/default.conf
+RUNCONFIG   := confDefault/default.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 
@@ -119,7 +119,7 @@ run: all
 	./$(NAME) $(RUNCONFIG)
 
 leaks: all
-	valgrind $(VLGFLAGS) ./$(NAME)
+	valgrind $(VLGFLAGS) ./$(NAME) $(RUNCONFIG)
 	$(call report_cmd, $(LEAKSLOG))
 
 define report_cmd
