@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Logger.hpp>
 #include <Utility.hpp>
 
 #include <cstdlib>
@@ -17,7 +18,7 @@ class SessionManager {
   const char* fileName = "sessions";
   const int tokenLength = 20;
 
-  std::fstream sessions;
+  std::fstream sessionsFile;
   std::unordered_map<std::string, std::string> sessionIds{};
 
  public:
@@ -26,7 +27,12 @@ class SessionManager {
 
  private:
   void generateOutfile(std::fstream& fs, const char* file);
+  void readSessionsFromFile(void);
   std::string randomizeSessionToken(void);
+
+ public:
+  void debugFillSessionsFile();
+  void debugPrintSessionsMap();
 
  public:
   std::string generateSessionId(void);

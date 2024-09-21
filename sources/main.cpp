@@ -23,8 +23,10 @@ int main(int argc, char** argv) {
 
   {
     SessionManager s;
-    std::cout << "Set-Cookie: " << s.generateSessionId() << std::endl;
+    s.generateSessionId();
+    // s.debugPrintSessionsMap();
   }
+  exit(1);
 
   Config config = ConfigInitializer::initializeConfig(argc, argv);
   RuntimeException::tryCatch(&Config::parseConfigFile, &config);
