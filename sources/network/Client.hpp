@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-enum struct ClientState {IDLE, READING, PROCESSING, PREPARING ,SENDING, DONE };
+enum struct ClientState {IDLE, READING, PROCESSING, PREPARING ,SENDING, DONE, CLOSE };
 enum struct ParsingState { REQLINE, HEADER, BODY, DONE };
 enum struct CgiState {IDLE, READING, WRITING, DONE};
 

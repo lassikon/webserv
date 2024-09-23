@@ -31,11 +31,15 @@ void ReadState::execute(Client& client) {
 void ReadState::handleEOF(Client& client) {
   if (client.getReadBuf() == nullptr) {
     LOG_DEBUG("Reading EOF from client fd:", client.getFd());
-    client.setClientState(ClientState::IDLE);
+    client.setClientState(ClientState::CLOSE);
     return;
+  } else if (client.getCgiState() != CgiState::IDLE) {
+    LOG_DEBUG("Client fd:", client.getFd(), "is CGI EOF");
+    client.setParsingState(ParsingState::DONE);
+    client.setClientState(ClientState::PROCESSING);
+    client.setCgiState(CgiState::DONE);
+  } else if (client.getReadBuf()->empty()) {
+    LOG_DEBUG("Reading EOF from client fd:", client.getFd());
+    client.setClientState(ClientState::PROCESSING);
   }
-  LOG_DEBUG("Client fd:", client.getFd(), "is CGI EOF");
-  client.setParsingState(ParsingState::DONE);
-  client.setClientState(ClientState::PROCESSING);
-  client.setCgiState(CgiState::DONE);
 }

@@ -119,13 +119,10 @@ bool CgiHandler::isValidScript(void) const {
 void CgiHandler::scriptLoader(void) {
   if (!isValidScript()) {
     cgiError("Could not open script");
-    LOG_DEBUG("Script:", cgi, "is not valid");
   } else if (pipe(inPipeFd) == -1) {
     cgiError("Could not create pipe");
-    LOG_DEBUG("Could not create pipe");
   } else if (pipe(outPipeFd) == -1) {
     cgiError("Could not create pipe");
-    LOG_DEBUG("Could not create pipe");
   } else {
     forkChildProcess();
   }

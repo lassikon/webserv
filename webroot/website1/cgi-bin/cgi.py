@@ -48,7 +48,7 @@ print("<html><body>")
 print("<h1>CGI Script Response</h1>")
 
 # Display a personalized message if the name was provided
-if name:
+if name and not title:
     print(f"<p>Welcome, {name}!</p>")
 elif name and title:
     print(f"<p>Welcome, {name}, {title} </p>")

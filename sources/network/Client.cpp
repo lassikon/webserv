@@ -24,10 +24,10 @@ bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
   if (revents & EPOLLOUT) {
     handlePollOutEvent(writeFd);
     if (shouldCloseConnection()) {
-      return false;
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
 void Client::handlePollInEvent(int readFd) {
@@ -107,7 +107,9 @@ void Client::initClient(void) {
   readBuf = nullptr;
   readNBytes = 0;
   writeNBytes = 0;
+  if (clientState == ClientState::DONE) {
   clientState = ClientState::IDLE;
+  }
   parsingState = ParsingState::REQLINE;
   if (cgiState == CgiState::DONE) {
     cgiState = CgiState::IDLE;

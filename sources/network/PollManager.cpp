@@ -28,6 +28,7 @@ void PollManager::addFd(int fd, uint32_t events) {
     }
   }
   LOG_DEBUG("Added fd:", fd, "to epollFd");
+  interestFdsList.push_back(fd);
 }
 
 void PollManager::removeFd(int fd) {
@@ -36,10 +37,18 @@ void PollManager::removeFd(int fd) {
       epollEvents.erase(it);
     }
   }
+
   if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
     throw serverError("Failed to remove fd from epollFd");
   }
   LOG_DEBUG("Removed fd:", fd, "from epollFd");
+
+  for (auto it = interestFdsList.begin(); it != interestFdsList.end(); ++it) {
+    if (*it == fd) {
+      interestFdsList.erase(it);
+      break;
+    }
+  }
 }
 
 void PollManager::modifyFd(int fd, uint32_t events) {
@@ -54,9 +63,8 @@ void PollManager::modifyFd(int fd, uint32_t events) {
 }
 
 bool PollManager::fdExists(int fd) {
-  auto it = std::find_if(epollEvents.begin(), epollEvents.end(),
-                         [fd](const struct epoll_event& event) { return event.data.fd == fd; });
-  return it != epollEvents.end();
+  auto it = std::find(interestFdsList.begin(), interestFdsList.end(), fd);
+  return it != interestFdsList.end();
 }
 
 int PollManager::epollWait(void) {
@@ -77,4 +85,8 @@ int PollManager::epollWait(void) {
 
 std::vector<struct epoll_event>& PollManager::getEpollEvents(void) {
   return epollEvents;
+}
+
+std::vector<int>& PollManager::getInterestFdsList(void) {
+  return interestFdsList;
 }

@@ -23,7 +23,7 @@ class ServerManager {
 
  private:
   std::vector<std::shared_ptr<Server>> servers;
-
+  
  public:
   ServerManager(void);
   ~ServerManager(void);

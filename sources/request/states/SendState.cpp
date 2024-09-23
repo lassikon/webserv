@@ -23,7 +23,9 @@ void SendState::execute(Client& client) {
     client.setClientState(ClientState::DONE);
     if (client.getCgiState() == CgiState::READING) {
       client.setCgiState(CgiState::WRITING);
+      client.setClientState(ClientState::READING);
     }
+    client.initClient();
     return;
   }
 

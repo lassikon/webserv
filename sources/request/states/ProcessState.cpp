@@ -6,7 +6,6 @@ void ProcessState::execute(Client& client) {
     client.setClientState(ClientState::DONE);
     return;
   }
-  LOG_TRACE("Processing request for client fd:", client.getFd());
   if (client.getFd() != client.getReadFd()) {
     LOG_TRACE("Processing CGI output for client fd:", client.getFd());
     processCgiOutput(client);

@@ -43,9 +43,12 @@ class Server {
 
   void addServerConfig(ServerConfig& serverConfig);
   void acceptConnection(PollManager& pollManager);
-  void handleClient(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd);
+  void handleClientIn(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd);
+  void handleClientOut(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd);
   void checkIdleClients(PollManager& pollManager);
   void updateClientLastActivity(int clientFd);
+  void modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> client, int eventFd,
+                     int clientFd);
 
  public:
   int getSocketFd(void) const { return socket.getFd(); }

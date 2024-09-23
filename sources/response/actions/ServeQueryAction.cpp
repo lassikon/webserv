@@ -28,7 +28,7 @@ void ServeQueryAction::execute(Client& client) {
   client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
   client.getRes().addHeader("Content-Type", mimeType);
   client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
-  client.getRes().addHeader("Connection", "keep-alive");
+  client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
 }
 
 void ServeQueryAction::serveWrongQuery(Client& client) {
@@ -36,5 +36,5 @@ void ServeQueryAction::serveWrongQuery(Client& client) {
   client.getRes().setResStatusCode(301);
   client.getRes().setResStatusMessage("Moved Permanently");
   client.getRes().addHeader("Location", "https://www.youtube.com/watch?v=r94vuvwUSkY");
-  client.getRes().addHeader("Connection", "keep-alive");
+  client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
 }
