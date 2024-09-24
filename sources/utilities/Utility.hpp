@@ -1,7 +1,8 @@
 #pragma once
 
+#include <fcntl.h>
 #include <Global.hpp>
-
+#include <CgiHandler.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -19,6 +20,12 @@ class Utility {
   static std::string getMimeType(std::string& extension);
   static bool statusOk(void) noexcept;
   static size_t convertSizetoBytes(std::string& size);
+  static void setNonBlocking(int& fd);
+  static void setCloseOnExec(int& fd);
+  static bool isCgiFd(int fd);
+  static int getClientFdFromCgiParams(int fd);
+  static int getOutReadFdFromClientFd(int fd);
+  static int getInWriteFdFromClientFd(int fd);
 
   template <class T> static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";

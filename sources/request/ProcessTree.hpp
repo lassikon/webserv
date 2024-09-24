@@ -15,6 +15,7 @@ class ProcessTree {
   ProcessTree(Validate validate, std::shared_ptr<ProcessTree> trueBranch,
               std::shared_ptr<ProcessTree> falseBranch);
   ProcessTree(std::shared_ptr<IServeAction> action);
+  ProcessTree(int statusCode);
   ~ProcessTree();
   void process(Client& client);
 
@@ -23,4 +24,6 @@ class ProcessTree {
   std::shared_ptr<ProcessTree> trueBranch = nullptr;
   std::shared_ptr<ProcessTree> falseBranch = nullptr;
   std::shared_ptr<IServeAction> action = nullptr;
+  int statusCode = 0;
+  void thorwError(Client& client);
 };

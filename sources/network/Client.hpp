@@ -31,14 +31,14 @@
 #include <string>
 #include <vector>
 
-enum struct ClientState { READING, PROCESSING, SENDING, DONE };
+enum struct ClientState {IDLE, READING, PROCESSING, PREPARING ,SENDING, DONE, CLOSE };
 enum struct ParsingState { REQLINE, HEADER, BODY, DONE };
+enum struct CgiState {IDLE, READING, WRITING, DONE};
 
 class Client {
  private:
   Request req;
   Response res;
-  bool isCgi = false;
   int fd;
 
  private:
@@ -53,6 +53,7 @@ class Client {
  private:  //states
   ClientState clientState;
   ParsingState parsingState;
+  CgiState cgiState;
   ReadState readState;
   ParseState parseState;
   ProcessState processState;
@@ -101,7 +102,6 @@ class Client {
 
  public:  // getters
   int getFd(void) const { return fd; }
-  bool getIsCgi(void) { return isCgi; }
   Request& getReq(void) { return req; }
   Response& getRes(void) { return res; }
   PostHandler& getPostHandler(void) { return postHandler; }
@@ -111,10 +111,11 @@ class Client {
   std::vector<std::shared_ptr<ServerConfig>>& getServerConfigs(void) { return serverConfigs; }
   ClientState getClientState(void) const { return clientState; }
   ParsingState getParsingState(void) const { return parsingState; }
+  CgiState getCgiState(void) const { return cgiState; }
 
  public:  //  setters
   void setFd(int fd);
   void setClientState(ClientState state) { clientState = state; }
   void setParsingState(ParsingState state) { parsingState = state; }
-  void setIsCgi(bool isCgi) { this->isCgi = isCgi; }
+  void setCgiState(CgiState state) { cgiState = state; }
 };

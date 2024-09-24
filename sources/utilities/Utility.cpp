@@ -2,9 +2,9 @@
 #include <Utility.hpp>
 
 static std::map<std::string, std::string> mimeTypes = {
-    {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
-    {"png", "image/png"},  {"jpg", "image/jpeg"}, {"jpeg", "image/jpeg"},
-    {"gif", "image/gif"},  {"txt", "text/plain"},
+  {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
+  {"png", "image/png"},  {"jpg", "image/jpeg"}, {"jpeg", "image/jpeg"},
+  {"gif", "image/gif"},  {"txt", "text/plain"},
 };
 
 std::string Utility::trimWhitespaces(std::string& line) {
@@ -55,6 +55,64 @@ std::string Utility::getMimeType(std::string& extension) {
   return "application/octet-stream";
 }
 
+void Utility::setNonBlocking(int& fd) {
+  int flags = fcntl(fd, F_GETFL, 0);
+  if (flags == -1) {
+    LOG_ERROR("Failed to get file descriptor flags");
+    return;
+  }
+  if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+    LOG_ERROR("Failed to set file descriptor to non-blocking");
+  }
+}
+
+void Utility::setCloseOnExec(int& fd) {
+  int flags = fcntl(fd, F_GETFD, 0);
+  if (flags == -1) {
+    LOG_ERROR("Failed to get file descriptor flags");
+    return;
+  }
+  if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
+    LOG_ERROR("Failed to set file descriptor to close-on-exec");
+  }
+}
+
+bool Utility::isCgiFd(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int Utility::getClientFdFromCgiParams(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      return cgi.clientFd;
+    }
+  }
+  return -1;
+}
+
+int Utility::getOutReadFdFromClientFd(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.clientFd == fd) {
+      return cgi.outReadFd;
+    }
+  }
+  return -1;
+}
+
+int Utility::getInWriteFdFromClientFd(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.clientFd == fd) {
+      return cgi.inWriteFd;
+    }
+  }
+  return -1;
+}
+
 bool Utility::statusOk(void) noexcept {
   return g_ExitStatus == 0 ? true : false;
 }
@@ -73,13 +131,13 @@ size_t Utility::convertSizetoBytes(std::string& size) {
     size.pop_back();
   }
   try {
-        bytes = std::stoull(size) * multiplier;
-    } catch (const std::invalid_argument&) {
-        // Handle invalid argument
-        bytes = 0;
-    } catch (const std::out_of_range&) {
-        // Handle out of range
-        bytes = SIZE_MAX;
-    }
+    bytes = std::stoull(size) * multiplier;
+  } catch (const std::invalid_argument&) {
+    // Handle invalid argument
+    bytes = 0;
+  } catch (const std::out_of_range&) {
+    // Handle out of range
+    bytes = SIZE_MAX;
+  }
   return bytes;
 }

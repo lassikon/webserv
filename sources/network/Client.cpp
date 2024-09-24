@@ -4,7 +4,8 @@
 Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
     : fd(socketFd), serverConfigs(serverConfigs) {
   LOG_DEBUG(Utility::getConstructor(*this));
-  clientState = ClientState::READING;
+  clientState = ClientState::IDLE;
+  cgiState = CgiState::IDLE;
 }
 
 Client::~Client(void) {
@@ -23,15 +24,18 @@ bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
   if (revents & EPOLLOUT) {
     handlePollOutEvent(writeFd);
     if (shouldCloseConnection()) {
-      return false;
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
 void Client::handlePollInEvent(int readFd) {
   LOG_INFO("Client fd:", fd, "has POLLIN event");
   setReadFd(readFd);
+  if (clientState == ClientState::IDLE) {
+    clientState = ClientState::READING;
+  }
   if (clientState == ClientState::READING) {
     readState.execute(*this);
     parseState.execute(*this);
@@ -44,23 +48,19 @@ void Client::handlePollOutEvent(int writeFd) {
   if (clientState == ClientState::PROCESSING) {
     NetworkException::tryCatch(&ProcessState::execute, &this->processState, *this);
   }
-  //   try {
-  //     processState.execute(*this);
-  //   } catch (HttpException& e) {
-  //     LOG_ERROR("Exception caught:", e.what());
-  //     e.setResponseAttributes();
-  //     clientState = ClientState::SENDING;
-  //   }
-  // }
+  if (clientState == ClientState::PREPARING) {
+    if (writeNBytes == 0) {
+      res.makeResponse();
+    }
+    clientState = ClientState::SENDING;
+  }
   if (clientState == ClientState::SENDING) {
-    res.makeResponse();
     sendState.execute(*this);
   }
   if (clientState == ClientState::DONE) {
     LOG_INFO("Client fd:", fd, "is done");
     LOG_DEBUG("Reinitializing client fd:", fd);
     initClient();
-    clientState = ClientState::READING;
   }
 }
 
@@ -92,6 +92,7 @@ void Client::resetResponse(void) {
 }
 
 void Client::resetRequest(void) {
+  req.setQuery("");
   req.setMethod("");
   req.setReqURI("");
   req.setVersion("");
@@ -103,12 +104,17 @@ void Client::resetRequest(void) {
 void Client::initClient(void) {
   resetRequest();
   resetResponse();
-  isCgi = false;
   readBuf = nullptr;
   readNBytes = 0;
   writeNBytes = 0;
-  clientState = ClientState::READING;
+  if (clientState == ClientState::DONE) {
+  clientState = ClientState::IDLE;
+  }
   parsingState = ParsingState::REQLINE;
+  if (cgiState == CgiState::DONE) {
+    cgiState = CgiState::IDLE;
+    cgiHandler.closePipeFds();
+  }
 }
 
 bool Client::shouldCloseConnection(void) {

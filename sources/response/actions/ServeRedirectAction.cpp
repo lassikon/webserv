@@ -7,5 +7,5 @@ void ServeRedirectAction::execute(Client& client) {
   client.getRes().setResStatusCode(301);
   client.getRes().setResStatusMessage("Moved Permanently");
   client.getRes().addHeader("Location", client.getRes().getRouteConfig().redirect);
-  client.getRes().addHeader("Connection", "keep-alive");
+  client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
 }

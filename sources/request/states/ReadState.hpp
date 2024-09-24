@@ -14,4 +14,5 @@ class ReadState : public IStateHandler {
 
   private:
     bool isCgiOutput(Client& client, std::string buf);
+    void handleEOF(Client& client);
 };

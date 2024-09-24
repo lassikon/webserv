@@ -16,6 +16,7 @@ class PollManager {
  private:
   int epollFd;
   std::vector<struct epoll_event> epollEvents;
+  std::vector<int> interestFdsList;
 
  public:
   PollManager(void);
@@ -23,6 +24,7 @@ class PollManager {
 
   int epollWait(void);
   std::vector<struct epoll_event>& getEpollEvents(void);
+  std::vector<int>& getInterestFdsList(void);
 
  public:
   void addFd(int fd, uint32_t events);

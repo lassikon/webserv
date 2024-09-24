@@ -4,6 +4,7 @@
 #include <Logger.hpp>
 #include <PollManager.hpp>
 #include <RuntimeException.hpp>
+#include <Utility.hpp>
 
 #include <fcntl.h>
 #include <netdb.h>

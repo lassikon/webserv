@@ -23,7 +23,7 @@ class ServerManager {
 
  private:
   std::vector<std::shared_ptr<Server>> servers;
-
+  
  public:
   ServerManager(void);
   ~ServerManager(void);
@@ -47,8 +47,4 @@ class ServerManager {
   void handlePollOutEvent(PollManager& pollManager, struct epoll_event& event);
   void handleNoEvents(PollManager& pollManager);
 
- private:
-  bool isCgiFd(int fd) const;
-  int getClientFdFromCgiParams(int fd) const;
-  int getCgiFdFromClientFd(int fd) const;
 };

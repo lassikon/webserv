@@ -18,4 +18,5 @@ class ServerDirectiveSetter : public IDirectiveSetter {
   void setPort(ServerConfig& server, std::string& value, int& lineNumber);
   void setErrorPages(ServerConfig& server, std::string& value, int& lineNumber);
   void setClientBodySizeLimit(ServerConfig& server, std::string& value, int& lineNumber);
+  void setCgiInterpreters(ServerConfig& server, std::string& value, int& lineNumber);
 };

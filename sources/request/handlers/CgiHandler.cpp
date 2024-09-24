@@ -1,36 +1,17 @@
 #include <CgiHandler.hpp>
 #include <Client.hpp>
 
-// static std::map<pid_t, int> pids;
-
-void CgiHandler::debugPrintCgiFd(void) {
-  char buffer[256];
-  LOG_DEBUG("Printing CGI fd contents");
-  read(cgiFd, &buffer, sizeof(buffer));
-  write(STDOUT_FILENO, &buffer, sizeof(buffer));
-}
-
-CgiHandler::CgiHandler(const Client& client) {
-  cgi = "/run/media/jankku/Verbergen/dev/42/webserv/cgi-bin/hello.cgi";
-  LOG_TRACE(Utility::getConstructor(*this));
-  args.push_back(cgi);
-  generateEnvpVector();
-  (void)client;
-  cgiFd = pipefd[Fd::Read];
-}
-
-CgiHandler::CgiHandler(void) {  // delete this
+CgiHandler::CgiHandler(void) {
   LOG_TRACE(Utility::getConstructor(*this));
 }
 
-void CgiHandler::generateEnvpVector(void) {
-  envps.push_back(std::string("REDIRECT_STATUS=") + "200");
-  envps.push_back(std::string("REQUEST_METHOD=") + "FILLME");
-  envps.push_back(std::string("SCRIPT_FILENAME=") + "FILLME");
-  envps.push_back(std::string("PATH_INFO=") + "FILLME");
-  envps.push_back(std::string("CONTENT_TYPE=") + "FILLME");
-  envps.push_back(std::string("CONTENT_LENGTH=") + "FILLME");
-  envps.push_back(std::string("QUERY_STRING=") + "FILLME");
+void CgiHandler::generateEnvpVector(Client& client) {
+  envps.push_back(std::string("REQUEST_METHOD=") + client.getReq().getMethod());
+  envps.push_back(std::string("SCRIPT_FILENAME=") + client.getRes().getReqURI());
+  envps.push_back(std::string("PATH_INFO=") + client.getRes().getReqURI());
+  envps.push_back(std::string("CONTENT_TYPE=") + client.getReq().getHeaders()["Content-Type"]);
+  envps.push_back(std::string("CONTENT_LENGTH=") + std::to_string(client.getReq().getBodySize()));
+  envps.push_back(std::string("QUERY_STRING=") + client.getReq().getQuery());
   envps.push_back(std::string("HTTP_COOKIE=") + "FILLME");
 }
 
@@ -41,31 +22,23 @@ CgiHandler::~CgiHandler(void) {
 
 void CgiHandler::closePipeFds(void) {
   LOG_TRACE("Closing file descriptors");
-  if (pipefd[Fd::Read] != -1) {
-    close(pipefd[Fd::Read]);
+  if (inPipeFd[Fd::Read] != -1) {
+    close(inPipeFd[Fd::Read]);
   }
-  if (pipefd[Fd::Write] != -1) {
-    close(pipefd[Fd::Write]);
+  if (inPipeFd[Fd::Write] != -1) {
+    close(inPipeFd[Fd::Write]);
   }
-  if (cgiFd != -1) {
-    close(cgiFd);
+  if (outPipeFd[Fd::Read] != -1) {
+    close(outPipeFd[Fd::Read]);
+  }
+  if (outPipeFd[Fd::Write] != -1) {
+    close(outPipeFd[Fd::Write]);
   }
 }
 
 void CgiHandler::killAllChildPids(void) {
   for (auto& cgiParam : g_CgiParams) {
     kill(cgiParam.pid, SIGKILL);
-  }
-}
-
-void CgiHandler::waitChildProcess(void) {
-  //waitpid(this->pid, &wstat, WNOHANG);
-  waitpid(this->pid, &wstat, 0);
-  if (WIFSIGNALED(wstat) != 0) {
-    g_ExitStatus = (int)RuntimeError::Signal + WTERMSIG(wstat);
-  } else if (WIFEXITED(wstat)) {
-    g_ExitStatus = WEXITSTATUS(wstat);
-    close(pipefd[Fd::Write]);
   }
 }
 
@@ -82,9 +55,14 @@ void CgiHandler::executeCgiScript(void) {
   LOG_TRACE("Log entry from child process");
   std::vector<char*> argv = convertStringToChar(args);
   std::vector<char*> envp = convertStringToChar(envps);
-  if (dup2(pipefd[Fd::Write], STDOUT_FILENO) == -1) {
+  if (dup2(outPipeFd[Fd::Write], STDOUT_FILENO) == -1) {
     cgiError("Could not duplicate pipe fd");
   }
+  if (dup2(inPipeFd[Fd::Read], STDIN_FILENO) == -1) {
+    cgiError("Could not duplicate pipe fd");
+  }
+  close(outPipeFd[Fd::Write]);
+  close(inPipeFd[Fd::Read]);
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
     cgiError("Failed to execute CGI script");
   }
@@ -98,67 +76,76 @@ bool CgiHandler::isChildProcess(void) const {
   return this->pid == 0 ? true : false;
 }
 
-// const pid_t& CgiHandler::addNewProcessId(void) noexcept {
-//   g_Pids.insert(std::make_pair(fork(), pipefd[Fd::Read]);
-//   return g_Pids[pids.size() - 1];
-// }
-
 void CgiHandler::forkChildProcess(void) {
   LOG_TRACE("Forking new child process");
-  // this->pid = addNewProcessId();
   this->pid = fork();
   if (this->pid == -1) {
     cgiError("Could not create child process");
   } else if (isChildProcess()) {
     LOG_DEBUG("Child pid:", getpid());
-    //close(pipefd[Fd::Read]);
+    close(outPipeFd[Fd::Read]);
+    close(inPipeFd[Fd::Write]);
     executeCgiScript();
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-    // cgiFd = pipefd[Fd::Read];
-    CgiParams cgiParam;
-    cgiParam.pid = this->pid;
-    cgiParam.fd = pipefd[Fd::Read];
-    cgiParam.write = pipefd[Fd::Write];
-    cgiParam.clientFd = clientFd;
-    cgiParam.isExited = false;
-    cgiParam.start = std::chrono::steady_clock::now();
-    g_CgiParams.push_back(cgiParam);
+    close(outPipeFd[Fd::Write]);
+    close(inPipeFd[Fd::Read]);
+    setGlobal();
   }
 }
 
+void CgiHandler::setGlobal(void) {
+  CgiParams cgiParam;
+  cgiParam.pid = this->pid;
+  cgiParam.outReadFd = outPipeFd[Fd::Read];
+  cgiParam.outWriteFd = outPipeFd[Fd::Write];
+  cgiParam.inReadFd = inPipeFd[Fd::Read];
+  cgiParam.inWriteFd = inPipeFd[Fd::Write];
+  cgiParam.clientFd = clientFd;
+  cgiParam.isExited = false;
+  cgiParam.start = std::chrono::steady_clock::now();
+  g_CgiParams.push_back(cgiParam);
+}
+
+//edited
 bool CgiHandler::isValidScript(void) const {
   struct stat s;
-  if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), X_OK)) {
+  if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), R_OK)) {
     return true;
   }
   return false;
 }
 
 void CgiHandler::scriptLoader(void) {
-  //cgiError("whatever error");
   if (!isValidScript()) {
     cgiError("Could not open script");
-  } else if (pipe(pipefd) == -1) {
+  } else if (pipe(inPipeFd) == -1) {
+    cgiError("Could not create pipe");
+  } else if (pipe(outPipeFd) == -1) {
     cgiError("Could not create pipe");
   } else {
     forkChildProcess();
-    // waitChildProcess();
   }
 }
 
 void CgiHandler::runScript(void) {
   LOG_TRACE("Running new CGI instance");
   RuntimeException::tryCatch(&CgiHandler::scriptLoader, this);
-  //debugPrintCgiFd();
 }
 
 void CgiHandler::executeRequest(Client& client) {
   LOG_TRACE("CgiHandler: executingRequest");
   cgi = client.getRes().getReqURI();
-  LOG_TRACE("Using binary:", cgi);
+
+  std::string ext = cgi.substr(cgi.find_last_of(".") + 1);
+  if (ext == "py")
+    args.push_back(client.getRes().getServerConfig().cgiInterpreters["py"]);
+  else if (ext == "php")
+    args.push_back(client.getRes().getServerConfig().cgiInterpreters["php"]);
+  else
+    LOG_TRACE("Using binary:", cgi);
   clientFd = client.getFd();
   args.push_back(cgi);
-  generateEnvpVector();
+  generateEnvpVector(client);
   runScript();
 }

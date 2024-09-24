@@ -21,8 +21,8 @@ class NetworkException : public IException {
   NetworkException(Client& client, NetworkError errCode, const char* fileName, const char* funcName,
                    const size_t line, Args&&... args)
       : IException(errCode, fileName, funcName, line, std::forward<Args>(args)...) {
-    setResponseAttributes(client.getRes(), (int)errCode, getErrorMessage(errCode));
-    client.setClientState(ClientState::SENDING);
+    setResponseAttributes(client, (int)errCode, getErrorMessage(errCode));
+    client.setClientState(ClientState::PREPARING);
   }
 
   // Template to create new try-catch block, can create multiple blocks inside each other
@@ -60,12 +60,12 @@ class NetworkException : public IException {
   }
 
  private:
-  void setResponseAttributes(Response& respond, int errorCode, const char* message) {
-    respond.setResStatusCode(errorCode);
-    respond.setResStatusMessage(message);
-    auto key = respond.getServerConfig().pagesCustom.find(errorCode);
-    if (key == respond.getServerConfig().pagesCustom.end()) {
-      key = respond.getServerConfig().pagesDefault.find(errorCode);
+  void setResponseAttributes(Client& client, int errorCode, const char* message) {
+    client.getRes().setResStatusCode(errorCode);
+    client.getRes().setResStatusMessage(message);
+    auto key = client.getRes().getServerConfig().pagesCustom.find(errorCode);
+    if (key == client.getRes().getServerConfig().pagesCustom.end()) {
+      key = client.getRes().getServerConfig().pagesDefault.find(errorCode);
     }
     std::string path = key->second;
     std::filesystem::path exePath;
@@ -75,37 +75,38 @@ class NetworkException : public IException {
     }
     std::filesystem::path errorPath = exePath / path;
     std::string errorPathStr = errorPath.string();
+    LOG_ERROR("Error page path:", errorPathStr);
     if (!std::filesystem::exists(errorPath) || !isValid(errorPathStr)) {
-      setBasicErrorPage(respond);
+      setBasicErrorPage(client);
       return;
     }
     std::vector<char> ibody = Utility::readFile(errorPathStr);
-    respond.setResBody(ibody);
+    client.getRes().setResBody(ibody);
     std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
     std::string mimeType = Utility::getMimeType(ext);
-    respond.addHeader("Cache-Control", "max-age=3600, must-revalidate");
-    respond.addHeader("Content-Type", mimeType);
-    respond.addHeader("Content-Length", std::to_string(ibody.size()));
-    respond.addHeader("Connection", "close");
+    client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
+    client.getRes().addHeader("Content-Type", mimeType);
+    client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
+    client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
   }
 
   bool isValid(std::string path) const {
     struct stat s;
-    if (!stat(path.c_str(), &s) && S_ISREG(s.st_mode) && !access(path.c_str(), X_OK)) {
+    if (!stat(path.c_str(), &s) && S_ISREG(s.st_mode) && !access(path.c_str(), R_OK)) {
       return true;
     }
     return false;
   }
 
-  void setBasicErrorPage(Response& res) {
+  void setBasicErrorPage(Client& client) {
     std::string body("<html><body><h1>404 Not Found, error page not found!</h1></body></html>");
     std::vector<char> ibody(body.begin(), body.end());
-    res.setResStatusCode(404);
-    res.setResStatusMessage("Not Found");
-    res.setResBody(ibody);
-    res.addHeader("Content-Type", "text/html");
-    res.addHeader("Connection", "keep-alive");
-    res.addHeader("Content-Length", std::to_string(ibody.size()));
+    client.getRes().setResStatusCode(404);
+    client.getRes().setResStatusMessage("Not Found");
+    client.getRes().setResBody(ibody);
+    client.getRes().addHeader("Content-Type", "text/html");
+    client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
+    client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
     return;
   }
 };

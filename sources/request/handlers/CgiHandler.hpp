@@ -21,8 +21,10 @@ class Client;
 
 struct CgiParams {
   pid_t pid = -1;
-  int fd = -1;
-  int write = -1;
+  int outReadFd = -1;
+  int outWriteFd = -1;
+  int inReadFd = -1;
+  int inWriteFd = -1;
   int clientFd = -1;
   bool isExited = false;
   steady_time_point_t start;
@@ -40,8 +42,8 @@ class CgiHandler : public IRequestHandler {
   std::vector<std::string> args{};
   std::string cgi;  // delete this?
 
-  int pipefd[2];
-  int cgiFd;
+  int outPipeFd[2];
+  int inPipeFd[2];
   int clientFd;
   int wstat;
   pid_t pid;
@@ -55,15 +57,14 @@ class CgiHandler : public IRequestHandler {
  public:
   void executeRequest(Client& client) override;
   void runScript(void);
+  void closePipeFds(void);
 
  private:
   void scriptLoader(void);
-  void generateEnvpVector(void);
+  void setGlobal(void); 
+  void generateEnvpVector(Client& client);
   void forkChildProcess(void);
-  void waitChildProcess(void);
   void executeCgiScript(void);
-  void closePipeFds(void);
-  void debugPrintCgiFd(void);
 
  private:
   std::vector<char*> convertStringToChar(std::vector<std::string>& vec);

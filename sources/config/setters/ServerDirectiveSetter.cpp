@@ -13,6 +13,8 @@ void ServerDirectiveSetter::handleDirective(void* data, std::string& key, std::s
     setErrorPages(*server, value, lineNumber);
   } else if (key == "client_body_size_limit") {
     setClientBodySizeLimit(*server, value, lineNumber);
+  } else if (key == "cgi_interpreter") {
+    setCgiInterpreters(*server, value, lineNumber);
   } else {
     LOG_WARN("Parse: Invalid directive,", key, " at line ", lineNumber);
   }
@@ -94,4 +96,24 @@ void ServerDirectiveSetter::setClientBodySizeLimit(ServerConfig& server, std::st
   if (!server.clientBodySizeLimit.empty())
     LOG_WARN("Parse: Client body size limit already set, updating with line", lineNumber);
   server.clientBodySizeLimit = value;
+}
+
+void ServerDirectiveSetter::setCgiInterpreters(ServerConfig& server, std::string& value,
+                                               int& lineNumber) {
+  std::stringstream ss(value);
+  std::string interpreter;
+  std::string extension;
+  std::getline(ss, extension, ' ');
+  std::getline(ss, interpreter, ' ');
+  if (interpreter.empty() || extension.empty()) {
+    LOG_WARN("Parse: Invalid CGI interpreter,", value, " at line", lineNumber);
+    return;
+  }
+  if (server.cgiInterpreters.find(extension) != server.cgiInterpreters.end())
+    LOG_WARN("Parse: CGI interpreter already set for extension,", extension, " at line",
+             lineNumber);
+  if (!std::filesystem::exists(interpreter))
+    LOG_WARN("Parse: CGI interpreter path not found,", interpreter, " at line", lineNumber);
+  else
+    server.cgiInterpreters[extension] = interpreter;
 }

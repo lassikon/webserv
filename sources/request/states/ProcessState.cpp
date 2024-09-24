@@ -6,10 +6,16 @@ void ProcessState::execute(Client& client) {
     client.setClientState(ClientState::DONE);
     return;
   }
-  LOG_TRACE("Processing request for client fd:", client.getFd());
-  if (client.getIsCgi()) {
+  if (client.getFd() != client.getReadFd()) {
+    LOG_TRACE("Processing CGI output for client fd:", client.getFd());
     processCgiOutput(client);
+  } else if (client.getFd() != client.getWriteFd()) {
+    LOG_TRACE("Processing cgi body for client fd:", client.getFd());
+    client.getRes().setResBody(client.getReq().getBody());
+    client.getRes().makeBodytoCgi();
+    client.setClientState(ClientState::SENDING);
   } else {
+    LOG_TRACE("Processing request for client fd:", client.getFd());
     processRequest(client);
   }
 }
@@ -18,9 +24,13 @@ void ProcessState::processRequest(Client& client) {
   client.getRes().setServerConfig(chooseServerConfig(client));  // choose server config
   buildPath(client);
   if (client.getRes().getReqURI().find("/cgi-bin/") != std::string::npos) {
-    client.setIsCgi(true);
     client.getCgiHandler().executeRequest(client);
     client.setClientState(ClientState::READING);
+    client.setCgiState(CgiState::WRITING);
+    if (client.getReq().getMethod() == "POST") {
+      client.setCgiState(CgiState::READING);
+      client.setClientState(ClientState::PROCESSING);
+    }
     return;
   } else if (client.getReq().getMethod() == "GET") {
     client.getGetHandler().executeRequest(client);
@@ -31,7 +41,7 @@ void ProcessState::processRequest(Client& client) {
   } else {
     LOG_ERROR("Unsupported method in client:", client.getFd());
   }
-  client.setClientState(ClientState::SENDING);
+  client.setClientState(ClientState::PREPARING);
 }
 
 void ProcessState::processCgiOutput(Client& client) {
@@ -51,7 +61,8 @@ void ProcessState::processCgiOutput(Client& client) {
   client.getRes().addHeader("Content-Length", std::to_string(client.getReq().getBodySize()));
   std::vector<char> reqBody = client.getReq().getBody();
   client.getRes().setResBody(reqBody);
-  client.setClientState(ClientState::SENDING);
+  client.setCgiState(CgiState::DONE);
+  client.setClientState(ClientState::PREPARING);
 }
 
 ServerConfig ProcessState::chooseServerConfig(Client& client) {
