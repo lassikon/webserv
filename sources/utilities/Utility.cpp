@@ -66,6 +66,17 @@ void Utility::setNonBlocking(int& fd) {
   }
 }
 
+void Utility::setCloseOnExec(int& fd) {
+  int flags = fcntl(fd, F_GETFD, 0);
+  if (flags == -1) {
+    LOG_ERROR("Failed to get file descriptor flags");
+    return;
+  }
+  if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
+    LOG_ERROR("Failed to set file descriptor to close-on-exec");
+  }
+}
+
 bool Utility::isCgiFd(int fd) {
   for (auto& cgi : g_CgiParams) {
     if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {

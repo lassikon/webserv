@@ -53,7 +53,7 @@ void ServerManager::runServers(void) {
   PollManager pollManager;
   LOG_TRACE("Adding server sockets to pollManager");
   initializePollManager(pollManager);
-  while (true) {
+  while (Utility::statusOk()) {
     int epollCount = pollManager.epollWait();
     if (epollCount == -1) {
       throw serverError("Failed to epoll fds");
@@ -66,6 +66,7 @@ void ServerManager::runServers(void) {
 }
 
 void ServerManager::serverLoop(PollManager& pollManager) {
+  checkChildProcesses(pollManager);
   for (auto& event : pollManager.getEpollEvents()) {
     if (event.events & EPOLLERR || event.events & EPOLLHUP || event.events & EPOLLRDHUP) {
       handlePollErrors(pollManager, event);
@@ -75,32 +76,35 @@ void ServerManager::serverLoop(PollManager& pollManager) {
       handlePollOutEvent(pollManager, event);
     }
   }
-  checkChildProcesses(pollManager);
+  checkForNewChildProcesses(pollManager);
 }
 
 bool ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_event& event) {
   int fd = event.data.fd;
-  if (event.events & (EPOLLERR | EPOLLRDHUP)) {
-    LOG_ERROR("Epoll error or hangup on fd:", fd);
-    pollManager.removeFd(fd);
-  } else if ((event.events & EPOLLHUP) && Utility::isCgiFd(fd)) {
+  if ((event.events & EPOLLHUP) && Utility::isCgiFd(fd)) {
     LOG_WARN("EPoll hangup on CGI fd:", fd);
     for (auto& server : servers) {
       if (server->isClientFd(Utility::getClientFdFromCgiParams(fd))) {
         server->handleClientIn(pollManager, EPOLLIN, fd,
                                Utility::getClientFdFromCgiParams(fd));  // child process has exited
+        break;
       }
     }
     for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
       if (it->outReadFd == fd) {
         pollManager.removeFd(it->outReadFd);
         pollManager.removeFd(it->inWriteFd);
+        close(it->outWriteFd);
+        close(it->inReadFd);
         it = g_CgiParams.erase(it);
       } else {
         ++it;
       }
     }
     return true;
+  } else if (event.events & (EPOLLERR | EPOLLRDHUP)) {
+    LOG_ERROR("Epoll error or hangup on fd:", fd);
+    pollManager.removeFd(fd);
   } else {
     LOG_WARN("EPoll on fd:", fd);
   }
@@ -171,7 +175,6 @@ bool ServerManager::childTimeout(steady_time_point_t& start) {
 }
 
 void ServerManager::checkChildProcesses(PollManager& pollManager) {
-  checkForNewChildProcesses(pollManager);
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
     int status;
     if (!it->isExited) {

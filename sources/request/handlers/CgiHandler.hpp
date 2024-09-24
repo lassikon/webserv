@@ -57,6 +57,7 @@ class CgiHandler : public IRequestHandler {
  public:
   void executeRequest(Client& client) override;
   void runScript(void);
+  void closePipeFds(void);
 
  private:
   void scriptLoader(void);
@@ -64,7 +65,6 @@ class CgiHandler : public IRequestHandler {
   void generateEnvpVector(Client& client);
   void forkChildProcess(void);
   void executeCgiScript(void);
-  void closePipeFds(void);
 
  private:
   std::vector<char*> convertStringToChar(std::vector<std::string>& vec);

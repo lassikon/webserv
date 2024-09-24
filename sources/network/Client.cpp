@@ -113,6 +113,7 @@ void Client::initClient(void) {
   parsingState = ParsingState::REQLINE;
   if (cgiState == CgiState::DONE) {
     cgiState = CgiState::IDLE;
+    cgiHandler.closePipeFds();
   }
 }
 

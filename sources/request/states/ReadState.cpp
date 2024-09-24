@@ -9,7 +9,6 @@ void ReadState::execute(Client& client) {
     LOG_WARN("Failed to receive data from client fd:", client.getFd());
     return;
   }
-
   if (nbytes == 0) {  // EOF
     handleEOF(client);
     return;

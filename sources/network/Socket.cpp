@@ -22,7 +22,9 @@ void Socket::setupSocket(ServerConfig& serverConfig) {
   if (sockFd == -1) {
     throw socketError("Failed to create socket");
   }
-  setNonBlocking();
+  //setNonBlocking();
+  Utility::setNonBlocking(sockFd);
+  Utility::setCloseOnExec(sockFd);
   int opt = 1;
   if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
     throw socketError("Failed to set socket options");

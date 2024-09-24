@@ -21,6 +21,7 @@ class Utility {
   static bool statusOk(void) noexcept;
   static size_t convertSizetoBytes(std::string& size);
   static void setNonBlocking(int& fd);
+  static void setCloseOnExec(int& fd);
   static bool isCgiFd(int fd);
   static int getClientFdFromCgiParams(int fd);
   static int getOutReadFdFromClientFd(int fd);

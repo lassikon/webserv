@@ -16,6 +16,12 @@ void ParseState::execute(Client& client) {
   if (client.getParsingState() == ParsingState::BODY) {
     parseBody(client, iBuf);
   }
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.clientFd == client.getFd() && cgi.isExited) {
+      client.setCgiState(CgiState::DONE);
+      client.setParsingState(ParsingState::DONE);
+    }
+  }
   if (client.getParsingState() == ParsingState::DONE) {
     LOG_TRACE("Request received from client fd:", client.getFd());
     client.setClientState(ClientState::PROCESSING);
