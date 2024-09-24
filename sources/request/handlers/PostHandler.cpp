@@ -9,7 +9,8 @@ void PostHandler::getContentType(Client& client) {
   if (contentType.empty()) {
     throw clientError("Content-Type header not found");
   }
-  if (contentType.find("multipart/form-data")) {
+  if (contentType.find("multipart/form-data") != std::string::npos) {
+    // boundary = contentType.substr(contentType.find("boundary=") + 9);
     contentType = "multipart/form-data";
   }
   LOG_INFO("Content type:", contentType);
@@ -31,7 +32,7 @@ void PostHandler::processFormUrlEncoded(Client& client) {
     std::string value = pair.substr(delimiterPos + 1);
     formData[UrlEncoder::decode(key)] = UrlEncoder::decode(value);
   }
-  LOG_DEBUG("Parsed form data:");
+  LOG_DEBUG("Parsed form data:");  // For testing purposes
   for (const auto& [key, value] : formData) {
     LOG_DEBUG(key, ":", value);
   }
@@ -115,8 +116,13 @@ void PostHandler::processFormData(const std::string& part) {
 
 void PostHandler::processMultipartFormData(Client& client) {
   LOG_INFO("Processing multipart/form-data");
-  std::string data(client.getReq().getBody().begin(), client.getReq().getBody().end());
-  LOG_DEBUG("Raw data:\n", data);
+  // check for body existence
+  const auto& body = client.getReq().getBody();
+  LOG_DEBUG("Body size:", body.size());
+  if (body.empty()) {
+    throw clientError("Empty body");
+  }
+  std::string data(body.begin(), body.end());
   std::string boundary = extractBoundary(client);
   std::vector<std::string> parts = splitByBoundary(data, boundary);
   for (const std::string& part : parts) {
@@ -148,7 +154,7 @@ void PostHandler::executeRequest(Client& client) {
   if (contentType == "application/x-www-form-urlencoded") {
     processFormUrlEncoded(client);
   } else if (contentType == "multipart/form-data") {
-    // processMultipartFormData(client);
+    processMultipartFormData(client);
   } else {
     throw clientError("Unsupported content type:", contentType);
   }

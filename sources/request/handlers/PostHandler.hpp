@@ -7,6 +7,7 @@ class Client;
 class PostHandler : public IRequestHandler {
  private:
   std::string contentType;
+  std::string boundary;
   std::unordered_map<std::string, std::string> formData;
 
  public:

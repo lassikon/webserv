@@ -103,10 +103,10 @@ void ParseState::parseBodyWithContentLength(Client& client, std::istringstream& 
   client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);
   iBuf.read(bodyData.data(), contentLength);
-  if (iBuf.gcount() != contentLength) {
-    LOG_ERROR("Failed to read body data");
-    return;
-  }
+  // if (iBuf.gcount() != contentLength) {
+  //   LOG_ERROR("Failed to read body data");
+  //   return;
+  // }
   client.getReq().setBody(bodyData);
   // LOG_DEBUG("bodyData:", std::string(bodyData.begin(), bodyData.end()));
   client.setClientState(ClientState::PROCESSING);
