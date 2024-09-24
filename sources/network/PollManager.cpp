@@ -2,6 +2,8 @@
 
 PollManager::PollManager(void) {
   LOG_DEBUG(Utility::getConstructor(*this));
+  interestFdsList.resize(MAX_CLIENTS);
+  interestFdsList.clear();
   epollEvents.resize(MAX_EVENTS);
   epollFd = epoll_create(MAX_CLIENTS);
   if (epollFd == -1) {
@@ -11,6 +13,12 @@ PollManager::PollManager(void) {
 
 PollManager::~PollManager(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
+  for (auto& fd : interestFdsList) {
+    if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
+      continue;
+    }
+    LOG_DEBUG("Removed fd:", fd, "from epollFd");
+  }
   close(epollFd);
 }
 

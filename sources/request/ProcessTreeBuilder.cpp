@@ -13,10 +13,10 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildGetProcessTree() {
   auto serveDirectoryListing =
     std::make_shared<ProcessTree>(std::make_shared<ServeDirectoryListingAction>());
   auto serveFile = std::make_shared<ProcessTree>(std::make_shared<ServeFileAction>());
-  auto serve403 = std::make_shared<ProcessTree>(std::make_shared<Serve403Action>());
-  auto serve404 = std::make_shared<ProcessTree>(std::make_shared<Serve404Action>());
-  auto serve405 = std::make_shared<ProcessTree>(std::make_shared<Serve405Action>());
-  auto serve413 = std::make_shared<ProcessTree>(std::make_shared<Serve413Action>());
+  auto serve403 = std::make_shared<ProcessTree>(403);
+  auto serve404 = std::make_shared<ProcessTree>(404);
+  auto serve405 = std::make_shared<ProcessTree>(405);
+  auto serve413 = std::make_shared<ProcessTree>(413);
   auto serveQuery = std::make_shared<ProcessTree>(std::make_shared<ServeQueryAction>());
 
   // define process tree
@@ -54,9 +54,9 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildGetProcessTree() {
 std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildPathTree() {
   auto serveFile = std::make_shared<ProcessTree>(std::make_shared<ServeFileAction>());
   auto serveRedirect = std::make_shared<ProcessTree>(std::make_shared<ServeRedirectAction>());
-  auto serve404 = std::make_shared<ProcessTree>(std::make_shared<Serve404Action>());
-  auto serve405 = std::make_shared<ProcessTree>(std::make_shared<Serve405Action>());
-  auto serve413 = std::make_shared<ProcessTree>(std::make_shared<Serve413Action>());
+  auto serve404 = std::make_shared<ProcessTree>(404);
+  auto serve405 = std::make_shared<ProcessTree>(405);
+  auto serve413 = std::make_shared<ProcessTree>(413);
   auto self = shared_from_this();
   auto isPathExist = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isPathExist(path); }, nullptr, serve404);

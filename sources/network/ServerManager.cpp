@@ -56,7 +56,8 @@ void ServerManager::runServers(void) {
   while (Utility::statusOk()) {
     int epollCount = pollManager.epollWait();
     if (epollCount == -1) {
-      throw serverError("Failed to epoll fds");
+      continue;
+      //throw serverError("Failed to epoll fds");
     } else if (epollCount == 0) {
       handleNoEvents(pollManager);
     } else {

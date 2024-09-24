@@ -79,10 +79,6 @@ SOURCES := main \
            ServeFileAction \
            ServeRedirectAction \
            ServeQueryAction \
-           Serve403Action \
-           Serve404Action \
-           Serve405Action \
-           Serve413Action \
            Response \
            Logger \
            Signal \

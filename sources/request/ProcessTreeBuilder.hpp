@@ -4,10 +4,6 @@
 #include <Logger.hpp>
 #include <ProcessTree.hpp>
 
-#include <Serve403Action.hpp>
-#include <Serve404Action.hpp>
-#include <Serve405Action.hpp>
-#include <Serve413Action.hpp>
 #include <ServeDirectoryListingAction.hpp>
 #include <ServeFileAction.hpp>
 #include <ServeRedirectAction.hpp>

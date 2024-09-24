@@ -221,7 +221,7 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   pollManager.modifyFd(fd, newEvents);
 
   if (eventFd == clientFd && client->getCgiState() == CgiState::DONE) {
-    LOG_INFO("Client:", clientFd, "EOF CLOSING state");
+    LOG_INFO("Client:", clientFd, "EOF Done state");
     LOG_INFO("CGI:", Utility::getOutReadFdFromClientFd(clientFd), "done state");
     newEvents = 0;
     fd = eventFd;
