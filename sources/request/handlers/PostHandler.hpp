@@ -1,6 +1,13 @@
 #pragma once
 
 #include <IRequestHandler.hpp>
+#include <Logger.hpp>
+#include <UrlEncoder.hpp>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 class Client;
 

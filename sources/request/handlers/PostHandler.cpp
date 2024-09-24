@@ -1,7 +1,6 @@
+
 #include <Client.hpp>
-#include <Logger.hpp>
 #include <PostHandler.hpp>
-#include <UrlEncoder.hpp>
 
 void PostHandler::getContentType(Client& client) {
   LOG_INFO("Getting content type");
@@ -119,12 +118,22 @@ void PostHandler::processMultipartFormData(Client& client) {
   // check for body existence
   const auto& body = client.getReq().getBody();
   LOG_DEBUG("Body size:", body.size());
+  // for (size_t i = 0; i < body.size(); ++i) {  // Log body bytes
+  //   LOG_DEBUG("Byte ", i, ": ", static_cast<int>(body[i]));
+  // }
+  std::string hexBody;
+  for (const auto& c : body) {  // Convert body to hex for logging
+    hexBody += std::to_string(c);
+  }
+  LOG_DEBUG("Body in hex:", hexBody);
   if (body.empty()) {
     throw clientError("Empty body");
   }
   std::string data(body.begin(), body.end());
+  LOG_DEBUG("data length:", data.length());
   std::string boundary = extractBoundary(client);
   std::vector<std::string> parts = splitByBoundary(data, boundary);
+  LOG_DEBUG("Parts size:", parts.size());
   for (const std::string& part : parts) {
     if (isFilePart(part)) {
       processFilePart(part);
