@@ -76,6 +76,8 @@ void ParseState::parseBody(Client& client, std::istringstream& iBuf) {
     client.setParsingState(ParsingState::DONE);
     return;
   }
+  std::string iBufContent = iBuf.str();  // Extract current content of iBuf
+  LOG_DEBUG("iBuf content: ", iBufContent);
   LOG_TRACE("Parsing body");
   if (isChunked) {
     parseChunkedBody(client, iBuf);
@@ -104,6 +106,12 @@ void ParseState::parseBodyWithContentLength(Client& client, std::istringstream& 
   client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);
   iBuf.read(bodyData.data(), contentLength);
+  std::string hexBody;              // For logging
+  for (const auto& c : bodyData) {  // Convert body to hex for logging
+    hexBody += std::to_string(c);   // For logging
+  }
+  LOG_DEBUG("Body in hex:");
+  std::cout << hexBody << std::endl;  // For logging
   client.getReq().setBody(bodyData);
   client.setParsingState(ParsingState::DONE);
 }
@@ -147,7 +155,8 @@ bool ParseState::substrKeyAndValue(std::string header, std::string& key, std::st
 }
 
 bool ParseState::isHeaderEnd(std::string header) {
-  return header.find("\r\n\r") != std::string::npos || header.empty() || header == "\r";
+  // return header.find("\r\n\r") != std::string::npos || header.empty() || header == "\r";
+  return header.empty() || header == "\r";
 }
 
 bool ParseState::isWithBody(Client& client) {
