@@ -25,7 +25,7 @@ class SessionManager {
   SessionManager(void);
   ~SessionManager(void);
 
- private:
+ public:
   void generateOutfile(std::fstream& fs, const char* file);
   void readSessionsFromFile(void);
   std::string randomizeSessionToken(void);
@@ -34,11 +34,11 @@ class SessionManager {
   void debugFillSessionsFile();
   void debugPrintSessionsMap();
 
- public:
-  std::string generateSessionId(void);
-  bool sessionIdExists(std::string);
+ public:  // setters
+  std::string setSessionCookie(void);
 
  public:  // getters
   SessionManager& getSessionManager(void) { return *this; }
-  std::string getSessionId(std::string);
+  std::string getSessionCookie(std::string);
+  std::string getSessionQuery(std::string);
 };

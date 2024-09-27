@@ -23,7 +23,16 @@ int main(int argc, char** argv) {
 
   {
     SessionManager s;
-    s.generateSessionId();
+    s.setSessionCookie();
+    s.readSessionsFromFile();
+    s.debugPrintSessionsMap();
+    // if (s.getSessionCookie("sessionId=QMSMFTZBHPbWLTUIODYF")) {
+    //   LOG_INFO("Cookie found!");
+    // } else {
+    //   LOG_ERROR("Cookie not found!");
+    // }
+    // s.debugFillSessionsFile();
+    // s.generateSessionId();
     // s.debugPrintSessionsMap();
   }
   exit(1);
