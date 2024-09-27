@@ -9,7 +9,8 @@ void PostHandler::getContentType(Client& client) {
   if (contentType.empty()) {
     throw clientError("Content-Type header not found");
   }
-  if (contentType.find("multipart/form-data")) {
+  if (contentType.find("multipart/form-data") != std::string::npos) {
+    LOG_DEBUG("Content type is multipart/form-data");
     contentType = "multipart/form-data";
   }
   LOG_INFO("Content type:", contentType);
@@ -93,7 +94,7 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);
-  std::ofstream file( path + fileName, std::ios::binary);
+  std::ofstream file(path + fileName, std::ios::binary);
   if (!file.is_open()) {
     throw clientError("Failed to open file");
   } else {
@@ -124,7 +125,8 @@ void PostHandler::processFormData(const std::string& part) {
 
 void PostHandler::processMultipartFormData(Client& client) {
   LOG_INFO("Processing multipart/form-data");
-  std::string data(client.getReq().getBody().begin(), client.getReq().getBody().end());
+  std::cout << "data: " << client.getReq().getBody().data() << std::endl;
+  std::string data(client.getReq().getBody().data(), client.getReq().getBody().size());
   LOG_DEBUG("Raw data:\n", data);
   std::string boundary = extractBoundary(client);
   std::vector<std::string> parts = splitByBoundary(data, boundary);
@@ -157,7 +159,7 @@ void PostHandler::executeRequest(Client& client) {
   if (contentType == "application/x-www-form-urlencoded") {
     processFormUrlEncoded(client);
   } else if (contentType == "multipart/form-data") {
-    // processMultipartFormData(client);
+    processMultipartFormData(client);
   } else {
     throw clientError("Unsupported content type:", contentType);
   }

@@ -25,6 +25,7 @@ void ReadState::execute(Client& client) {
   } else {
     client.setReadBuf(std::make_shared<std::vector<char>>(temp->begin(), temp->end()));
   }
+  
   LOG_INFO("Receiving data from fd", client.getReadFd(), "at", client.getFd());
   LOG_INFO("Received", nbytes, "bytes from client fd", client.getFd());
   LOG_INFO("Data received:", buffer.data());
