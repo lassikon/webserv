@@ -31,9 +31,9 @@
 #include <string>
 #include <vector>
 
-enum struct ClientState {IDLE, READING, PROCESSING, PREPARING ,SENDING, DONE, CLOSE };
+enum struct ClientState { IDLE, READING, PROCESSING, PREPARING, SENDING, DONE, CLOSE };
 enum struct ParsingState { REQLINE, HEADER, BODY, DONE };
-enum struct CgiState {IDLE, READING, WRITING, DONE};
+enum struct CgiState { IDLE, READING, WRITING, DONE };
 
 class Client {
  private:
@@ -71,6 +71,9 @@ class Client {
   void setReadFd(int fd) { readFd = fd; }
   void setReadNBytes(ssize_t nBytes) { readNBytes = nBytes; }
   void setReadBuf(std::shared_ptr<std::vector<char>> buf) { readBuf = buf; }
+  void setReadBuf(std::vector<char> buf) {
+    readBuf = std::make_shared<std::vector<char>>(std::move(buf));
+  }
 
  private:  //write
   int writeFd;

@@ -104,6 +104,7 @@ void Client::resetRequest(void) {
 void Client::initClient(void) {
   resetRequest();
   resetResponse();
+  readBuf.reset();
   readBuf = nullptr;
   readNBytes = 0;
   writeNBytes = 0;

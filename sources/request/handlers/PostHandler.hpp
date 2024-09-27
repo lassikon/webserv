@@ -31,7 +31,7 @@ class PostHandler : public IRequestHandler {
   bool isFilePart(const std::string& part);
   std::string extractFileName(const std::string& part);
   std::string extractFileData(const std::string& part);
-  void processFilePart(const std::string& part);
+  void processFilePart(Client& client, const std::string& part);
   void processFormData(const std::string& part);
 
   void setResponse(Client& client);
