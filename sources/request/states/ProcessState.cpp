@@ -27,12 +27,13 @@ void ProcessState::processRequest(Client& client) {
     client.getCgiHandler().executeRequest(client);
     client.setClientState(ClientState::READING);
     client.setCgiState(CgiState::WRITING);
+    client.getReadBuf()->clear();
     if (client.getReq().getMethod() == "POST") {
       client.setCgiState(CgiState::READING);
       client.setClientState(ClientState::PROCESSING);
     }
     return;
-  } else if (client.getReq().getMethod() == "GET") {
+  } else if (client.getReq().getMethod() == "GET" || client.getReq().getMethod() == "HEAD") {
     client.getGetHandler().executeRequest(client);
   } else if (client.getReq().getMethod() == "POST") {
     client.getPostHandler().executeRequest(client);

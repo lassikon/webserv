@@ -1,7 +1,6 @@
 #include <iostream>
 
 int main() {
-  std::cout << "Connection: keep-alive\n";
   std::cout << "Content-type: text/html\n\n";
   std::cout << "<html>\n";
   std::cout << "<head>\n";

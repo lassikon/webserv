@@ -35,6 +35,7 @@ void ParseState::parseRequestLine(Client& client, std::istringstream& iBuf) {
   std::string reqURI;
   std::string reqVersion;
   std::getline(iBuf, requestLine);
+  LOG_TRACE("Request line:", requestLine);
   std::istringstream iss(requestLine);
   iss >> reqMethod >> reqURI >> reqVersion;
   LOG_DEBUG("reqMethod:", reqMethod, "URI:", reqURI, "reqVersion:", reqVersion);
@@ -53,6 +54,7 @@ void ParseState::parseHeaders(Client& client, std::istringstream& iBuf) {
   LOG_TRACE("Parsing headers");
   std::string header;
   while (std::getline(iBuf, header)) {
+    LOG_DEBUG("Header:", header);
     if (isHeaderEnd(header)) {
       client.setParsingState(ParsingState::BODY);
       break;
@@ -115,6 +117,7 @@ void ParseState::parseChunkedBody(Client& client, std::istringstream& iBuf) {
     if (chunkSizeHex.back() == '\r') {
       chunkSizeHex.pop_back();
     }
+    LOG_DEBUG("Chunk size:", chunkSizeHex);
     int bodySize = client.getReq().getBodySize();
     int chunkSize = std::stoi(chunkSizeHex, 0, 16);
     bodySize += chunkSize;

@@ -50,7 +50,9 @@ std::vector<std::string> PostHandler::splitByBoundary(std::string data, std::str
   std::vector<std::string> parts;
   size_t pos = 0;
   while ((pos = data.find(boundary)) != std::string::npos) {
-    parts.push_back(data.substr(0, pos));
+    parts.push_back(data.substr(pos + boundary.length()));
+    LOG_DEBUG("part value:", data.substr(pos + boundary.length()));
+    LOG_DEBUG("boundary value:", boundary);
     data.erase(0, pos + boundary.length());
   }
   return parts;
@@ -81,7 +83,7 @@ std::string PostHandler::extractFileData(const std::string& part) {
   return part.substr(pos);
 }
 
-void PostHandler::processFilePart(const std::string& part) {
+void PostHandler::processFilePart(Client& client, const std::string& part) {
   LOG_INFO("Processing file part");
   std::string fileName = extractFileName(part);
   std::string data = extractFileData(part);
@@ -89,9 +91,16 @@ void PostHandler::processFilePart(const std::string& part) {
   LOG_DEBUG("Data:\n", data);
 
   // Save file to disk
-  std::ofstream file("uploads/" + fileName);
-  file << data;
-  file.close();
+  std::string path = client.getRes().getReqURI() + "/";
+  LOG_DEBUG("Path:", path + fileName);
+  std::ofstream file( path + fileName, std::ios::binary);
+  if (!file.is_open()) {
+    throw clientError("Failed to open file");
+  } else {
+    LOG_INFO("File opened successfully");
+    file.write(data.data(), data.length());
+    file.close();
+  }
 }
 
 void PostHandler::processFormData(const std::string& part) {
@@ -121,7 +130,7 @@ void PostHandler::processMultipartFormData(Client& client) {
   std::vector<std::string> parts = splitByBoundary(data, boundary);
   for (const std::string& part : parts) {
     if (isFilePart(part)) {
-      processFilePart(part);
+      processFilePart(client, part);
     } else {
       processFormData(part);
     }
