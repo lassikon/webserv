@@ -141,3 +141,25 @@ size_t Utility::convertSizetoBytes(std::string& size) {
   }
   return bytes;
 }
+
+bool Utility::getLineVectoStr(std::string& line,
+                              std::vector<char>::const_iterator& it,
+                              std::vector<char>::const_iterator& end) {
+  std::string str;
+  while (it != end) {
+    if (*it == '\n') {
+      line = str;
+      str.clear();
+      it++;
+      return true;
+    } else {
+      str.push_back(*it);
+    }
+    it++;
+  }
+  if (!str.empty()) {
+    line = str;
+    return true;
+  }
+  return false;
+}

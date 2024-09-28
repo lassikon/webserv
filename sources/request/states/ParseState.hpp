@@ -16,9 +16,12 @@ class ParseState : public IStateHandler {
   void execute(Client& client) override;
 
  public:
-  void parseRequestLine(Client& client, std::istringstream& iBuf);
-  void parseHeaders(Client& client, std::istringstream& iBuf);
-  void parseBody(Client& client, std::istringstream& iBuf);
+  void parseRequestLine(Client& client, std::vector<char>::const_iterator& it,
+                        std::vector<char>::const_iterator& end);
+  void parseHeaders(Client& client, std::vector<char>::const_iterator& it,
+                    std::vector<char>::const_iterator& end);
+  void parseBody(Client& client, std::vector<char>::const_iterator& it,
+                 std::vector<char>::const_iterator& end);
 
  private:
   bool isHeaderEnd(std::string header);
@@ -26,7 +29,10 @@ class ParseState : public IStateHandler {
   bool isWithBody(Client& client);
   bool isWithContentLength(Client& client);
   bool isConnectionClose(Client& client);
-  void parseChunkedBody(Client& client, std::istringstream& iBuf);
-  void parseBodyWithContentLength(Client& client, std::istringstream& iBuf);
-  void parseBodyWithoutContentLength(Client& client, std::istringstream& iBuf);
+  void parseChunkedBody(Client& client, std::vector<char>::const_iterator& it,
+                        std::vector<char>::const_iterator& end);
+  void parseBodyWithContentLength(Client& client, std::vector<char>::const_iterator& it,
+                                  std::vector<char>::const_iterator& end);
+  void parseBodyWithoutContentLength(Client& client, std::vector<char>::const_iterator& it,
+                                     std::vector<char>::const_iterator& end);
 };

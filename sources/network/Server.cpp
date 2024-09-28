@@ -21,7 +21,7 @@ void Server::acceptConnection(PollManager& pollManager) {
   struct sockaddr_storage theirAddr {};
   socklen_t addrSize = sizeof theirAddr;
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
-  if (newFd == -1 || newFd == 0) {
+  if (newFd == -1 || newFd < 2) {
     LOG_WARN("Failed to accept new connection:", IException::expandErrno());
     return;
   }
@@ -235,6 +235,14 @@ void Server::checkIdleClients(PollManager& pollManager) {
       LOG_DEBUG("Client fd:", it->first, "has been idle for", idleTimeout.count(), "seconds");
       pollManager.removeFd(it->first);
       it = clientLastActivity.erase(it);
+      if (isClientFd(it->first)) {
+        auto clientIt = std::find_if(
+          clients.begin(), clients.end(),
+          [it](std::shared_ptr<Client>& client) { return client->getFd() == it->first; });
+        if (clientIt != clients.end()) {
+          clients.erase(clientIt);
+        }
+      }
     } else {
       it++;
     }

@@ -6,15 +6,14 @@ void ParseState::execute(Client& client) {
     return;
   }
   LOG_TRACE("Parsing request from client fd:", client.getFd());
-  std::istringstream iBuf(client.getReadBuf()->data());
   if (client.getParsingState() == ParsingState::REQLINE) {
-    parseRequestLine(client, iBuf);
+    parseRequestLine(client, client.getReadIt(), client.getReadEnd());
   }
   if (client.getParsingState() == ParsingState::HEADER) {
-    parseHeaders(client, iBuf);
+    parseHeaders(client, client.getReadIt(), client.getReadEnd());
   }
   if (client.getParsingState() == ParsingState::BODY) {
-    parseBody(client, iBuf);
+    parseBody(client, client.getReadIt(), client.getReadEnd());
   }
   for (auto& cgi : g_CgiParams) {
     if (cgi.clientFd == client.getFd() && cgi.isExited) {
@@ -28,13 +27,14 @@ void ParseState::execute(Client& client) {
   }
 }
 
-void ParseState::parseRequestLine(Client& client, std::istringstream& iBuf) {
+void ParseState::parseRequestLine(Client& client, std::vector<char>::const_iterator& it,
+                                  std::vector<char>::const_iterator& end) {
   LOG_TRACE("Parsing request line");
   std::string requestLine;
   std::string reqMethod;
   std::string reqURI;
   std::string reqVersion;
-  std::getline(iBuf, requestLine);
+  Utility::getLineVectoStr(requestLine, it, end);
   LOG_TRACE("Request line:", requestLine);
   std::istringstream iss(requestLine);
   iss >> reqMethod >> reqURI >> reqVersion;
@@ -50,11 +50,11 @@ void ParseState::parseRequestLine(Client& client, std::istringstream& iBuf) {
   client.setParsingState(ParsingState::HEADER);
 }
 
-void ParseState::parseHeaders(Client& client, std::istringstream& iBuf) {
+void ParseState::parseHeaders(Client& client, std::vector<char>::const_iterator& it,
+                              std::vector<char>::const_iterator& end) {
   LOG_TRACE("Parsing headers");
   std::string header;
-  while (std::getline(iBuf, header)) {
-    LOG_DEBUG("Header:", header);
+  while (Utility::getLineVectoStr(header, it, end)) {
     if (isHeaderEnd(header)) {
       client.setParsingState(ParsingState::BODY);
       break;
@@ -73,47 +73,57 @@ void ParseState::parseHeaders(Client& client, std::istringstream& iBuf) {
   }
 }
 
-void ParseState::parseBody(Client& client, std::istringstream& iBuf) {
+void ParseState::parseBody(Client& client, std::vector<char>::const_iterator& it,
+                           std::vector<char>::const_iterator& end) {
   if (!isWithBody(client)) {
     client.setParsingState(ParsingState::DONE);
     return;
   }
   LOG_TRACE("Parsing body");
   if (isChunked) {
-    parseChunkedBody(client, iBuf);
+    parseChunkedBody(client, it, end);
   } else if (isWithContentLength(client)) {
-    parseBodyWithContentLength(client, iBuf);
+    parseBodyWithContentLength(client, it, end);
   } else {
-    parseBodyWithoutContentLength(client, iBuf);
+    parseBodyWithoutContentLength(client, it, end);
   }
 }
 
-void ParseState::parseBodyWithoutContentLength(Client& client, std::istringstream& iBuf) {
+void ParseState::parseBodyWithoutContentLength(Client& client, std::vector<char>::const_iterator& it,
+                                               std::vector<char>::const_iterator& end) {
   LOG_WARN("Content-Length header not found. Using EOF");
   int bodySize = client.getReq().getBodySize();
-  bodySize += client.getReadNBytes();
+  bodySize += std::distance(it, end);
   client.getReq().setBodySize(bodySize);
-  std::vector<char> bodyData(client.getReadNBytes());
-  iBuf.read(bodyData.data(), client.getReadNBytes());
+  LOG_DEBUG("std::distance(it, end):", std::distance(it, end));
+  std::vector<char> bodyData(std::distance(it, end));
+  bodyData.assign(it, end);
   std::vector<char> body = client.getReq().getBody();
   body.insert(body.end(), bodyData.begin(), bodyData.end());
   client.getReq().setBody(body);
 }
 
-void ParseState::parseBodyWithContentLength(Client& client, std::istringstream& iBuf) {
+void ParseState::parseBodyWithContentLength(Client& client, std::vector<char>::const_iterator& it,
+                                            std::vector<char>::const_iterator& end) {
   LOG_DEBUG("Parsing body with content length");
   int contentLength = std::stoi(client.getReq().getHeaders()["Content-Length"]);
   client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);
-  iBuf.read(bodyData.data(), contentLength);
+  bodyData.assign(it, end);
   client.getReq().setBody(bodyData);
-  client.setParsingState(ParsingState::DONE);
+  LOG_INFO("Read Bytes:", client.getReadNBytes());
+  LOG_INFO("Content-Length:", contentLength);
+  LOG_INFO("diff:", std::distance(it, end));
+  if (std::distance(it, end) == contentLength) {
+    client.setParsingState(ParsingState::DONE);
+  }
 }
 
-void ParseState::parseChunkedBody(Client& client, std::istringstream& iBuf) {
+void ParseState::parseChunkedBody(Client& client, std::vector<char>::const_iterator& it,
+                                  std::vector<char>::const_iterator& end) {
   LOG_TRACE("Parsing chunked body");
   std::string chunkSizeHex;
-  while (std::getline(iBuf, chunkSizeHex) && chunkSizeHex != "\r") {
+  while (Utility::getLineVectoStr(chunkSizeHex, it, end) && chunkSizeHex != "\r") {
     if (chunkSizeHex.back() == '\r') {
       chunkSizeHex.pop_back();
     }
@@ -127,11 +137,11 @@ void ParseState::parseChunkedBody(Client& client, std::istringstream& iBuf) {
       break;
     }
     std::vector<char> chunkData(chunkSize);
-    iBuf.read(chunkData.data(), chunkSize);
+    chunkData.assign(it, it + chunkSize);
     std::vector<char> body = client.getReq().getBody();
     body.insert(body.end(), chunkData.begin(), chunkData.end());
     client.getReq().setBody(body);
-    iBuf.ignore(2);  // remove \r\n
+    it += chunkSize + 2;  // skip CRLF
   }
 }
 

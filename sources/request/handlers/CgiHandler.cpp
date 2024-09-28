@@ -17,7 +17,7 @@ void CgiHandler::generateEnvpVector(Client& client) {
 
 CgiHandler::~CgiHandler(void) {
   LOG_TRACE(Utility::getDeconstructor(*this));
-  closePipeFds();
+  //closePipeFds();
 }
 
 void CgiHandler::closePipeFds(void) {
