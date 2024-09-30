@@ -16,9 +16,9 @@ class ParseState : public IStateHandler {
   void execute(Client& client) override;
 
  public:
-  void parseRequestLine(Client& client, std::istringstream& iBuf);
-  void parseHeaders(Client& client, std::istringstream& iBuf);
-  void parseBody(Client& client, std::istringstream& iBuf);
+  void parseRequestLine(Client& client);
+  void parseHeaders(Client& client);
+  void parseBody(Client& client);
 
  private:
   bool isHeaderEnd(std::string header);
@@ -26,7 +26,7 @@ class ParseState : public IStateHandler {
   bool isWithBody(Client& client);
   bool isWithContentLength(Client& client);
   bool isConnectionClose(Client& client);
-  void parseChunkedBody(Client& client, std::istringstream& iBuf);
-  void parseBodyWithContentLength(Client& client, std::istringstream& iBuf);
-  void parseBodyWithoutContentLength(Client& client, std::istringstream& iBuf);
+  void parseChunkedBody(Client& client);
+  void parseBodyWithContentLength(Client& client);
+  void parseBodyWithoutContentLength(Client& client);
 };

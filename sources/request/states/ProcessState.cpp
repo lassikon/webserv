@@ -25,15 +25,19 @@ void ProcessState::processRequest(Client& client) {
   buildPath(client);
   if (client.getRes().getReqURI().find("/cgi-bin/") != std::string::npos) {
     client.getCgiHandler().executeRequest(client);
+    if (client.getReq().getMethod() == "GET") {
     client.setClientState(ClientState::READING);
     client.setCgiState(CgiState::WRITING);
     client.getReadBuf()->clear();
+    client.setReadBuf(nullptr);
+      return;
+    }
     if (client.getReq().getMethod() == "POST") {
       client.setCgiState(CgiState::READING);
       client.setClientState(ClientState::PROCESSING);
     }
     return;
-  } else if (client.getReq().getMethod() == "GET" || client.getReq().getMethod() == "HEAD") {
+  } else if (client.getReq().getMethod() == "GET") {
     client.getGetHandler().executeRequest(client);
   } else if (client.getReq().getMethod() == "POST") {
     client.getPostHandler().executeRequest(client);

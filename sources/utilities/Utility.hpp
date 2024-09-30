@@ -1,8 +1,8 @@
 #pragma once
 
 #include <fcntl.h>
-#include <Global.hpp>
 #include <CgiHandler.hpp>
+#include <Global.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -26,6 +26,7 @@ class Utility {
   static int getClientFdFromCgiParams(int fd);
   static int getOutReadFdFromClientFd(int fd);
   static int getInWriteFdFromClientFd(int fd);
+  static bool getLineVectoStr(std::vector<char>& buffer ,std::string& line, size_t& curr, size_t& end);
 
   template <class T> static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";

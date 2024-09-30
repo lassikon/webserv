@@ -58,7 +58,7 @@ void ServerManager::runServers(void) {
     if (epollCount == -1) {
       continue;
       //throw serverError("Failed to epoll fds");
-    } else if (epollCount == 0) {
+    } else if (epollCount == 0 && Utility::statusOk()) {
       handleNoEvents(pollManager);
     } else {
       serverLoop(pollManager);

@@ -146,6 +146,8 @@ void PostHandler::processMultipartFormData(Client& client) {
   for (const std::string& part : parts) {
     if (isFilePart(part)) {
       processFilePart(client, part);
+    } else if (part == "--\r\n") {
+      break;
     } else {
       processFormData(part);
     }

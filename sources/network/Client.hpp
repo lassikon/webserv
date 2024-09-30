@@ -32,7 +32,7 @@
 #include <vector>
 
 enum struct ClientState { IDLE, READING, PROCESSING, PREPARING, SENDING, DONE, CLOSE };
-enum struct ParsingState { REQLINE, HEADER, BODY, DONE };
+enum struct ParsingState { IDLE, REQLINE, HEADER, BODY, DONE };
 enum struct CgiState { IDLE, READING, WRITING, DONE };
 
 class Client {
@@ -63,6 +63,8 @@ class Client {
   int readFd;
   std::shared_ptr<std::vector<char>> readBuf = nullptr;
   ssize_t readNBytes = 0;
+  size_t readCurr  = 0;
+  size_t readEnd = 0;
 
  public:  //read
   int getReadFd(void) { return readFd; }
@@ -74,6 +76,10 @@ class Client {
   void setReadBuf(std::vector<char> buf) {
     readBuf = std::make_shared<std::vector<char>>(std::move(buf));
   }
+  void setReadCurr(size_t it) { readCurr = it; }
+  void setReadEnd(size_t end) { readEnd = end; }
+  size_t& getReadCurr(void) { return readCurr; }
+  size_t& getReadEnd(void) { return readEnd; }
 
  private:  //write
   int writeFd;
