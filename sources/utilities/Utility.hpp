@@ -26,9 +26,7 @@ class Utility {
   static int getClientFdFromCgiParams(int fd);
   static int getOutReadFdFromClientFd(int fd);
   static int getInWriteFdFromClientFd(int fd);
-  static bool getLineVectoStr(std::string& line,
-                              std::vector<char>::const_iterator& it,
-                              std::vector<char>::const_iterator& end);
+  static bool getLineVectoStr(std::vector<char>& buffer ,std::string& line, size_t& curr, size_t& end);
 
   template <class T> static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";

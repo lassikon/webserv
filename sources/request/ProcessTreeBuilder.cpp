@@ -25,7 +25,7 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildGetProcessTree() {
     [self](std::string& path) { return self->isRPermOn(path); }, serveDirectoryListing, serve403);
   auto isDirectoryListingOn = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isDIrectoryListingOn(path); }, isDirectoryRPermOn,
-    serve403);
+    serve404);
   auto isIndexRPermOn = std::make_shared<ProcessTree>(
     [self](std::string& path) { return self->isRPermOn(path); }, serveFile, serve403);
   auto isIndexExist =
@@ -96,8 +96,10 @@ bool ProcessTreeBuilder::isIndexExist(std::string& path) {
 bool ProcessTreeBuilder::isDefaultFileExist(std::string& path) {
   LOG_TRACE("Checking default file exist");
   for (auto& defFile : client.getRes().getRouteConfig().defaultFile) {
-    if (std::filesystem ::exists(path + defFile)) {
-      path = path + defFile;
+    LOG_DEBUG("Checking default file:", defFile);
+    LOG_DEBUG("Checking default file path:", path + "/" + defFile);
+    if (std::filesystem ::exists(path + "/" + defFile)) {
+      path = path + "/" + defFile;
       return true;
     }
   }

@@ -28,25 +28,31 @@ void ReadState::handleReadBuf(Client& client, std::vector<char> buffer, ssize_t 
   temp->assign(buffer.begin(), buffer.begin() + nbytes);
   if (client.getReadBuf() != nullptr) {
     LOG_TRACE("APPENDING before size:", client.getReadBuf()->size());
-    std::vector<char> buf = *client.getReadBuf();
+    std::vector<char>& buf = *client.getReadBuf();
     buf.insert(buf.end(), temp->begin(), temp->end());
-    client.setReadBuf(std::make_shared<std::vector<char>>(buf));
-    client.setReadEnd(client.getReadBuf()->end());
+    client.setReadBuf(std::move(buf));
+    client.setReadEnd(client.getReadBuf()->size());
     LOG_TRACE("APPENDING after size:", client.getReadBuf()->size());
   } else {
+    LOG_TRACE("CREATING new buffer");
     client.setReadBuf(std::make_shared<std::vector<char>>(temp->begin(), temp->end()));
-    client.setReadIt(client.getReadBuf()->begin());
-    client.setReadEnd(client.getReadBuf()->end());
+    client.setReadCurr(0);
+    client.setReadEnd(client.getReadBuf()->size());
   }
 }
 
 void ReadState::isCRLF(Client& client) {
+  if (client.getParsingState() != ParsingState::IDLE) {
+    return;
+  }
   LOG_DEBUG("Finding CRLF");
   std::vector<char> clrf = {'\r', '\n', '\r', '\n'};
   auto pos =
     std::search(client.getReadBuf()->begin(), client.getReadBuf()->end(), clrf.begin(), clrf.end());
   if (pos != client.getReadBuf()->end()) {
     LOG_DEBUG("CRLF found");
+    LOG_TRACE("Read curr:", client.getReadCurr());
+    LOG_TRACE("Read end:", client.getReadEnd());
     client.setParsingState(ParsingState::REQLINE);
   }
 }

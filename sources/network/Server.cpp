@@ -102,19 +102,21 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   //removing fd in epoll interest list fds
   if (eventFd == clientFd && client->getClientState() == ClientState::CLOSE &&
       client->getCgiState() == CgiState::IDLE) {
-    LOG_INFO("EOF CLOSING client fd:", clientFd);
+    LOG_INFO("EOF/Client closed writing end, CLOSING client fd:", clientFd);
     fd = eventFd;
     pollManager.removeFd(clientFd);
     for (auto it = clientLastActivity.begin(); it != clientLastActivity.end();) {
       if (it->first == clientFd) {
-        it = clientLastActivity.erase(it);
+        clientLastActivity.erase(it);
+        break;
       } else {
         it++;
       }
     }
     for (auto it = clients.begin(); it != clients.end();) {
       if ((*it)->getFd() == clientFd) {
-        it = clients.erase(it);
+        clients.erase(it);
+        break;
       } else {
         it++;
       }
@@ -234,13 +236,14 @@ void Server::checkIdleClients(PollManager& pollManager) {
     if (now - it->second > idleTimeout) {
       LOG_DEBUG("Client fd:", it->first, "has been idle for", idleTimeout.count(), "seconds");
       pollManager.removeFd(it->first);
-      it = clientLastActivity.erase(it);
+      clientLastActivity.erase(it);
       if (isClientFd(it->first)) {
         auto clientIt = std::find_if(
           clients.begin(), clients.end(),
           [it](std::shared_ptr<Client>& client) { return client->getFd() == it->first; });
         if (clientIt != clients.end()) {
           clients.erase(clientIt);
+          break;
         }
       }
     } else {

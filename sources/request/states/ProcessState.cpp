@@ -37,7 +37,7 @@ void ProcessState::processRequest(Client& client) {
       client.setClientState(ClientState::PROCESSING);
     }
     return;
-  } else if (client.getReq().getMethod() == "GET" || client.getReq().getMethod() == "HEAD") {
+  } else if (client.getReq().getMethod() == "GET") {
     client.getGetHandler().executeRequest(client);
   } else if (client.getReq().getMethod() == "POST") {
     client.getPostHandler().executeRequest(client);

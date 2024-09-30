@@ -6,12 +6,6 @@ void ServeFileAction::execute(Client& client) {
   std::string path = client.getRes().getReqURI();
   client.getRes().setResStatusCode(200);
   client.getRes().setResStatusMessage("OK");
-  if (client.getReq().getMethod() == "HEAD") {
-    client.getRes().setResBody(std::vector<char>());
-    client.getRes().addHeader("Content-Length", "0");
-    client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
-    return;
-  }
   std::vector<char> ibody = Utility::readFile(path);
   client.getRes().setResBody(ibody);
   std::string ext = path.substr(path.find_last_of(".") + 1);

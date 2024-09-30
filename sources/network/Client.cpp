@@ -6,6 +6,7 @@ Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverC
   LOG_DEBUG(Utility::getConstructor(*this));
   clientState = ClientState::IDLE;
   cgiState = CgiState::IDLE;
+  parsingState = ParsingState::IDLE;
 }
 
 Client::~Client(void) {
@@ -106,12 +107,14 @@ void Client::initClient(void) {
   resetResponse();
   readBuf.reset();
   readBuf = nullptr;
+  readCurr = 0;
+  readEnd = 0;
   readNBytes = 0;
   writeNBytes = 0;
   if (clientState == ClientState::DONE) {
   clientState = ClientState::IDLE;
   }
-  parsingState = ParsingState::REQLINE;
+  parsingState = ParsingState::IDLE;
   if (cgiState == CgiState::DONE) {
     cgiState = CgiState::IDLE;
     cgiHandler.closePipeFds();
