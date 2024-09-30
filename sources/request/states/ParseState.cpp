@@ -84,8 +84,6 @@ void ParseState::parseBody(Client& client) {
     client.setParsingState(ParsingState::DONE);
     return;
   }
-  std::string iBufContent = iBuf.str();  // Extract current content of iBuf
-  LOG_DEBUG("iBuf content: ", iBufContent);
   LOG_TRACE("Parsing body");
   if (isChunked) {
     parseChunkedBody(client);
