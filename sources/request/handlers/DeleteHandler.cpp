@@ -18,7 +18,7 @@ void DeleteHandler::executeRequest(Client& client) {
   std::string filePath = sanitizePath(client.getReq().getReqURI());
   std::filesystem::path rootPath = client.getRes().getRouteConfig().root;
   std::filesystem::path fullPath = rootPath / filePath;
-  LOG_TRACE("DeleteHandler: fullPath:", fullPath.string());
+  LOG_TRACE("fullPath:", fullPath.string());
 
   bool success = false;
   if (std::filesystem::is_directory(fullPath)) {
