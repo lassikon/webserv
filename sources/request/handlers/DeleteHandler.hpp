@@ -15,4 +15,5 @@ class DeleteHandler : public IRequestHandler {
 
  private:
   std::string sanitizePath(std::string path);
+  void deleteFile(std::filesystem::path fullPath, Client& client);
 };
