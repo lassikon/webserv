@@ -21,21 +21,21 @@ int main(int argc, char** argv) {
     Signal::trackSignals();
   }
 
-  {
-    SessionManager s;
-    s.setSessionCookie();
-    s.readSessionsFromFile();
-    s.debugPrintSessionsMap();
-    // if (s.getSessionCookie("sessionId=QMSMFTZBHPbWLTUIODYF")) {
-    //   LOG_INFO("Cookie found!");
-    // } else {
-    //   LOG_ERROR("Cookie not found!");
-    // }
-    // s.debugFillSessionsFile();
-    // s.generateSessionId();
-    // s.debugPrintSessionsMap();
-  }
-  exit(1);
+  // {
+  //   SessionManager s;
+  //   s.setSessionCookie();
+  //   s.readSessionsFromFile();
+  //   s.debugPrintSessionsMap();
+  //   // if (s.getSessionCookie("sessionId=QMSMFTZBHPbWLTUIODYF")) {
+  //   //   LOG_INFO("Cookie found!");
+  //   // } else {
+  //   //   LOG_ERROR("Cookie not found!");
+  //   // }
+  //   // s.debugFillSessionsFile();
+  //   // s.generateSessionId();
+  //   // s.debugPrintSessionsMap();
+  // }
+  // exit(1);
 
   Config config = ConfigInitializer::initializeConfig(argc, argv);
   RuntimeException::tryCatch(&Config::parseConfigFile, &config);
