@@ -29,6 +29,7 @@ enum class RuntimeError {
 };
 
 enum class NetworkError {
+  NoError = 0,
   BadRequest = 400,
   Forbidden = 403,
   Notfound = 404,

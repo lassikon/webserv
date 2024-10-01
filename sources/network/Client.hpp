@@ -14,6 +14,7 @@
 #include <Logger.hpp>
 #include <Request.hpp>
 #include <Response.hpp>
+#include <SessionManager.hpp>
 #include <Utility.hpp>
 
 #include <RuntimeException.hpp>
@@ -39,6 +40,8 @@ class Client {
  private:
   Request req;
   Response res;
+  SessionManager cookie;
+  bool isCgi = false;
   int fd;
 
  private:
@@ -63,7 +66,7 @@ class Client {
   int readFd;
   std::shared_ptr<std::vector<char>> readBuf = nullptr;
   ssize_t readNBytes = 0;
-  size_t readCurr  = 0;
+  size_t readCurr = 0;
   size_t readEnd = 0;
 
  public:  //read
@@ -113,6 +116,7 @@ class Client {
   int getFd(void) const { return fd; }
   Request& getReq(void) { return req; }
   Response& getRes(void) { return res; }
+  SessionManager& getCookie(void) { return cookie; }
   PostHandler& getPostHandler(void) { return postHandler; }
   DeleteHandler& getDeleteHandler(void) { return deleteHandler; }
   CgiHandler& getCgiHandler(void) { return cgiHandler; }

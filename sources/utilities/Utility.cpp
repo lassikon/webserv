@@ -1,5 +1,6 @@
-#include <Logger.hpp>
 #include <Utility.hpp>
+
+#include <NetworkException.hpp>
 
 static std::map<std::string, std::string> mimeTypes = {
   {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
@@ -139,7 +140,17 @@ size_t Utility::convertSizetoBytes(std::string& size) {
     // Handle out of range
     bytes = SIZE_MAX;
   }
-  return bytes;
+  bytes = std::stoull(size) * multiplier;
+}
+catch (const std::invalid_argument&) {
+  // Handle invalid argument
+  bytes = 0;
+}
+catch (const std::out_of_range&) {
+  // Handle out of range
+  bytes = SIZE_MAX;
+}
+return bytes;
 }
 
 bool Utility::getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr,

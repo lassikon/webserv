@@ -5,6 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
+RUNCONFIG   := confDefault/default.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 
@@ -59,12 +60,14 @@ SOURCES := main \
            PollManager \
            Server \
            ServerManager \
+           SessionManager \
            Socket \
            Config \
            ConfigInitializer \
            RouteDirectiveSetter \
            ServerDirectiveSetter \
            CgiHandler \
+           UploadHandler \
            DeleteHandler \
            GetHandler \
            PostHandler \
@@ -83,7 +86,7 @@ SOURCES := main \
            Logger \
            Signal \
            Utility \
-					 UrlEncoder
+           UrlEncoder
 
 SOURCES := $(addsuffix .cpp, $(SOURCES))
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SOURCES:.cpp=.o))
@@ -110,10 +113,10 @@ debug: re
 
 run: all
 	$(SCREENCLEAR)
-	./$(NAME)
+	./$(NAME) $(RUNCONFIG)
 
 leaks: all
-	valgrind $(VLGFLAGS) ./$(NAME)
+	valgrind $(VLGFLAGS) ./$(NAME) $(RUNCONFIG)
 	$(call report_cmd, $(LEAKSLOG))
 
 define report_cmd
