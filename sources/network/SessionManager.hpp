@@ -1,12 +1,14 @@
 #pragma once
 
 #include <Logger.hpp>
+#include <Response.hpp>
 #include <Utility.hpp>
 
 #include <cstdlib>
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class SessionManager {
  private:
@@ -35,7 +37,7 @@ class SessionManager {
   void debugPrintSessionsMap();
 
  public:  // setters
-  std::string setSessionCookie(void);
+  std::string setSessionCookie(Response& response);
 
  public:  // getters
   SessionManager& getSessionManager(void) { return *this; }

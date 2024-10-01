@@ -19,12 +19,6 @@ void SessionManager::generateOutfile(std::fstream& fs, const char* file) {
   }
 }
 
-void SessionManager::debugFillSessionsFile(void) {
-  for (int i = 0; i < tokenLength; i++) {
-    setSessionCookie();
-  }
-}
-
 void SessionManager::debugPrintSessionsMap(void) {
   for (const auto& [sessionId, query] : sessionIds) {
     LOG_DEBUG(sessionId, query);
@@ -44,13 +38,14 @@ void SessionManager::readSessionsFromFile(void) {
   }
 }
 
-std::string SessionManager::setSessionCookie(void) {
-  // void = const Client &client / QueryString = client.getRes().getReqURI()
-  std::string token, query = "?name=jon&id=1234";
+std::string SessionManager::setSessionCookie(Response& response) {
+  std::vector<char> vec = response.getResBody();
+  std::string token, query(vec.data(), vec.size());
   token.reserve(tokenLength);
   for (int i = 0; i < tokenLength; i++) {
     token += charSet[rand() % (sizeof(charSet) - 1)];
   }
+  std::cout << "\n\n\n" << query << "\n\n\n";  // DEBUG:
   sessionIds.insert(std::make_pair(token, query));
   sessionsFile << ("sessionId=" + token + query + "\n");
   return "sessionId=" + token;
