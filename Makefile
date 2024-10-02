@@ -5,7 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
-RUNCONFIG   := confDefault/default.conf
+RUNCONFIG   := confDefault/easy.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 
@@ -21,7 +21,7 @@ SCREENCLEAR := printf "\033c"
 # **************************************************************************** #
 
 CC          := c++
-CFLAGS      := -g -Wall -Werror -Wextra
+CFLAGS      := -g -Wall -Werror -Wextra -std=c++17
 CPPFLAGS    := -c -MMD -MP
 DEBUGFLAGS  := -fsanitize=address
 MAKEFLAGS   += --no-print-directory

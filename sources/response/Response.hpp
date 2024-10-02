@@ -22,7 +22,7 @@ class Response {
   std::vector<char> resBody = {};
   std::map<std::string, std::string> resHeaders = {};
   std::vector<char> resContent = {};
-  bool transferEncodingChunked = false;
+  // bool transferEncodingChunked = false;
 
  public:
   Response();

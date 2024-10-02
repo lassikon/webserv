@@ -17,8 +17,9 @@ void PostHandler::getContentType(Client& client) {
 
 void PostHandler::processFormUrlEncoded(Client& client) {
   LOG_INFO("Processing application/x-www-form-urlencoded");
-  std::string data(client.getReq().getBody().begin(), client.getReq().getBody().end());
-  LOG_DEBUG("Raw data:\n", data);
+  std::string data(client.getReq().getBody().data(), client.getReq().getBody().size());
+  // LOG_DEBUG("Raw data:\n", data);
+  std::cout << "Raw data:\n" << data;
   std::istringstream iss(data);
   std::string pair;
 

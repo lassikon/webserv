@@ -45,9 +45,14 @@ int main(int argc, char** argv) {
   }
 
   // config.printServerConfig();
+  try {
   ServerManager serverManager;
   serverManager.configServers(config);
-  serverManager.runServers();
+  serverManager.runServers();}
+
+  catch(std::exception &e) {
+    std::cout << e.what();
+  }
 
   /* ======================================================================= */
   /* ServerManager server; */

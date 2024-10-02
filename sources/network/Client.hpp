@@ -41,7 +41,7 @@ class Client {
   Request req;
   Response res;
   SessionManager cookie;
-  bool isCgi = false;
+  // bool isCgi = false;
   int fd;
 
  private:
