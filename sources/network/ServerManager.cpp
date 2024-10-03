@@ -30,7 +30,16 @@ void ServerManager::configServers(Config& config) {
       }
     } else {
       LOG_DEBUG("Creating new server config in port:", serverConfig.second.port);
-      servers.emplace_back(std::make_shared<Server>(serverConfig.second));
+      try {
+        // Try to create a new server and add it to the list
+        servers.emplace_back(std::make_shared<Server>(serverConfig.second));
+      } catch (const std::exception& e) {
+        LOG_ERROR("Failed to create server on port:", serverConfig.second.port, e.what());
+        // Remove the server that failed to initialize
+        if (!servers.empty() && servers.back()->getPort() == serverConfig.second.port) {
+          servers.pop_back();
+        }
+      }
     }
   }
 }
@@ -44,6 +53,10 @@ void ServerManager::handleNoEvents(PollManager& pollManager) {
 
 void ServerManager::initializePollManager(PollManager& pollManager) {
   for (auto& server : servers) {
+    if (server->getSocketFd() < 0) {
+      LOG_ERROR("Invalid socket fd for server", server->getServerName());
+      continue;
+    }
     pollManager.addFd(server->getSocketFd(), EPOLLIN);
     LOG_DEBUG("Added server", server->getServerName(), "to pollManager");
   }
@@ -51,6 +64,10 @@ void ServerManager::initializePollManager(PollManager& pollManager) {
 
 void ServerManager::runServers(void) {
   PollManager pollManager;
+  if (servers.empty()) {
+    LOG_ERROR("No servers to run");
+    return;
+  }
   LOG_TRACE("Adding server sockets to pollManager");
   initializePollManager(pollManager);
   while (Utility::statusOk()) {

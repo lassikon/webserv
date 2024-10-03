@@ -15,14 +15,15 @@ void Socket::setupSocket(ServerConfig& serverConfig) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
-  if (int s = getaddrinfo(NULL, std::to_string(serverConfig.port).c_str(), &hints, &addr) != 0) {
+  int s = getaddrinfo(serverConfig.serverName.c_str(), std::to_string(serverConfig.port).c_str(),
+                      &hints, &addr);
+  if (s != 0) {
     throw socketError("Failed to get address info:", gai_strerror(s));
   }
   sockFd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockFd == -1) {
     throw socketError("Failed to create socket");
   }
-  //setNonBlocking();
   Utility::setNonBlocking(sockFd);
   Utility::setCloseOnExec(sockFd);
   int opt = 1;
