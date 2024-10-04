@@ -21,7 +21,7 @@ SCREENCLEAR := printf "\033c"
 # **************************************************************************** #
 
 CC          := c++
-CFLAGS      := -g -Wall -Werror -Wextra
+CFLAGS      := -g -Wall -Wextra -Werror -std=c++17
 CPPFLAGS    := -c -MMD -MP
 DEBUGFLAGS  := -fsanitize=address
 MAKEFLAGS   += -j8 --no-print-directory

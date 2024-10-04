@@ -18,11 +18,11 @@ class Response {
 
  private:  // for response
   int resStatusCode = 0;
+  std::string resCookie;
   std::string resStatusMessage;
   std::vector<char> resBody = {};
   std::map<std::string, std::string> resHeaders = {};
   std::vector<char> resContent = {};
-  bool transferEncodingChunked = false;
 
  public:
   Response();

@@ -7,6 +7,7 @@ Server::Server(ServerConfig& serverConfig) {
   ipAddress = serverConfig.ipAddress;
   socket = Socket();
   socket.setupSocket(serverConfig);
+  // session = SessionManager(*this);
 }
 
 Server::~Server(void) {

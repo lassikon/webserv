@@ -5,6 +5,11 @@ SessionManager::SessionManager(void) {
   generateOutfile(sessionsFile, fileName);
 }
 
+SessionManager::SessionManager(Server &server) : server(server) {
+  LOG_TRACE(Utility::getConstructor(*this));
+  generateOutfile(sessionsFile, fileName);
+}
+
 SessionManager::~SessionManager(void) {
   LOG_TRACE(Utility::getDeconstructor(*this));
   if (sessionsFile.is_open()) {
@@ -57,15 +62,16 @@ std::string SessionManager::getSessionQuery(std::string currentSession) {
       return query;
     }
   }
-  return nullptr;
+  return {};
 }
+
 std::string SessionManager::getSessionCookie(std::string currentSession) {
   for (const auto& [session, query] : sessionIds) {
     if (session == currentSession) {
       return session;
     }
   }
-  return nullptr;
+  return {};
 }
 
 // localhost:3490 -> serve login.html

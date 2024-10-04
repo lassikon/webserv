@@ -2,6 +2,7 @@
 
 #include <Logger.hpp>
 #include <Response.hpp>
+#include <Server.hpp>
 #include <Utility.hpp>
 
 #include <cstdlib>
@@ -23,14 +24,16 @@ class SessionManager {
   std::fstream sessionsFile;
   std::unordered_map<std::string, std::string> sessionIds{};
 
+  Server &server;
+
  public:
   SessionManager(void);
+  SessionManager(Server &server);
   ~SessionManager(void);
 
  public:
   void generateOutfile(std::fstream& fs, const char* file);
   void readSessionsFromFile(void);
-  std::string randomizeSessionToken(void);
 
  public:
   void debugFillSessionsFile();
