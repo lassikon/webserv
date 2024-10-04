@@ -6,6 +6,7 @@
 #include <Logger.hpp>
 #include <NetworkException.hpp>
 #include <PollManager.hpp>
+#include <SessionManager.hpp>
 #include <Socket.hpp>
 
 #include <netdb.h>
@@ -22,6 +23,8 @@
 #include <string>
 #include <vector>
 
+// class SessionManager;
+
 class Server {
  private:
   std::vector<std::shared_ptr<Client>> clients;
@@ -34,6 +37,7 @@ class Server {
  private:
   std::string ipAddress;
   std::string serverName;
+  SessionManager session;
   Socket socket;
   int port;
 
@@ -56,6 +60,8 @@ class Server {
   int getPort(void) const { return port; }
 
   std::string getServerName(void) const { return serverName; }
+
+  //SessionManager &getSession(void) { return session; }
 
   std::string getIpAddress(void) const { return ipAddress; }
 

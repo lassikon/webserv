@@ -1,12 +1,17 @@
 #pragma once
 
 #include <Logger.hpp>
+#include <Response.hpp>
+
 #include <Utility.hpp>
 
 #include <cstdlib>
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
+
+class Server;
 
 class SessionManager {
  private:
@@ -21,21 +26,23 @@ class SessionManager {
   std::fstream sessionsFile;
   std::unordered_map<std::string, std::string> sessionIds{};
 
+  Server &server;
+
  public:
-  SessionManager(void);
+  SessionManager(void) = delete;
+  SessionManager(Server &server);
   ~SessionManager(void);
 
  public:
   void generateOutfile(std::fstream& fs, const char* file);
   void readSessionsFromFile(void);
-  std::string randomizeSessionToken(void);
 
  public:
   void debugFillSessionsFile();
   void debugPrintSessionsMap();
 
  public:  // setters
-  std::string setSessionCookie(void);
+  std::string setSessionCookie(Response& response);
 
  public:  // getters
   SessionManager& getSessionManager(void) { return *this; }

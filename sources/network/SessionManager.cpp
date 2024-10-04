@@ -1,6 +1,12 @@
 #include <SessionManager.hpp>
+#include <Server.hpp>
 
-SessionManager::SessionManager(void) {
+// SessionManager::SessionManager(void) {
+//   LOG_TRACE(Utility::getConstructor(*this));
+//   generateOutfile(sessionsFile, fileName);
+// }
+
+SessionManager::SessionManager(Server &server) : server(server) {
   LOG_TRACE(Utility::getConstructor(*this));
   generateOutfile(sessionsFile, fileName);
 }
@@ -16,12 +22,6 @@ void SessionManager::generateOutfile(std::fstream& fs, const char* file) {
   fs.open(file, std::ios::in | std::ios::out | std::ios_base::app);
   if (fs.fail()) {
     LOG_WARN("Could not open file:", file, strerror(errno));
-  }
-}
-
-void SessionManager::debugFillSessionsFile(void) {
-  for (int i = 0; i < tokenLength; i++) {
-    setSessionCookie();
   }
 }
 
@@ -44,13 +44,14 @@ void SessionManager::readSessionsFromFile(void) {
   }
 }
 
-std::string SessionManager::setSessionCookie(void) {
-  // void = const Client &client / QueryString = client.getRes().getReqURI()
-  std::string token, query = "?name=jon&id=1234";
+std::string SessionManager::setSessionCookie(Response& response) {
+  std::vector<char> vec = response.getResBody();
+  std::string token, query(vec.data(), vec.size());
   token.reserve(tokenLength);
   for (int i = 0; i < tokenLength; i++) {
     token += charSet[rand() % (sizeof(charSet) - 1)];
   }
+  std::cout << "\n\n\n" << query << "\n\n\n";  // DEBUG:
   sessionIds.insert(std::make_pair(token, query));
   sessionsFile << ("sessionId=" + token + query + "\n");
   return "sessionId=" + token;
@@ -62,15 +63,16 @@ std::string SessionManager::getSessionQuery(std::string currentSession) {
       return query;
     }
   }
-  return nullptr;
+  return {};
 }
+
 std::string SessionManager::getSessionCookie(std::string currentSession) {
   for (const auto& [session, query] : sessionIds) {
     if (session == currentSession) {
       return session;
     }
   }
-  return nullptr;
+  return {};
 }
 
 // localhost:3490 -> serve login.html

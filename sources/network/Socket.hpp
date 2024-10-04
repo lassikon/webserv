@@ -18,7 +18,6 @@ class Socket {
 
  private:
   int sockFd = -1;
-  // int port = -1;
 
  public:
   Socket(void);
