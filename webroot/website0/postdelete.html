@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test POST and DELETE Methods</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        #file-list {
+            margin-top: 20px;
+            padding: 0;
+            list-style-type: none;
+        }
+        #file-list li {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<h1>POST and DELETE Request Test</h1>
+
+<!-- Form for POST method -->
+<form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+    <label for="file">Choose a file to upload:</label>
+    <input type="file" id="file" name="file"><br><br>
+    <input type="submit" value="Upload File">
+</form>
+
+<!-- Form for DELETE method -->
+<form id="deleteForm" action="/delete" method="POST">
+    <label for="deletePath">File/Folder to delete:</label>
+    <input type="text" id="deletePath" name="deletePath" placeholder="Enter file/folder name"><br><br>
+    <input type="button" value="Delete" onclick="deleteFile()">
+</form>
+
+<h2>Files and Folders:</h2>
+<ul id="file-list"></ul>
+
+<script>
+    // Function to handle the DELETE method request
+    function deleteFile() {
+        const deletePath = document.getElementById('deletePath').value;
+        fetch('/delete', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `deletePath=${encodeURIComponent(deletePath)}`
+        }).then(response => response.text())
+        .then(data => {
+            alert(data);
+            loadFiles(); // Refresh file list after deletion
+        }).catch(error => console.error('Error:', error));
+    }
+
+    // Function to load files and folders (assuming your server returns a list of them)
+    function loadFiles() {
+        fetch('/list')
+            .then(response => response.json())
+            .then(data => {
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = '';
+                data.forEach(file => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = file;
+                    fileList.appendChild(listItem);
+                });
+            }).catch(error => console.error('Error:', error));
+    }
+
+    // Initial file/folder listing
+    window.onload = loadFiles;
+</script>
+
+</body>
+</html>
