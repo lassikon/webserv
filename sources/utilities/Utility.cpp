@@ -113,6 +113,41 @@ int Utility::getInWriteFdFromClientFd(int fd) {
   return -1;
 }
 
+bool Utility::isOutReadFd(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Utility::isInWriteFd(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.inWriteFd == fd) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Utility::getIsTimeout(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      return cgi.isTimeout;
+    }
+  }
+  return false;
+}
+
+bool Utility::getIsFailed(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      return cgi.isFailed;
+    }
+  }
+  return false;
+}
 bool Utility::statusOk(void) noexcept {
   return g_ExitStatus == 0 ? true : false;
 }

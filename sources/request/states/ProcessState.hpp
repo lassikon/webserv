@@ -21,5 +21,4 @@ class ProcessState : public IStateHandler {
   void processRequest(Client& client);
   ServerConfig chooseServerConfig(Client& client);
   void buildPath(Client& client);
-  bool isWithStatusCode(Client& client);
 };

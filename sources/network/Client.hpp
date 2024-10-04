@@ -32,7 +32,7 @@
 #include <vector>
 
 enum struct ClientState { IDLE, READING, PROCESSING, PREPARING, SENDING, DONE, CLOSE };
-enum struct ParsingState { IDLE, REQLINE, HEADER, BODY, DONE };
+enum struct ParsingState { IDLE, REQLINE, HEADER, VERIFY, BODY, DONE };
 enum struct CgiState { IDLE, READING, WRITING, DONE };
 
 class Client {
@@ -94,9 +94,6 @@ class Client {
  public:
   Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs);
   ~Client(void);
-
-  bool operator==(const Client& other) const;
-
  public:
   void resetRequest(void);
   void resetResponse(void);
@@ -108,6 +105,8 @@ class Client {
   void handlePollOutEvent(int writeFd);
   bool shouldCloseConnection(void);
   void cleanupClient(void);
+  void ifGatewayError(void);
+
 
  public:  // getters
   int getFd(void) const { return fd; }

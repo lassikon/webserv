@@ -26,7 +26,10 @@ struct CgiParams {
   int inReadFd = -1;
   int inWriteFd = -1;
   int clientFd = -1;
+  int childExitStatus = -1;
   bool isExited = false;
+  bool isTimeout = false;
+  bool isFailed = false;
   steady_time_point_t start;
 };
 
@@ -42,11 +45,13 @@ class CgiHandler : public IRequestHandler {
   std::vector<std::string> args{};
   std::string cgi;  // delete this?
 
-  int outPipeFd[2];
-  int inPipeFd[2];
+  int outPipeFd[2] = {-1, -1};
+  int inPipeFd[2] = {-1, -1};
   int clientFd;
   int wstat;
   pid_t pid;
+
+   bool isBin = false;
 
  public:
   /* CgiHandler(void) = delete; */
@@ -56,15 +61,16 @@ class CgiHandler : public IRequestHandler {
 
  public:
   void executeRequest(Client& client) override;
-  void runScript(void);
+  void runScript(Client& client);
   void closePipeFds(void);
 
  private:
-  void scriptLoader(void);
+  void scriptLoader(Client& client);
   void setGlobal(void); 
   void generateEnvpVector(Client& client);
-  void forkChildProcess(void);
+  void forkChildProcess(Client& client);
   void executeCgiScript(void);
+  void exitError(int status, const std::string& message);
 
  private:
   std::vector<char*> convertStringToChar(std::vector<std::string>& vec);

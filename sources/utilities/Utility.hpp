@@ -26,6 +26,10 @@ class Utility {
   static int getClientFdFromCgiParams(int fd);
   static int getOutReadFdFromClientFd(int fd);
   static int getInWriteFdFromClientFd(int fd);
+  static bool isOutReadFd(int fd);
+  static bool isInWriteFd(int fd);
+  static bool getIsTimeout(int fd);
+  static bool getIsFailed(int fd);
   static bool getLineVectoStr(std::vector<char>& buffer ,std::string& line, size_t& curr, size_t& end);
 
   template <class T> static std::string getConstructor(const T& object) {

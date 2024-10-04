@@ -11,7 +11,7 @@ class PostHandler : public IRequestHandler {
 
  public:
   PostHandler() = default;
-  virtual ~PostHandler() = default;
+  virtual ~PostHandler() {LOG_DEBUG(Utility::getDeconstructor(*this));};
   void executeRequest(Client& client) override;
 
  private:

@@ -33,7 +33,12 @@ enum class NetworkError {
   Forbidden = 403,
   Notfound = 404,
   Method = 405,
-  Payload = 413
+  Length = 411,
+  Payload = 413,
+  Internal = 500,
+  BadGateway = 502,
+  GatewayTimeout = 504,
+  Version = 505
 };
 
 class IException : public std::exception, public Logger {

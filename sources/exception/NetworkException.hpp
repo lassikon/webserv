@@ -11,7 +11,9 @@ class NetworkException : public IException {
   std::unordered_map<NetworkError, std::string> errMsgMap = {
     {NetworkError::BadRequest, "Bad Request"},    {NetworkError::Forbidden, "Forbidden"},
     {NetworkError::Notfound, "Not Found"},        {NetworkError::Method, "Method Not Allowed"},
-    {NetworkError::Payload, "Payload Too Large"},
+    {NetworkError::Payload, "Payload Too Large"}, {NetworkError::Internal, "Internal Server Error"},
+    {NetworkError::BadGateway, "Bad Gateway"},    {NetworkError::GatewayTimeout, "Gateway Timeout"},
+    {NetworkError::Version, "HTTP Version Not Supported"}, {NetworkError::Length, "Length Required"}
   };
 
  public:
@@ -23,6 +25,10 @@ class NetworkException : public IException {
       : IException(errCode, fileName, funcName, line, std::forward<Args>(args)...) {
     setResponseAttributes(client, (int)errCode, getErrorMessage(errCode));
     client.setClientState(ClientState::PREPARING);
+    client.setParsingState(ParsingState::DONE);
+    if (client.getCgiState() != CgiState::IDLE) {
+      client.setCgiState(CgiState::DONE);
+    }
   }
 
   // Template to create new try-catch block, can create multiple blocks inside each other
@@ -77,7 +83,7 @@ class NetworkException : public IException {
     std::string errorPathStr = errorPath.string();
     LOG_ERROR("Error page path:", errorPathStr);
     if (!std::filesystem::exists(errorPath) || !isValid(errorPathStr)) {
-      setBasicErrorPage(client);
+      setBasicErrorPage(client, errorCode, message);
       return;
     }
     std::vector<char> ibody = Utility::readFile(errorPathStr);
@@ -98,11 +104,11 @@ class NetworkException : public IException {
     return false;
   }
 
-  void setBasicErrorPage(Client& client) {
-    std::string body("<html><body><h1>404 Not Found, error page not found!</h1></body></html>");
+  void setBasicErrorPage(Client& client, int errorCode, const char* message) {
+    std::string body("<html><body><h1>" + std::string(message) + "!</h1></body></html>");
     std::vector<char> ibody(body.begin(), body.end());
-    client.getRes().setResStatusCode(404);
-    client.getRes().setResStatusMessage("Not Found");
+    client.getRes().setResStatusCode(errorCode);
+    client.getRes().setResStatusMessage(message);
     client.getRes().setResBody(ibody);
     client.getRes().addHeader("Content-Type", "text/html");
     client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
@@ -120,3 +126,12 @@ class NetworkException : public IException {
 #define httpMethod(client, ...) NetworkException(client, NetworkError::Method, LOGDATA, __VA_ARGS__)
 #define httpPayload(client, ...) \
   NetworkException(client, NetworkError::Payload, LOGDATA, __VA_ARGS__)
+#define httpInternal(client, ...) \
+  NetworkException(client, NetworkError::Internal, LOGDATA, __VA_ARGS__)
+#define httpBadGateway(client, ...) \
+  NetworkException(client, NetworkError::BadGateway, LOGDATA, __VA_ARGS__)
+#define httpGatewayTimeout(client, ...) \
+  NetworkException(client, NetworkError::GatewayTimeout, LOGDATA, __VA_ARGS__)
+#define httpVersion(client, ...) \
+  NetworkException(client, NetworkError::Version, LOGDATA, __VA_ARGS__)
+#define httpLength(client, ...) NetworkException(client, NetworkError::Length, LOGDATA, __VA_ARGS__)

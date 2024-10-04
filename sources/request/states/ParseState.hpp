@@ -2,6 +2,8 @@
 
 #include <IStateHandler.hpp>
 #include <Logger.hpp>
+#include <ProcessTree.hpp>
+#include <ProcessTreeBuilder.hpp>
 
 class Client;
 
@@ -10,14 +12,20 @@ class ParseState : public IStateHandler {
  private:
   bool isChunked = false;
 
+ private:
+  std::shared_ptr<ProcessTree> root;
+
  public:
   ParseState() = default;
   virtual ~ParseState() = default;
   void execute(Client& client) override;
 
- public:
+ private:
+  ServerConfig chooseServerConfig(Client& client);
+  void buildPath(Client& client);
   void parseRequestLine(Client& client);
   void parseHeaders(Client& client);
+  void verifyRequest(Client& client);
   void parseBody(Client& client);
 
  private:

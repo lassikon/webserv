@@ -1,7 +1,9 @@
 #include <Client.hpp>
+#include <NetworkException.hpp>
 #include <ProcessState.hpp>
 
 void ProcessState::execute(Client& client) {
+  LOG_TRACE("Processing client fd:", client.getFd());
   if (client.getReadBuf() == nullptr) {
     client.setClientState(ClientState::DONE);
     return;
@@ -21,15 +23,15 @@ void ProcessState::execute(Client& client) {
 }
 
 void ProcessState::processRequest(Client& client) {
-  client.getRes().setServerConfig(chooseServerConfig(client));  // choose server config
-  buildPath(client);
+  //client.getRes().setServerConfig(chooseServerConfig(client));  // choose server config
+  //buildPath(client);
   if (client.getRes().getReqURI().find("/cgi-bin/") != std::string::npos) {
     client.getCgiHandler().executeRequest(client);
     if (client.getReq().getMethod() == "GET") {
-    client.setClientState(ClientState::READING);
-    client.setCgiState(CgiState::WRITING);
-    client.getReadBuf()->clear();
-    client.setReadBuf(nullptr);
+      client.setClientState(ClientState::READING);
+      client.setCgiState(CgiState::WRITING);
+      client.getReadBuf()->clear();
+      client.setReadBuf(nullptr);
       return;
     }
     if (client.getReq().getMethod() == "POST") {
@@ -52,15 +54,8 @@ void ProcessState::processRequest(Client& client) {
 void ProcessState::processCgiOutput(Client& client) {
   client.getRes().setResStatusCode(200);
   client.getRes().setResStatusMessage("OK");
-  if (isWithStatusCode(client)) {
-    std::string statusLine = client.getReq().getHeaders()["Status"];
-    client.getRes().setResStatusCode(std::stoi(statusLine.substr(0, 3)));
-    client.getRes().setResStatusMessage(statusLine.substr(4));
-  }
   for (auto& header : client.getReq().getHeaders()) {
-    if (header.first != "Status") {
-      client.getRes().addHeader(header.first, header.second);
-    }
+    client.getRes().addHeader(header.first, header.second);
   }
   client.getRes().addHeader("Connection", "keep-alive");
   client.getRes().addHeader("Content-Length", std::to_string(client.getReq().getBodySize()));
@@ -70,7 +65,8 @@ void ProcessState::processCgiOutput(Client& client) {
   client.setClientState(ClientState::PREPARING);
 }
 
-ServerConfig ProcessState::chooseServerConfig(Client& client) {
+
+/* ServerConfig ProcessState::chooseServerConfig(Client& client) {
   LOG_TRACE("Choosing server config for client fd:", client.getFd());
   for (auto& serverConfig : client.getServerConfigs()) {
     if (serverConfig->serverName == client.getReq().getHeaders()["Host"]) {
@@ -87,8 +83,4 @@ void ProcessState::buildPath(Client& client) {
   client.getRes().setReqURI(client.getReq().getReqURI());
   root = ptb->buildPathTree();
   root->process(client);
-}
-
-bool ProcessState::isWithStatusCode(Client& client) {
-  return client.getReq().getHeaders().find("Status") != client.getReq().getHeaders().end();
-}
+} */

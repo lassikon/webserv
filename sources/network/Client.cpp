@@ -14,16 +14,12 @@ Client::~Client(void) {
   cleanupClient();
 }
 
-bool Client::operator==(const Client& other) const {
-  return fd == other.fd;
-}
-
 bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
   if (revents & EPOLLIN) {
-    handlePollInEvent(readFd);
+    NetworkException::tryCatch(&Client::handlePollInEvent, this, readFd);
   }
   if (revents & EPOLLOUT) {
-    handlePollOutEvent(writeFd);
+    NetworkException::tryCatch(&Client::handlePollOutEvent, this, writeFd);
     if (shouldCloseConnection()) {
       return true;
     }
@@ -33,6 +29,7 @@ bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
 
 void Client::handlePollInEvent(int readFd) {
   LOG_INFO("Client fd:", fd, "has POLLIN event");
+  ifGatewayError();
   setReadFd(readFd);
   if (clientState == ClientState::IDLE) {
     clientState = ClientState::READING;
@@ -40,16 +37,21 @@ void Client::handlePollInEvent(int readFd) {
   if (clientState == ClientState::READING) {
     readState.execute(*this);
     parseState.execute(*this);
+    //NetworkException::tryCatch(&ReadState::execute, &this->readState, *this);
+    //NetworkException::tryCatch(&ParseState::execute, &this->parseState, *this);
   }
 }
 
 void Client::handlePollOutEvent(int writeFd) {
   LOG_INFO("Client fd:", fd, "has POLLOUT event");
+  ifGatewayError();
   setWriteFd(writeFd);
   if (clientState == ClientState::PROCESSING) {
-    NetworkException::tryCatch(&ProcessState::execute, &this->processState, *this);
+    processState.execute(*this);
+    // NetworkException::tryCatch(&ProcessState::execute, &this->processState, *this);
   }
   if (clientState == ClientState::PREPARING) {
+    LOG_DEBUG("Preparing response");
     if (writeNBytes == 0) {
       res.makeResponse();
     }
@@ -112,7 +114,7 @@ void Client::initClient(void) {
   readNBytes = 0;
   writeNBytes = 0;
   if (clientState == ClientState::DONE) {
-  clientState = ClientState::IDLE;
+    clientState = ClientState::IDLE;
   }
   parsingState = ParsingState::IDLE;
   if (cgiState == CgiState::DONE) {
@@ -126,8 +128,18 @@ bool Client::shouldCloseConnection(void) {
       req.getHeaders()["Connection"] == "close") {
     return true;
   }
-  if (writeNBytes == -1) {
+  if (writeNBytes == -1 || res.getResStatusCode() == 500) {
     return true;
   }
   return false;
+}
+
+void Client::ifGatewayError(void) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.clientFd == getFd() && cgi.isTimeout) {
+      throw httpGatewayTimeout(*this, "CGI process timed out for client fd:", getFd());
+    } else if (cgi.clientFd == getFd() && cgi.isFailed) {
+      throw httpBadGateway(*this, "CGI process exited for client fd:", getFd());
+    }
+  }
 }

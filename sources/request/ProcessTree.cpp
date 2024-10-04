@@ -1,6 +1,6 @@
 #include <Client.hpp>
-#include <ProcessTree.hpp>
 #include <NetworkException.hpp>
+#include <ProcessTree.hpp>
 ProcessTree::ProcessTree(Validate validate, std::shared_ptr<ProcessTree> trueBranch,
                          std::shared_ptr<ProcessTree> falseBranch)
     : validate(validate), trueBranch(trueBranch), falseBranch(falseBranch) {}
@@ -45,8 +45,20 @@ void ProcessTree::thorwError(Client& client) {
     case 405:
       throw httpMethod(client, "HTTP Error 405 - Method Not Allowed");
       break;
+    case 411:
+      throw httpLength(client, "HTTP Error 411 - Length Required");
+      break;
     case 413:
       throw httpPayload(client, "HTTP Error 413 - Payload Too Large");
+      break;
+    case 500:
+      throw httpInternal(client, "HTTP Error 500 - Internal Server Error");
+      break;
+    case 502:
+      throw httpBadGateway(client, "HTTP Error 502 - Bad Gateway");
+      break;
+    case 504:
+      throw httpGatewayTimeout(client, "HTTP Error 504 - Gateway Timeout");
       break;
     default:
       break;

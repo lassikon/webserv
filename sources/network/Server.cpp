@@ -21,20 +21,21 @@ void Server::acceptConnection(PollManager& pollManager) {
   struct sockaddr_storage theirAddr {};
   socklen_t addrSize = sizeof theirAddr;
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
-  if (newFd == -1 || newFd < 2) {
+  if (newFd < 0) {
     LOG_WARN("Failed to accept new connection:", IException::expandErrno());
     return;
   }
   Utility::setCloseOnExec(newFd);
+  Utility::setNonBlocking(newFd);
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs));
   LOG_DEBUG("Accepted new client fd:", newFd);
-  pollManager.addFd(newFd, EPOLLIN);
+
+  pollManager.addFd(newFd, EPOLLIN, [&](int fd) { removeClient(fd); });
   clientLastActivity[newFd] = std::chrono::steady_clock::now();
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
 void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd) {
-  bool isClose = false;
   auto it = std::find_if(
     clients.begin(), clients.end(),
     [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
@@ -43,6 +44,7 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
     return;
   }
   if (it != clients.end()) {
+    bool isClose = false;
     if (eventFd == Utility::getOutReadFdFromClientFd(clientFd)) {
       LOG_DEBUG("Handling EPOLLIN event for cgi,", eventFd, " to client fd:", clientFd);
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
@@ -52,21 +54,18 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
       updateClientLastActivity(clientFd);
     }
+    modifyFdEvent(pollManager, *it, eventFd, clientFd);
     if (isClose == true) {
-      LOG_TRACE("Connection closed or error occured");
+      LOG_TRACE("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
       pollManager.removeFd(clientFd);
-      clientLastActivity.erase(clientFd);
-      LOG_DEBUG("Erasing client fd:", (*it)->getFd(), "from clients");
-      clients.erase(it);
+      return;
     }
   }
-  modifyFdEvent(pollManager, *it, eventFd, clientFd);
 }
 
 void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eventFd,
                              int clientFd) {
-  bool isClose = false;
   auto it = std::find_if(
     clients.begin(), clients.end(),
     [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
@@ -75,6 +74,7 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eve
     return;
   }
   if (it != clients.end()) {
+    bool isClose = false;
     if (eventFd == Utility::getInWriteFdFromClientFd(clientFd)) {
       LOG_DEBUG("Handling EPOLLOUT event for cgi,", eventFd, " to client fd:", clientFd);
       isClose = (*it)->handleEpollEvents(revents, clientFd, eventFd);
@@ -84,14 +84,14 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eve
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
       updateClientLastActivity(clientFd);
     }
+    modifyFdEvent(pollManager, *it, eventFd, clientFd);
     if (isClose == true) {
-      LOG_TRACE("Connection closed or error occured");
+      LOG_DEBUG("Closing client fd:", clientFd);
+      LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
       pollManager.removeFd(clientFd);
-      clientLastActivity.erase(clientFd);
-      clients.erase(it);
+      return;
     }
   }
-  modifyFdEvent(pollManager, *it, eventFd, clientFd);
 }
 
 void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> client, int eventFd,
@@ -104,23 +104,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
       client->getCgiState() == CgiState::IDLE) {
     LOG_INFO("EOF/Client closed writing end, CLOSING client fd:", clientFd);
     fd = eventFd;
+    LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
-    for (auto it = clientLastActivity.begin(); it != clientLastActivity.end();) {
-      if (it->first == clientFd) {
-        clientLastActivity.erase(it);
-        break;
-      } else {
-        it++;
-      }
-    }
-    for (auto it = clients.begin(); it != clients.end();) {
-      if ((*it)->getFd() == clientFd) {
-        clients.erase(it);
-        break;
-      } else {
-        it++;
-      }
-    }
     return;
   }
   //client reset to waiting for EPOLLIN / initial state
@@ -143,6 +128,14 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   if (eventFd == clientFd && client->getClientState() == ClientState::PROCESSING &&
       client->getCgiState() == CgiState::IDLE) {
     LOG_INFO("Client:", clientFd, "Processing state, ~EPOLLIN, EPOLLOUT");
+    newEvents &= ~EPOLLIN;
+    newEvents |= EPOLLOUT;
+    fd = eventFd;
+  }
+  //after sending response to client, waiting for eof on send
+  if (eventFd == clientFd && client->getClientState() == ClientState::PREPARING &&
+      client->getCgiState() == CgiState::IDLE) {
+    LOG_TRACE("Client:", clientFd, "Sending state, EPOLLOUT");
     newEvents &= ~EPOLLIN;
     newEvents |= EPOLLOUT;
     fd = eventFd;
@@ -174,15 +167,6 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
     newEvents &= ~EPOLLOUT;
     fd = eventFd;
   }
-  /* 
-  if (eventFd == clientFd && client->getClientState() == ClientState::DONE &&
-      client->getCgiState() ==
-        CgiState::WRITING) {  //Client events after cgi poll out for bin/get request
-    LOG_INFO("Client:", clientFd, "done state, ~EPOLLIN, ~EPOLLOUT for Cgi:",
-             Utility::getInWriteFdFromClientFd(clientFd), "writing state");
-    newEvents = 0;
-    fd = eventFd;
-  } */
 
   //Disabling epollin and epollout for client after client pollout for cgi request
   //Epollin from cgi stdout
@@ -193,6 +177,16 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
     newEvents = 0;
     fd = eventFd;
   }
+  //cgi error before fork
+  if (eventFd == clientFd && client->getClientState() == ClientState::READING &&
+      client->getCgiState() == CgiState::WRITING &&
+      Utility::getOutReadFdFromClientFd(clientFd) == -1) {
+    LOG_INFO("Client:", clientFd, "Reading state");
+    LOG_INFO("CGI writing state");
+    newEvents |= EPOLLOUT;
+    fd = eventFd;
+  }
+
   //CGI events after cgi epollin, waiting for cgi/reading eof
   if (eventFd == Utility::getOutReadFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::READING &&
@@ -211,6 +205,16 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
     newEvents |= EPOLLOUT;
     fd = Utility::getClientFdFromCgiParams(eventFd);
   }
+
+  if (eventFd == Utility::getOutReadFdFromClientFd(clientFd) &&
+      client->getClientState() == ClientState::PREPARING &&
+      client->getCgiState() == CgiState::DONE) {
+    LOG_INFO("Client:", clientFd, "Processing state , EPOLLOUT");
+    LOG_INFO("CGI:", eventFd, "done state");
+    newEvents |= EPOLLOUT;
+    fd = Utility::getClientFdFromCgiParams(eventFd);
+  }
+
   //Client events after cgi done state, waiitng for sending eof
   if (eventFd == clientFd && client->getClientState() == ClientState::SENDING &&
       client->getCgiState() == CgiState::DONE) {
@@ -220,34 +224,18 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
     newEvents |= EPOLLOUT;
     fd = eventFd;
   }
-  pollManager.modifyFd(fd, newEvents);
 
-  if (eventFd == clientFd && client->getCgiState() == CgiState::DONE) {
-    LOG_INFO("Client:", clientFd, "EOF Done state");
-    LOG_INFO("CGI:", Utility::getOutReadFdFromClientFd(clientFd), "done state");
-    newEvents = 0;
-    fd = eventFd;
-  }
+  pollManager.modifyFd(fd, newEvents);
 }
 
 void Server::checkIdleClients(PollManager& pollManager) {
   auto now = std::chrono::steady_clock::now();
-  for (auto it = clientLastActivity.begin(); it != clientLastActivity.end();) {
+  for (auto it = clientLastActivity.begin(); it != clientLastActivity.end(); it++) {
     if (now - it->second > idleTimeout) {
       LOG_DEBUG("Client fd:", it->first, "has been idle for", idleTimeout.count(), "seconds");
+      LOG_DEBUG("Removing client fd:", it->first, "from pollManager");
       pollManager.removeFd(it->first);
-      clientLastActivity.erase(it);
-      if (isClientFd(it->first)) {
-        auto clientIt = std::find_if(
-          clients.begin(), clients.end(),
-          [it](std::shared_ptr<Client>& client) { return client->getFd() == it->first; });
-        if (clientIt != clients.end()) {
-          clients.erase(clientIt);
-          break;
-        }
-      }
-    } else {
-      it++;
+      break;
     }
   }
 }
@@ -264,4 +252,22 @@ bool Server::isClientFd(int fd) const {
     }
   }
   return false;
+}
+
+void Server::removeClient(int clientFd) {
+  auto it = std::find_if(
+    clients.begin(), clients.end(),
+    [clientFd](std::shared_ptr<Client>& client) { return client->getFd() == clientFd; });
+  if (it != clients.end()) {
+    clients.erase(it);
+  }
+
+  for (auto it = clientLastActivity.begin(); it != clientLastActivity.end();) {
+    if (it->first == clientFd) {
+      clientLastActivity.erase(it);
+      break;
+    } else {
+      it++;
+    }
+  }
 }

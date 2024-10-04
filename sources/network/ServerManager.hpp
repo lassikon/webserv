@@ -42,7 +42,7 @@ class ServerManager {
   bool childTimeout(steady_time_point_t& start);
 
  private:
-  bool handlePollErrors(PollManager& pollManager, struct epoll_event& event);
+  void handlePollErrors(PollManager& pollManager, struct epoll_event& event);
   void handlePollInEvent(PollManager& pollManager, struct epoll_event& event);
   void handlePollOutEvent(PollManager& pollManager, struct epoll_event& event);
   void handleNoEvents(PollManager& pollManager);

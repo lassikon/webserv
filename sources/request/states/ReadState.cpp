@@ -1,4 +1,5 @@
 #include <Client.hpp>
+#include <NetworkException.hpp>
 #include <ReadState.hpp>
 
 void ReadState::execute(Client& client) {
@@ -7,19 +8,18 @@ void ReadState::execute(Client& client) {
   nbytes = read(client.getReadFd(), buffer.data(), buffer.size());
   client.setReadNBytes(nbytes + client.getReadNBytes());
   if (nbytes == -1) {
-    LOG_WARN("Failed to receive data from client fd:", client.getFd());
-    return;
+    throw httpInternal(client, "Failed to read from client fd:", client.getFd());
   }
   if (nbytes == 0) {  // EOF
-    handleIfEOF(client);
+    handleEOF(client);
     return;
   }
   handleReadBuf(client, buffer, nbytes);
   LOG_INFO("Receiving data from fd", client.getReadFd(), "at", client.getFd());
   LOG_INFO("Received", nbytes, "bytes from client fd", client.getFd());
   LOG_INFO("Data received:", buffer.data());
-  isCRLF(client);
-  handleIfCgiOutput(client);
+  ifCRLF(client);
+  ifCgiOutput(client);
 }
 
 void ReadState::handleReadBuf(Client& client, std::vector<char> buffer, ssize_t nbytes) {
@@ -41,7 +41,7 @@ void ReadState::handleReadBuf(Client& client, std::vector<char> buffer, ssize_t 
   }
 }
 
-void ReadState::isCRLF(Client& client) {
+void ReadState::ifCRLF(Client& client) {
   if (client.getParsingState() != ParsingState::IDLE) {
     return;
   }
@@ -57,7 +57,7 @@ void ReadState::isCRLF(Client& client) {
   }
 }
 
-void ReadState::handleIfCgiOutput(Client& client) {
+void ReadState::ifCgiOutput(Client& client) {
   if (client.getReadFd() != client.getFd()) {
     LOG_DEBUG("Client", client.getFd(), "is CGI output");
     client.resetRequest();
@@ -65,7 +65,7 @@ void ReadState::handleIfCgiOutput(Client& client) {
   }
 }
 
-void ReadState::handleIfEOF(Client& client) {
+void ReadState::handleEOF(Client& client) {
   if (client.getReadBuf() == nullptr) {
     LOG_DEBUG("Reading EOF from client fd:", client.getFd());
     client.setClientState(ClientState::CLOSE);

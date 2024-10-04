@@ -54,7 +54,7 @@ class Server {
   int getSocketFd(void) const { return socket.getFd(); }
 
   int getPort(void) const { return port; }
-
+  void removeClient(int clientFd);
   std::string getServerName(void) const { return serverName; }
 
   std::string getIpAddress(void) const { return ipAddress; }

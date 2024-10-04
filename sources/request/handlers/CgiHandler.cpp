@@ -1,8 +1,9 @@
 #include <CgiHandler.hpp>
 #include <Client.hpp>
+#include <NetworkException.hpp>
 
 CgiHandler::CgiHandler(void) {
-  LOG_TRACE(Utility::getConstructor(*this));
+  LOG_DEBUG(Utility::getConstructor(*this));
 }
 
 void CgiHandler::generateEnvpVector(Client& client) {
@@ -16,7 +17,7 @@ void CgiHandler::generateEnvpVector(Client& client) {
 }
 
 CgiHandler::~CgiHandler(void) {
-  LOG_TRACE(Utility::getDeconstructor(*this));
+  LOG_DEBUG(Utility::getDeconstructor(*this));
   //closePipeFds();
 }
 
@@ -24,15 +25,19 @@ void CgiHandler::closePipeFds(void) {
   LOG_TRACE("Closing file descriptors");
   if (inPipeFd[Fd::Read] != -1) {
     close(inPipeFd[Fd::Read]);
+    inPipeFd[Fd::Read] = -1;
   }
   if (inPipeFd[Fd::Write] != -1) {
     close(inPipeFd[Fd::Write]);
+    inPipeFd[Fd::Write] = -1;
   }
   if (outPipeFd[Fd::Read] != -1) {
     close(outPipeFd[Fd::Read]);
+    outPipeFd[Fd::Read] = -1;
   }
   if (outPipeFd[Fd::Write] != -1) {
     close(outPipeFd[Fd::Write]);
+    outPipeFd[Fd::Write] = -1;
   }
 }
 
@@ -51,20 +56,30 @@ std::vector<char*> CgiHandler::convertStringToChar(std::vector<std::string>& vec
   return vector;
 }
 
+void CgiHandler::exitError(int status, const std::string& message) {
+  LOG_ERROR("CgiHandler:", message);
+  std::exit(status);
+}
+
 void CgiHandler::executeCgiScript(void) {
   LOG_TRACE("Log entry from child process");
   std::vector<char*> argv = convertStringToChar(args);
   std::vector<char*> envp = convertStringToChar(envps);
-  if (dup2(outPipeFd[Fd::Write], STDOUT_FILENO) == -1) {
-    cgiError("Could not duplicate pipe fd");
+  if (outPipeFd[Fd::Write] != -1) {
+    if (dup2(outPipeFd[Fd::Write], STDOUT_FILENO) == -1) {
+      exitError(2, "Could not duplicate pipe fd1");
+    }
   }
-  if (dup2(inPipeFd[Fd::Read], STDIN_FILENO) == -1) {
-    cgiError("Could not duplicate pipe fd");
+  if (inPipeFd[Fd::Read] != -1) {
+    if (dup2(inPipeFd[Fd::Read], STDIN_FILENO) == -1) {
+      exitError(2, "Could not duplicate pipe fd2");
+    }
   }
   close(outPipeFd[Fd::Write]);
   close(inPipeFd[Fd::Read]);
+    exitError(2, "Could not duplicate pipe fd3");
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
-    cgiError("Failed to execute CGI script");
+    exitError(2, "Could not duplicate pipe fd3");
   }
 }
 
@@ -76,11 +91,11 @@ bool CgiHandler::isChildProcess(void) const {
   return this->pid == 0 ? true : false;
 }
 
-void CgiHandler::forkChildProcess(void) {
+void CgiHandler::forkChildProcess(Client& client) {
   LOG_TRACE("Forking new child process");
   this->pid = fork();
   if (this->pid == -1) {
-    cgiError("Could not create child process");
+    throw httpBadGateway(client, "Could not duplicate pipe fd");
   } else if (isChildProcess()) {
     LOG_DEBUG("Child pid:", getpid());
     close(outPipeFd[Fd::Read]);
@@ -103,49 +118,61 @@ void CgiHandler::setGlobal(void) {
   cgiParam.inWriteFd = inPipeFd[Fd::Write];
   cgiParam.clientFd = clientFd;
   cgiParam.isExited = false;
+  cgiParam.isTimeout = false;
+  cgiParam.isFailed = false;
   cgiParam.start = std::chrono::steady_clock::now();
+  cgiParam.childExitStatus = -1;
   g_CgiParams.push_back(cgiParam);
 }
 
-//edited
 bool CgiHandler::isValidScript(void) const {
   struct stat s;
-  if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), R_OK)) {
-    return true;
+  if (isBin) {
+    if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), X_OK)) {
+      return true;
+    }
+  } else {
+    if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), R_OK)) {
+      return true;
+    }
   }
   return false;
 }
 
-void CgiHandler::scriptLoader(void) {
+void CgiHandler::scriptLoader(Client& client) {
   if (!isValidScript()) {
-    cgiError("Could not open script");
-  } else if (pipe(inPipeFd) == -1) {
-    cgiError("Could not create pipe");
-  } else if (pipe(outPipeFd) == -1) {
-    cgiError("Could not create pipe");
-  } else {
-    forkChildProcess();
+    throw httpBadGateway(client, "Invalid CGI script");
   }
+  if (client.getReq().getMethod() == "POST") {
+    if (pipe(inPipeFd) == -1) {
+      throw httpBadGateway(client, "Invalid CGI script");
+    }
+  }
+  if (pipe(outPipeFd) == -1) {
+    throw httpBadGateway(client, "Invalid CGI script");
+  }
+  forkChildProcess(client);
 }
 
-void CgiHandler::runScript(void) {
+void CgiHandler::runScript(Client& client) {
   LOG_TRACE("Running new CGI instance");
-  RuntimeException::tryCatch(&CgiHandler::scriptLoader, this);
+  scriptLoader(client);
 }
 
 void CgiHandler::executeRequest(Client& client) {
   LOG_TRACE("CgiHandler: executingRequest");
   cgi = client.getRes().getReqURI();
-
   std::string ext = cgi.substr(cgi.find_last_of(".") + 1);
   if (ext == "py")
     args.push_back(client.getRes().getServerConfig().cgiInterpreters["py"]);
   else if (ext == "php")
     args.push_back(client.getRes().getServerConfig().cgiInterpreters["php"]);
-  else
+  else {
     LOG_TRACE("Using binary:", cgi);
+    isBin = true;
+  }
   clientFd = client.getFd();
   args.push_back(cgi);
   generateEnvpVector(client);
-  runScript();
+  runScript(client);
 }
