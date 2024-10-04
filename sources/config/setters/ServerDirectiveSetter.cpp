@@ -35,6 +35,7 @@ void ServerDirectiveSetter::setIP(ServerConfig& server, std::string& value, int&
 void ServerDirectiveSetter::setServerName(ServerConfig& server, std::string& value,
                                           int& lineNumber) {
   const std::regex serverNamePattern("^(\\w)[\\w-]{0,61}(\\w)(\\.[\\w-]{1,63})*$");
+  LOG_TRACE("Server name:", value);
   if (!std::regex_match(value, serverNamePattern)) {
     LOG_WARN("Parse: Invalid server name,", value, " at line ", lineNumber);
     return;

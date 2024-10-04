@@ -101,6 +101,7 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
     LOG_INFO("File opened successfully");
     file.write(data.data(), data.length());
     file.close();
+    upload = true;
   }
 }
 
@@ -128,14 +129,6 @@ void PostHandler::processMultipartFormData(Client& client) {
   // check for body existence
   const auto& body = client.getReq().getBody();
   LOG_DEBUG("Body size:", body.size());
-  // for (size_t i = 0; i < body.size(); ++i) {  // Log body bytes
-  //   LOG_DEBUG("Byte ", i, ": ", static_cast<int>(body[i]));
-  // }
-  std::string hexBody;
-  for (const auto& c : body) {  // Convert body to hex for logging
-    hexBody += std::to_string(c);
-  }
-  LOG_DEBUG("Body in hex:", hexBody);
   if (body.empty()) {
     throw clientError("Empty body");
   }
@@ -160,8 +153,18 @@ void PostHandler::setResponse(Client& client) {
   client.getRes().setResStatusCode(200);
   client.getRes().setResStatusMessage("OK");
   client.getRes().addHeader("Content-Type", "text/html");
-
-  std::string htmlResponse = "<html><body><h1>POST request processed</h1><ul>";
+  std::string htmlResponse;
+  if (upload) {
+    // Set HTTP 303 status for redirection after a POST request
+    client.getRes().setResStatusCode(303);
+    client.getRes().setResStatusMessage("See Other");
+    htmlResponse = "<html><body><h1>File uploaded. Redirecting...</h1></body></html>";
+    client.getRes().addHeader("Location", "/upload/");
+  }
+  else {
+    htmlResponse = "<html><body><h1>POST request processed</h1><ul>";
+  }
+  client.getRes().addHeader("Content-Length", std::to_string(htmlResponse.size()));
   std::vector<char> responseBody(htmlResponse.begin(), htmlResponse.end());
   client.getRes().setResBody(responseBody);
 }
@@ -170,6 +173,7 @@ void PostHandler::executeRequest(Client& client) {
   LOG_INFO("Processing POST request for path:", client.getReq().getReqURI());
   client.setClientState(ClientState::PROCESSING);
   client.setParsingState(ParsingState::BODY);
+  upload = false;
 
   getContentType(client);
   if (contentType == "application/x-www-form-urlencoded") {

@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     return (int)RuntimeError::Config;
   }
 
-  // config.printServerConfig();
+  config.printServerConfig();
   try {
   ServerManager serverManager;
   serverManager.configServers(config);
