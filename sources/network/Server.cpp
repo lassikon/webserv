@@ -1,12 +1,13 @@
 #include <Server.hpp>
 
-Server::Server(ServerConfig& serverConfig) {
+Server::Server(ServerConfig& serverConfig) : session(*this) {
   LOG_TRACE(Utility::getConstructor(*this));
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
   port = serverConfig.port;
   ipAddress = serverConfig.ipAddress;
-  socket = Socket();
+  // socket = Socket();
   socket.setupSocket(serverConfig);
+  // session = SessionManager(*this);
 }
 
 Server::~Server(void) {

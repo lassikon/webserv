@@ -182,8 +182,14 @@ bool ProcessTreeBuilder::isMethodAllowed(std::string& path) {
 bool ProcessTreeBuilder::isClientBodySizeAllowed(std::string& path) {
   LOG_TRACE("Checking client body size limit");
   (void)path;
-  if (client.getReq().getBodySize() >
-      Utility::convertSizetoBytes(client.getRes().getServerConfig().clientBodySizeLimit)) {
+  std::string clientBodySizeLimit = client.getRes().getServerConfig().clientBodySizeLimit;
+  size_t limit;
+  if (clientBodySizeLimit.empty()) {
+    limit = SIZE_MAX;
+  } else {
+    limit = Utility::convertSizetoBytes(clientBodySizeLimit);
+  }
+  if (client.getReq().getBodySize() > limit) {
     return false;
   }
   return true;

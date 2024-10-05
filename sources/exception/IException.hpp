@@ -29,6 +29,7 @@ enum class RuntimeError {
 };
 
 enum class NetworkError {
+  NoError = 0,
   BadRequest = 400,
   Forbidden = 403,
   Notfound = 404,
@@ -66,7 +67,9 @@ class IException : public std::exception, public Logger {
   IException(RuntimeError err, const char* file, const char* func, int line, Args&&... args)
       : file(file), func(func), line(line) {
     logEntry = createLogEntry(logLevel::Fatal, "FATAL", "Runtime", std::forward<Args>(args)...);
-    g_ExitStatus = (int)err;
+    // g_ExitStatus = (int)err;
+    (void)err;
+    g_ExitStatus = 0;
   };
 
  private:

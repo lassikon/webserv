@@ -63,7 +63,7 @@ class Client {
   int readFd;
   std::shared_ptr<std::vector<char>> readBuf = nullptr;
   ssize_t readNBytes = 0;
-  size_t readCurr  = 0;
+  size_t readCurr = 0;
   size_t readEnd = 0;
 
  public:  //read

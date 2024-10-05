@@ -10,8 +10,8 @@ echo "  const float example = 42;" >> $1.hpp
 echo >> $1.hpp
 echo "public:" >> $1.hpp
 echo "  $1(void);" >> $1.hpp
-echo "  $1(const $1 &other);" >> $1.hpp
-echo "  $1 &operator=(const $1 &other);" >> $1.hpp
+echo "  $1(const $1 &other) = delete;" >> $1.hpp
+echo "  $1 &operator=(const $1 &other) = delete;" >> $1.hpp
 echo "  ~$1(void);" >> $1.hpp
 echo "};" >> $1.hpp
 echo >> $1.hpp
@@ -20,7 +20,5 @@ echo "#include <$1.hpp>" > $1.cpp
 echo >> $1.cpp
 
 echo "$1::$1(void) {}" >> $1.cpp
-echo "$1::$1(const $1 &other) { (void)other; }" >> $1.cpp
-echo "$1 &$1::operator=(const $1 &other) { (void)other; return *this; }" >> $1.cpp
 echo "$1::~$1(void) {}" >> $1.cpp
 echo >> $1.cpp

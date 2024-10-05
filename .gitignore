@@ -1,14 +1,10 @@
 webserv
-**/*build
-**/*.deps
+sessions
 **/*.vscode
-**/dump*
+**/*.deps
+**/*build
 **/*.log
 **/*.txt
 **/*.pdf
 **/*.sh
-<<<<<<< HEAD
 .clang-format
-.vscode/
-=======
->>>>>>> 3ac5ed69ae609aab250de4b1d6b238d2a02d9afd

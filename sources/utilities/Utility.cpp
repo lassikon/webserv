@@ -1,5 +1,6 @@
-#include <Logger.hpp>
 #include <Utility.hpp>
+
+#include <NetworkException.hpp>
 
 static std::map<std::string, std::string> mimeTypes = {
   {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
@@ -174,6 +175,7 @@ size_t Utility::convertSizetoBytes(std::string& size) {
     // Handle out of range
     bytes = SIZE_MAX;
   }
+  bytes = std::stoull(size) * multiplier;
   return bytes;
 }
 

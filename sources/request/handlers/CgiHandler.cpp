@@ -80,7 +80,6 @@ void CgiHandler::executeCgiScript(Client& client) {
   std::filesystem::path path(client.getRes().getReqURI());
   LOG_TRACE("Changing execution directory to:", path.parent_path().c_str());
   chdir(path.parent_path().c_str());
-    exitError(2, "Could not duplicate pipe fd3");
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
     exitError(2, "Could not duplicate pipe fd3");
   }

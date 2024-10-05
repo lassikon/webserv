@@ -12,7 +12,7 @@ class PollManager {
 
 #define MAX_CLIENTS 1000
 #define MAX_EVENTS 64
-#define TIMEOUT 20000
+#define TIMEOUT 10000
 
  private:
   int epollFd;

@@ -205,7 +205,8 @@ bool ParseState::substrKeyAndValue(std::string header, std::string& key, std::st
 }
 
 bool ParseState::isHeaderEnd(std::string header) {
-  return header.find("\r\n\r") != std::string::npos || header.empty() || header == "\r";
+  // return header.find("\r\n\r") != std::string::npos || header.empty() || header == "\r";
+  return header.empty() || header == "\r";
 }
 
 bool ParseState::isWithBody(Client& client) {

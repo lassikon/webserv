@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <CgiHandler.hpp>
 #include <Global.hpp>
+#include <Logger.hpp>
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -10,6 +12,11 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+
+#include <fcntl.h>
+#include <sys/types.h>
+
+class Client;
 
 class Utility {
  public:
@@ -30,7 +37,9 @@ class Utility {
   static bool isInWriteFd(int fd);
   static bool getIsTimeout(int fd);
   static bool getIsFailed(int fd);
-  static bool getLineVectoStr(std::vector<char>& buffer ,std::string& line, size_t& curr, size_t& end);
+  static bool getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr,
+                              size_t& end);
+  void isValidFile(mode_t mode, int permission, const std::string& file, Client& client) const;
 
   template <class T> static std::string getConstructor(const T& object) {
     return getClassName(object) + " constructor called";

@@ -1,13 +1,22 @@
 #pragma once
 
 #include <IRequestHandler.hpp>
+#include <Logger.hpp>
+#include <UrlEncoder.hpp>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 class Client;
 
 class PostHandler : public IRequestHandler {
  private:
   std::string contentType;
+  std::string boundary;
   std::unordered_map<std::string, std::string> formData;
+  bool upload;
 
  public:
   PostHandler() = default;
