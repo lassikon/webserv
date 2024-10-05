@@ -1,14 +1,11 @@
 #include <SessionManager.hpp>
 #include <Server.hpp>
-
-// SessionManager::SessionManager(void) {
-//   LOG_TRACE(Utility::getConstructor(*this));
-//   generateOutfile(sessionsFile, fileName);
-// }
+#include <Client.hpp>
 
 SessionManager::SessionManager(Server &server) : server(server) {
   LOG_TRACE(Utility::getConstructor(*this));
   generateOutfile(sessionsFile, fileName);
+  clients = server.getClients();
 }
 
 SessionManager::~SessionManager(void) {
@@ -20,8 +17,9 @@ SessionManager::~SessionManager(void) {
 
 void SessionManager::generateOutfile(std::fstream& fs, const char* file) {
   fs.open(file, std::ios::in | std::ios::out | std::ios_base::app);
-  if (fs.fail()) {
+  if (fs.fail() && !errorLogged) {
     LOG_WARN("Could not open file:", file, strerror(errno));
+    errorLogged = true;
   }
 }
 

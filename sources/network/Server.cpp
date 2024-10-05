@@ -5,9 +5,7 @@ Server::Server(ServerConfig& serverConfig) : session(*this) {
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
   port = serverConfig.port;
   ipAddress = serverConfig.ipAddress;
-  // socket = Socket();
   socket.setupSocket(serverConfig);
-  // session = SessionManager(*this);
 }
 
 Server::~Server(void) {

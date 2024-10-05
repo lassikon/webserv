@@ -2,7 +2,6 @@
 
 #include <Logger.hpp>
 #include <Response.hpp>
-
 #include <Utility.hpp>
 
 #include <cstdlib>
@@ -22,11 +21,13 @@ class SessionManager {
 
   const char* fileName = "sessions";
   const int tokenLength = 20;
+  bool errorLogged = false;
 
   std::fstream sessionsFile;
   std::unordered_map<std::string, std::string> sessionIds{};
 
   Server &server;
+  std::vector<std::shared_ptr<Client>> clients;
 
  public:
   SessionManager(void) = delete;
