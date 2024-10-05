@@ -111,6 +111,14 @@ void Config::addServerToMap(ServerConfig& serverConfig) {
     LOG_WARN("Parse: Missing port in server block at line ", _lineNumber);
     return;
   }
+  for (auto& server : _servers) {
+    if (server.second.port == serverConfig.port &&
+        server.second.serverName == serverConfig.serverName) {
+      LOG_WARN("Parse: Server with port  ", serverConfig.port, " and servername",
+               serverConfig.serverName, " already exists");
+      return;
+    }
+  }
   std::string hostName;
   hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port) + " " +
              serverConfig.serverName;

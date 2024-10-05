@@ -48,13 +48,20 @@ void RouteDirectiveSetter::setMethods(RouteConfig& route, std::string& value, in
 }
 // must be an absolute path
 void RouteDirectiveSetter::setRoot(RouteConfig& route, std::string& value, int& lineNumber) {
+  std::filesystem::path exePath;
+  exePath = Utility::getExePath(exePath);
   if (!std::filesystem::exists(value)) {
     LOG_WARN("Parse: Root path not found,", value, " at line", lineNumber);
     return;
   }
-  if (!route.root.empty())
-    LOG_WARN("Parse: Root already set, updating with line", lineNumber);
-  route.root = value;
+
+  if (value.compare(0, exePath.string().size(), exePath.string()) == 0) {
+    if (!route.root.empty())
+      LOG_WARN("Parse: Root already set, updating with line", lineNumber);
+    route.root = value;
+  } else {
+    LOG_WARN("Parse: Root path is not allowed,", value, " at line", lineNumber);
+  }
 }
 
 void RouteDirectiveSetter::setDirectoryListing(RouteConfig& route, std::string& value,

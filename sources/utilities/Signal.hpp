@@ -15,6 +15,8 @@ class Signal {
  private:
   static void signalHandler(int sigNum) noexcept;
   static inline void createSigMap(void) noexcept;
+  static void sigPipeHandler(int sigNum) noexcept;
+  static void sigChildHandler(int sigNum) noexcept;
 
  public:
   static void trackSignals(void) noexcept;

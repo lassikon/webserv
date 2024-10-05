@@ -93,7 +93,8 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
         if (Utility::isOutReadFd(fd)) {
           server->handleClientIn(pollManager, EPOLLIN, fd, clientFd);
         } else {
-          server->handleClientOut(pollManager, EPOLLOUT, fd, clientFd);
+          server->handleClientIn(pollManager, EPOLLIN, Utility::getOutReadFdFromClientFd(clientFd),
+                                 clientFd);
         }
         break;
       }
@@ -123,6 +124,7 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
     } */
   } else {
     LOG_WARN("EPoll on fd:", fd);
+    LOG_WARN("errno:", IException::expandErrno());
     pollManager.removeFd(fd);
   }
 }
@@ -202,8 +204,8 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
         // throw exception?
       } else if (result > 0) {  // Child process has exited
         LOG_INFO("Child process", it->pid, "exited with status:", it->childExitStatus);
-        close(it->outWriteFd);
-        close(it->inReadFd);
+        //close(it->outWriteFd);
+        //close(it->inReadFd);
         it->isExited = true;
         if (it->childExitStatus != 0) {
           LOG_ERROR("Child process exited with status:", it->childExitStatus);

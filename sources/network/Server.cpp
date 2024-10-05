@@ -187,7 +187,7 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
     fd = eventFd;
   }
 
-  //CGI events after cgi epollin, waiting for cgi/reading eof
+  //CGI events after cgi epollin, waiting for cgi/ client reading eof
   if (eventFd == Utility::getOutReadFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::WRITING) {
@@ -196,7 +196,7 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
     newEvents = EPOLLIN;
     fd = eventFd;
   }
-  //enabling client epollout to send cgi output to client
+  //enabling client epollout to send cgi output to client browser
   if (eventFd == Utility::getOutReadFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::PROCESSING &&
       client->getCgiState() == CgiState::DONE) {

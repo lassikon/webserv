@@ -61,7 +61,7 @@ void CgiHandler::exitError(int status, const std::string& message) {
   std::exit(status);
 }
 
-void CgiHandler::executeCgiScript(void) {
+void CgiHandler::executeCgiScript(Client& client) {
   LOG_TRACE("Log entry from child process");
   std::vector<char*> argv = convertStringToChar(args);
   std::vector<char*> envp = convertStringToChar(envps);
@@ -77,6 +77,9 @@ void CgiHandler::executeCgiScript(void) {
   }
   close(outPipeFd[Fd::Write]);
   close(inPipeFd[Fd::Read]);
+  std::filesystem::path path(client.getRes().getReqURI());
+  LOG_TRACE("Changing execution directory to:", path.parent_path().c_str());
+  chdir(path.parent_path().c_str());
     exitError(2, "Could not duplicate pipe fd3");
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
     exitError(2, "Could not duplicate pipe fd3");
@@ -100,7 +103,7 @@ void CgiHandler::forkChildProcess(Client& client) {
     LOG_DEBUG("Child pid:", getpid());
     close(outPipeFd[Fd::Read]);
     close(inPipeFd[Fd::Write]);
-    executeCgiScript();
+    executeCgiScript(client);
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
     close(outPipeFd[Fd::Write]);

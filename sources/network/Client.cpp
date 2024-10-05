@@ -52,10 +52,8 @@ void Client::handlePollOutEvent(int writeFd) {
   }
   if (clientState == ClientState::PREPARING) {
     LOG_DEBUG("Preparing response");
-    if (writeNBytes == 0) {
-      res.makeResponse();
-    }
-    clientState = ClientState::SENDING;
+    res.makeResponse();
+    clientState = ClientState::SENDING; 
   }
   if (clientState == ClientState::SENDING) {
     sendState.execute(*this);
@@ -128,7 +126,10 @@ bool Client::shouldCloseConnection(void) {
       req.getHeaders()["Connection"] == "close") {
     return true;
   }
-  if (writeNBytes == -1 || res.getResStatusCode() == 500) {
+  if (writeNBytes == -1 && (cgiState == CgiState::IDLE || cgiState == CgiState::DONE)) {
+    return true;
+  }
+  if (res.getResStatusCode() == 500) {
     return true;
   }
   return false;

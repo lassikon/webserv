@@ -47,7 +47,8 @@ void PollManager::addFd(int fd, uint32_t events, std::function<void(int)> cleanU
 void PollManager::removeFd(int fd) {
 
   auto it = interestFdsList.find(fd);
-  if (it != interestFdsList.end()) {
+  if (it != interestFdsList.end() && (fcntl(fd, F_GETFD) != -1)) {
+
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
       throw serverError("Failed to remove fd from epollFd");
     }

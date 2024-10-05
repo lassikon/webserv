@@ -23,6 +23,7 @@ class NetworkException : public IException {
   NetworkException(Client& client, NetworkError errCode, const char* fileName, const char* funcName,
                    const size_t line, Args&&... args)
       : IException(errCode, fileName, funcName, line, std::forward<Args>(args)...) {
+    client.resetResponse();
     setResponseAttributes(client, (int)errCode, getErrorMessage(errCode));
     client.setClientState(ClientState::PREPARING);
     client.setParsingState(ParsingState::DONE);
@@ -90,7 +91,7 @@ class NetworkException : public IException {
     client.getRes().setResBody(ibody);
     std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
     std::string mimeType = Utility::getMimeType(ext);
-    client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
+   // client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
     client.getRes().addHeader("Content-Type", mimeType);
     client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
     client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);

@@ -14,7 +14,6 @@ void SendState::execute(Client& client) {
     write(client.getWriteFd(), client.getRes().getResContent().data() + client.getWriteNBytes(),
           client.getRes().getResContent().size() - client.getWriteNBytes());
   client.setWriteNBytes(client.getWriteNBytes() + nbytes);
-  LOG_DEBUG("HERERERER");
   if (nbytes == -1) {
     //throw httpInternal(client, "Failed to write to client fd:", client.getFd());
     LOG_ERROR("Failed to write to client fd:", client.getFd());

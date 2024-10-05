@@ -69,7 +69,7 @@ class CgiHandler : public IRequestHandler {
   void setGlobal(void); 
   void generateEnvpVector(Client& client);
   void forkChildProcess(Client& client);
-  void executeCgiScript(void);
+  void executeCgiScript(Client& client);
   void exitError(int status, const std::string& message);
 
  private:

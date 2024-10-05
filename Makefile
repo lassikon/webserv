@@ -23,7 +23,7 @@ CC          := c++
 CFLAGS      := -g -Wall -Werror -Wextra
 CPPFLAGS    := -c -MMD -MP
 DEBUGFLAGS  := -fsanitize=address
-MAKEFLAGS   += --no-print-directory
+MAKEFLAGS   += -j8 --no-print-directory
 
 # **************************************************************************** #
 #    VALGRIND

@@ -10,7 +10,7 @@ void ServeFileAction::execute(Client& client) {
   client.getRes().setResBody(ibody);
   std::string ext = path.substr(path.find_last_of(".") + 1);
   std::string mimeType = Utility::getMimeType(ext);
-  client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
+  //client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
   client.getRes().addHeader("Content-Type", mimeType);
   client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
   client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);

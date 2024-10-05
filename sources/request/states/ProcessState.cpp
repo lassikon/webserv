@@ -8,14 +8,15 @@ void ProcessState::execute(Client& client) {
     client.setClientState(ClientState::DONE);
     return;
   }
-  if (client.getFd() != client.getReadFd()) {
-    LOG_TRACE("Processing CGI output for client fd:", client.getFd());
-    processCgiOutput(client);
-  } else if (client.getFd() != client.getWriteFd()) {
+
+  if (client.getFd() != client.getWriteFd()) {
     LOG_TRACE("Processing cgi body for client fd:", client.getFd());
     client.getRes().setResBody(client.getReq().getBody());
     client.getRes().makeBodytoCgi();
     client.setClientState(ClientState::SENDING);
+  } else if (client.getFd() != client.getReadFd()) {
+    LOG_TRACE("Processing CGI output for client fd:", client.getFd());
+    processCgiOutput(client);
   } else {
     LOG_TRACE("Processing request for client fd:", client.getFd());
     processRequest(client);
@@ -64,7 +65,6 @@ void ProcessState::processCgiOutput(Client& client) {
   client.setCgiState(CgiState::DONE);
   client.setClientState(ClientState::PREPARING);
 }
-
 
 /* ServerConfig ProcessState::chooseServerConfig(Client& client) {
   LOG_TRACE("Choosing server config for client fd:", client.getFd());
