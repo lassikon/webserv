@@ -31,6 +31,7 @@ class Request {
   std::string getReqURI(void) const { return reqURI; }
   std::string getVersion(void) const { return reqVersion; }
   std::string getQuery(void) const { return reqQuery; }
+  std::string getCookie(void) const { return reqCookie; }
   size_t getBodySize(void) const { return reqBodySize; }
   std::map<std::string, std::string> getHeaders(void) const { return reqHeaders; }
   std::vector<char> getBody(void) const { return reqBody; }
@@ -42,4 +43,5 @@ class Request {
   void setBody(std::vector<char> body) { reqBody = std::move(body); }
   void setBodySize(size_t size) { reqBodySize = size; }
   void setQuery(std::string query) { reqQuery = query; }
+  void setCookie(std::string cookie) { reqCookie = cookie; }
 };

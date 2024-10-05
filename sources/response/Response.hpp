@@ -29,12 +29,13 @@ class Response {
   ~Response();
 
   void makeResponse(void);
+  void makeBodytoCgi(void);
 
  public:  // getters
-  void makeBodytoCgi(void);
   std::vector<char>& getResContent(void) { return resContent; }
   std::vector<char>& getResBody(void) { return resBody; }
   std::string& getReqURI(void) { return reqURI; }
+  std::string& getCookie(void) { return resCookie; }
   RouteConfig& getRouteConfig(void) { return routeConfig; }
   ServerConfig& getServerConfig(void) { return serverConfig; }
   int getResStatusCode(void) { return resStatusCode; }
@@ -45,6 +46,7 @@ class Response {
   void setResStatusMessage(std::string message) { resStatusMessage = message; }
   void addHeader(std::string key, std::string value) { resHeaders[key] = value; }
   void setReqURI(std::string uri) { reqURI = uri; }
+  void setCookie(std::string cookie) { resCookie = cookie; }
   void setResBody(std::vector<char> body) { resBody = std::move(body); }
   void setRouteConfig(RouteConfig& route) { routeConfig = route; }
   void setServerConfig(ServerConfig server) { serverConfig = server; }

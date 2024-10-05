@@ -5,7 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
-RUNCONFIG   := confDefault/easy.conf
+RUNCONFIG   := confDefault/jankku.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 
