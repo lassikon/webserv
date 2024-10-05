@@ -17,6 +17,7 @@
 #include <Utility.hpp>
 
 #include <RuntimeException.hpp>
+#include <SessionManager.hpp>
 
 #include <netdb.h>
 #include <sys/epoll.h>
@@ -39,10 +40,12 @@ class Client {
  private:
   Request req;
   Response res;
+  std::string cookie;
   int fd;
 
  private:
   std::vector<std::shared_ptr<ServerConfig>>& serverConfigs;
+  SessionManager &session;
 
  private:  // handlers
   PostHandler postHandler;
@@ -92,7 +95,7 @@ class Client {
   void setWriteNBytes(ssize_t nBytes) { writeNBytes = nBytes; }
 
  public:
-  Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs);
+  Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs, SessionManager &session);
   ~Client(void);
  public:
   void resetRequest(void);
@@ -107,11 +110,11 @@ class Client {
   void cleanupClient(void);
   void ifGatewayError(void);
 
-
  public:  // getters
   int getFd(void) const { return fd; }
   Request& getReq(void) { return req; }
   Response& getRes(void) { return res; }
+  std::string& getCookie(void) { return cookie; }
   PostHandler& getPostHandler(void) { return postHandler; }
   DeleteHandler& getDeleteHandler(void) { return deleteHandler; }
   CgiHandler& getCgiHandler(void) { return cgiHandler; }
@@ -120,9 +123,11 @@ class Client {
   ClientState getClientState(void) const { return clientState; }
   ParsingState getParsingState(void) const { return parsingState; }
   CgiState getCgiState(void) const { return cgiState; }
+  SessionManager& getClientSession(void) { return session; }
 
  public:  //  setters
   void setFd(int fd);
+  void setCookie(std::string cookie) { this->cookie = cookie; }
   void setClientState(ClientState state) { clientState = state; }
   void setParsingState(ParsingState state) { parsingState = state; }
   void setCgiState(CgiState state) { cgiState = state; }

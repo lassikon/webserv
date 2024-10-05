@@ -25,7 +25,7 @@ class SessionManager {
 
   std::fstream sessionsFile;
   std::unordered_map<std::string, std::string> sessionIds{};
-
+  
   Server &server;
   std::vector<std::shared_ptr<Client>> clients;
 
