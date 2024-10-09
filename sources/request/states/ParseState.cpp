@@ -49,7 +49,6 @@ void ParseState::parseRequestLine(Client& client) {
   iss >> reqMethod >> reqURI >> reqVersion;
   LOG_DEBUG("reqMethod:", reqMethod, "URI:", reqURI, "reqVersion:", reqVersion);
   if (reqMethod.empty() || reqURI.empty() || reqVersion.empty()) {
-    return;
     throw httpBadRequest(client, "Invalid request line for client fd:", client.getFd());
   }
   client.getReq().setMethod(reqMethod);
