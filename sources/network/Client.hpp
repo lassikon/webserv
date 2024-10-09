@@ -40,7 +40,7 @@ class Client {
  private:
   Request req;
   Response res;
-  std::string cookie{};
+  //std::string cookie{}; delete this
   int fd;
 
  private:
@@ -116,7 +116,7 @@ class Client {
   int getFd(void) const { return fd; }
   Request& getReq(void) { return req; }
   Response& getRes(void) { return res; }
-  std::string& getCookie(void) { return cookie; }
+  // std::string& getCookie(void) { return cookie; } delete this
   PostHandler& getPostHandler(void) { return postHandler; }
   DeleteHandler& getDeleteHandler(void) { return deleteHandler; }
   CgiHandler& getCgiHandler(void) { return cgiHandler; }
@@ -129,7 +129,7 @@ class Client {
 
  public:  //  setters
   void setFd(int fd);
-  void setCookie(std::string cookie) { this->cookie = cookie; }
+  // void setCookie(std::string cookie) { this->cookie = cookie; } delete this
   void setClientState(ClientState state) { clientState = state; }
   void setParsingState(ParsingState state) { parsingState = state; }
   void setCgiState(CgiState state) { cgiState = state; }

@@ -88,6 +88,7 @@ bool ProcessTreeBuilder::isIndexExist(std::string& path) {
   if (std::filesystem ::exists(path + "index.html") ||
       std::filesystem::exists(path + "index.htm")) {
     path = path + "index.html";
+    LOG_DEBUG("Index file exist at path:", path);
     return true;
   }
   return false;
@@ -97,9 +98,9 @@ bool ProcessTreeBuilder::isDefaultFileExist(std::string& path) {
   LOG_TRACE("Checking default file exist");
   for (auto& defFile : client.getRes().getRouteConfig().defaultFile) {
     LOG_DEBUG("Checking default file:", defFile);
-    LOG_DEBUG("Checking default file path:", path + "/" + defFile);
-    if (std::filesystem ::exists(path + "/" + defFile)) {
-      path = path + "/" + defFile;
+    LOG_DEBUG("Checking default file path:", path  + defFile);
+    if (std::filesystem ::exists(path + defFile)) {
+      path = path + defFile;
       return true;
     }
   }

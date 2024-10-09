@@ -5,6 +5,9 @@
 
 class Client;
 class ServeFileAction : public IServeAction {
+ private:
+  bool isIndexOrDefaultFile(Client& client);
+
  public:
   ServeFileAction() = default;
   virtual ~ServeFileAction() = default;

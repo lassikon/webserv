@@ -77,3 +77,15 @@ std::string SessionManager::getSessionCookie(std::string sessionToken) {
   }
   return {};
 }
+
+bool SessionManager::isSessionCookie(std::string sessionToken) {
+  std::string cookie;
+  sessionToken = sessionToken.substr(10, 10 + tokenLength);
+  auto it = sessionIds.find(sessionToken);
+  if (it != sessionIds.end()) {
+    cookie = it->second;
+    LOG_DEBUG("Session cookie found:", cookie);
+    return true;
+  }
+  return false;
+}

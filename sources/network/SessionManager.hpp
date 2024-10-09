@@ -24,6 +24,10 @@ class SessionManager {
   bool errorLogged = false;
 
   std::fstream sessionsFile;
+  // the key should be the token and value would be like an object or struct
+  // this struct would have data which is client info or preferences like cookie details us just name and cookie for post request
+  // for simple get request the value would be some default
+  //but in a real thing it would be a database with user preferences
   std::unordered_map<std::string, std::string> sessionIds{};
 
   Server& server;
@@ -48,4 +52,7 @@ class SessionManager {
  public:  // getters
   std::string getSessionCookie(std::string);
   std::string getSessionQuery(std::string);
+
+ public:
+  bool isSessionCookie(std::string sessionToken);
 };
