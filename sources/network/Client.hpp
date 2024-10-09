@@ -40,12 +40,12 @@ class Client {
  private:
   Request req;
   Response res;
-  std::string cookie;
+  std::string cookie{};
   int fd;
 
  private:
   std::vector<std::shared_ptr<ServerConfig>>& serverConfigs;
-  SessionManager &session;
+  SessionManager& session;
 
  private:  // handlers
   PostHandler postHandler;
@@ -95,8 +95,10 @@ class Client {
   void setWriteNBytes(ssize_t nBytes) { writeNBytes = nBytes; }
 
  public:
-  Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs, SessionManager &session);
+  Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs,
+         SessionManager& session);
   ~Client(void);
+
  public:
   void resetRequest(void);
   void resetResponse(void);
