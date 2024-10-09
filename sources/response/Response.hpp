@@ -18,7 +18,6 @@ class Response {
 
  private:  // for response
   int resStatusCode = 0;
-  std::string resCookie;
   std::string resStatusMessage;
   std::vector<char> resBody = {};
   std::map<std::string, std::string> resHeaders = {};
@@ -29,9 +28,9 @@ class Response {
   ~Response();
 
   void makeResponse(void);
+  void makeBodytoCgi(void);
 
  public:  // getters
-  void makeBodytoCgi(void);
   std::vector<char>& getResContent(void) { return resContent; }
   std::vector<char>& getResBody(void) { return resBody; }
   std::string& getReqURI(void) { return reqURI; }
@@ -39,6 +38,7 @@ class Response {
   ServerConfig& getServerConfig(void) { return serverConfig; }
   int getResStatusCode(void) { return resStatusCode; }
   std::map<std::string, std::string>& getResHeaders(void) { return resHeaders; }
+  std::string& getResHeader(std::string key) { return resHeaders.at(key); }
 
  public:  // setters
   void setResStatusCode(int code) { resStatusCode = code; }

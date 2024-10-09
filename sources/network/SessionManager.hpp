@@ -2,7 +2,6 @@
 
 #include <Logger.hpp>
 #include <Response.hpp>
-
 #include <Utility.hpp>
 
 #include <cstdlib>
@@ -22,30 +21,31 @@ class SessionManager {
 
   const char* fileName = "sessions";
   const int tokenLength = 20;
+  bool errorLogged = false;
 
   std::fstream sessionsFile;
   std::unordered_map<std::string, std::string> sessionIds{};
 
-  Server &server;
+  Server& server;
+  std::vector<std::shared_ptr<Client>> clients;
+
+ private:
+  void generateOutfile(std::fstream& fs, const char* file);
+  void readSessionsFromFile(void);
+  std::string setExpireTime(void);
 
  public:
   SessionManager(void) = delete;
-  SessionManager(Server &server);
+  SessionManager(Server& server);
   ~SessionManager(void);
 
  public:
-  void generateOutfile(std::fstream& fs, const char* file);
-  void readSessionsFromFile(void);
-
- public:
-  void debugFillSessionsFile();
   void debugPrintSessionsMap();
 
  public:  // setters
-  std::string setSessionCookie(Response& response);
+  std::string setSessionCookie(void);
 
  public:  // getters
-  SessionManager& getSessionManager(void) { return *this; }
   std::string getSessionCookie(std::string);
   std::string getSessionQuery(std::string);
 };

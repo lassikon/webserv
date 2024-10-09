@@ -36,10 +36,7 @@ void ParseState::execute(Client& client) {
 
 void ParseState::parseRequestLine(Client& client) {
   LOG_TRACE("Parsing request line");
-  std::string requestLine;
-  std::string reqMethod;
-  std::string reqURI;
-  std::string reqVersion;
+  std::string requestLine, reqMethod, reqURI, reqCookie, reqVersion;
   std::vector<char>& buffer = *client.getReadBuf();
   size_t& curr = client.getReadCurr();
   size_t& end = client.getReadEnd();
@@ -50,6 +47,13 @@ void ParseState::parseRequestLine(Client& client) {
   LOG_DEBUG("reqMethod:", reqMethod, "URI:", reqURI, "reqVersion:", reqVersion);
   if (reqMethod.empty() || reqURI.empty() || reqVersion.empty()) {
     throw httpBadRequest(client, "Invalid request line for client fd:", client.getFd());
+  }
+  if (client.getCookie().empty()) {
+    reqCookie = client.getClientSession().setSessionCookie();
+    client.setCookie(reqCookie);
+    LOG_DEBUG("Generated new cookie token");
+  } else {
+    LOG_DEBUG("We should utilize existing cookie");
   }
   client.getReq().setMethod(reqMethod);
   client.getReq().setReqURI(reqURI);

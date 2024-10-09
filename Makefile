@@ -5,7 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
-RUNCONFIG   := confDefault/easy.conf
+RUNCONFIG   := confDefault/jankku.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 
@@ -24,7 +24,7 @@ CC          := c++
 CFLAGS      := -g -Wall -Werror -Wextra -std=c++17
 CPPFLAGS    := -c -MMD -MP
 DEBUGFLAGS  := -fsanitize=address
-MAKEFLAGS   += --no-print-directory -j1
+MAKEFLAGS   += --no-print-directory -j4
 
 # **************************************************************************** #
 #    VALGRIND

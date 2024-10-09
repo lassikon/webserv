@@ -16,7 +16,6 @@ class Request {
   std::string reqURI;
   std::string reqVersion;
   std::string reqQuery;
-  std::string reqCookie;
   std::map<std::string, std::string> reqHeaders;
   std::vector<char> reqBody;
   size_t reqBodySize = 0;
