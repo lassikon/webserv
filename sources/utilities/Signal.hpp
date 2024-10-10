@@ -1,16 +1,16 @@
 #pragma once
 
 #include <CgiHandler.hpp>
-#include <RuntimeException.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
+#include <RuntimeException.hpp>
 #include <Typedef.hpp>
 
 #include <csignal>
 
 class Signal {
  private:
-  static SIGMAP sigmap;
+  static sigmap_t sigmap;
 
  private:
   static void signalHandler(int sigNum) noexcept;

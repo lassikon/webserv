@@ -149,6 +149,7 @@ bool Utility::getIsFailed(int fd) {
   }
   return false;
 }
+
 bool Utility::statusOk(void) noexcept {
   return g_ExitStatus == 0 ? true : false;
 }
