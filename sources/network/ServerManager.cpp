@@ -45,9 +45,10 @@ void ServerManager::configServers(Config& config) {
 }
 
 void ServerManager::handleNoEvents(PollManager& pollManager) {
-  LOG_DEBUG("No events, checking for idle clients");
+  LOG_DEBUG("No events, checking for idle clients or expired cookies");
   for (auto& server : servers) {
     server->checkIdleClients(pollManager);
+    // server->getSession().checkExpiredCookies();
   }
 }
 

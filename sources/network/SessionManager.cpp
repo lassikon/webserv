@@ -89,3 +89,8 @@ bool SessionManager::isSessionCookie(std::string sessionToken) {
   }
   return false;
 }
+
+void checkExpiredCookies(void) {
+  // For Jarno to implement
+  return;
+}

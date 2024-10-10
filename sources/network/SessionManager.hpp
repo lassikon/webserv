@@ -55,4 +55,5 @@ class SessionManager {
 
  public:
   bool isSessionCookie(std::string sessionToken);
+  void checkExpiredCookies(void);
 };
