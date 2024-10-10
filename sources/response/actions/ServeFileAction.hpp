@@ -10,7 +10,7 @@ class ServeFileAction : public IServeAction {
   bool isExist(std::string path) const ;
   bool isPerm(std::string path) const;
   void ifCookie(Client& client, std::string& path);
-  bool isCookieFound(Clinet& client, std::string& path);
+  bool isCookieFound(Client& client, std::string& path);
 
  public:
   ServeFileAction() = default;
