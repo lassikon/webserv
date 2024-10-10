@@ -1,8 +1,8 @@
 #include <Client.hpp>
 #include <NetworkException.hpp>
 
-Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs)
-    : fd(socketFd), serverConfigs(serverConfigs) {
+Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs, SessionManager &session)
+    : fd(socketFd), serverConfigs(serverConfigs), session(session) {
   LOG_DEBUG(Utility::getConstructor(*this));
   clientState = ClientState::IDLE;
   cgiState = CgiState::IDLE;
@@ -53,7 +53,7 @@ void Client::handlePollOutEvent(int writeFd) {
   if (clientState == ClientState::PREPARING) {
     LOG_DEBUG("Preparing response");
     res.makeResponse();
-    clientState = ClientState::SENDING; 
+    clientState = ClientState::SENDING;
   }
   if (clientState == ClientState::SENDING) {
     sendState.execute(*this);
@@ -75,7 +75,7 @@ void Client::setFd(int newFd) {
 
 void Client::cleanupClient(void) {
   if (fd > 0) {
-    LOG_DEBUG("cleanupClient() closing fd:", fd);
+    LOG_DEBUG("closing fd:", fd);
     if (close(fd) == -1) {
       throw clientError("Failed to close fd:", fd);
     }

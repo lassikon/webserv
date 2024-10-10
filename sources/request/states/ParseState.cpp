@@ -36,10 +36,7 @@ void ParseState::execute(Client& client) {
 
 void ParseState::parseRequestLine(Client& client) {
   LOG_TRACE("Parsing request line");
-  std::string requestLine;
-  std::string reqMethod;
-  std::string reqURI;
-  std::string reqVersion;
+  std::string requestLine, reqMethod, reqURI, reqVersion;
   std::vector<char>& buffer = *client.getReadBuf();
   size_t& curr = client.getReadCurr();
   size_t& end = client.getReadEnd();
@@ -49,9 +46,9 @@ void ParseState::parseRequestLine(Client& client) {
   iss >> reqMethod >> reqURI >> reqVersion;
   LOG_DEBUG("reqMethod:", reqMethod, "URI:", reqURI, "reqVersion:", reqVersion);
   if (reqMethod.empty() || reqURI.empty() || reqVersion.empty()) {
-    return;
     throw httpBadRequest(client, "Invalid request line for client fd:", client.getFd());
   }
+
   client.getReq().setMethod(reqMethod);
   client.getReq().setReqURI(reqURI);
   client.getReq().setVersion(reqVersion);

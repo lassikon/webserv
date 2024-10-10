@@ -5,9 +5,7 @@ Server::Server(ServerConfig& serverConfig) : session(*this) {
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
   port = serverConfig.port;
   ipAddress = serverConfig.ipAddress;
-  // socket = Socket();
   socket.setupSocket(serverConfig);
-  // session = SessionManager(*this);
 }
 
 Server::~Server(void) {
@@ -28,7 +26,7 @@ void Server::acceptConnection(PollManager& pollManager) {
   }
   Utility::setCloseOnExec(newFd);
   Utility::setNonBlocking(newFd);
-  clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs));
+  clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs, session));
   LOG_DEBUG("Accepted new client fd:", newFd);
 
   pollManager.addFd(newFd, EPOLLIN, [&](int fd) { removeClient(fd); });

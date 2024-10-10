@@ -3,6 +3,7 @@
 #include <sys/epoll.h>
 #include <Utility.hpp>
 #include <Logger.hpp>
+#include <functional>
 #include <algorithm>
 #include <vector>
 #include <map>

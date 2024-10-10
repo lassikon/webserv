@@ -23,8 +23,6 @@
 #include <string>
 #include <vector>
 
-// class SessionManager;
-
 class Server {
  private:
   std::vector<std::shared_ptr<Client>> clients;
@@ -61,7 +59,9 @@ class Server {
   void removeClient(int clientFd);
   std::string getServerName(void) const { return serverName; }
 
-  //SessionManager &getSession(void) { return session; }
+  SessionManager &getSession(void) { return session; }
+
+  std::vector<std::shared_ptr<Client>>& getClients(void) { return clients; }
 
   std::string getIpAddress(void) const { return ipAddress; }
 
