@@ -48,7 +48,6 @@ void ParseState::parseRequestLine(Client& client) {
   if (reqMethod.empty() || reqURI.empty() || reqVersion.empty()) {
     throw httpBadRequest(client, "Invalid request line for client fd:", client.getFd());
   }
-
   client.getReq().setMethod(reqMethod);
   client.getReq().setReqURI(reqURI);
   client.getReq().setVersion(reqVersion);

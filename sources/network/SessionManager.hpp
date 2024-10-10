@@ -4,8 +4,8 @@
 #include <Response.hpp>
 #include <Utility.hpp>
 
+#include <chrono>
 #include <cstdlib>
-#include <fstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -25,19 +25,22 @@ class SessionManager {
   //   std::string body;
   // };
   // std::vector<std::shared_ptr<Cookie>> cookies;
-
+  // const std::chrono::system_clock::time_point lifetime = std::chrono::seconds(3600);
+  // std::chrono::time_point<typename Clock> lifetime = 3600;  // in seconds
   // the key should be the token and value would be like an object or struct
   // this struct would have data which is client info or preferences like cookie details us just name and cookie for post request
   // for simple get request the value would be some default
   // but in a real thing it would be a database with user preferences
 
-  std::unordered_map<std::string, std::string> sessionIds{};
-
   Server& server;
   std::vector<std::shared_ptr<Client>> clients;
 
+  const std::chrono::seconds lifetime;
+  std::unordered_map<std::string, std::chrono::system_clock::time_point> sessionIds{};
+
  private:
   std::string setExpireTime(void);
+  void debugPrintSessionsMap(void);
 
  public:
   SessionManager(void) = delete;
@@ -48,6 +51,5 @@ class SessionManager {
   std::string setSessionCookie(void);
 
  public:  // getters
-  std::string getSessionCookie(std::string sessionToken);
   bool isSessionCookie(std::string sessionToken);
 };

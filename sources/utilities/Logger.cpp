@@ -15,6 +15,7 @@ std::unordered_map<std::string, bool> Logger::classFilter = {
   {"Socket", false},
   {"PollManager", false},
   {"ServersManager", false},
+  {"SessionManager", false},
 
   // request
   {"Request", false},

@@ -21,9 +21,10 @@ void ServeFileAction::execute(Client& client) {
 
 void ServeFileAction::ifCookie(Client& client, std::string& path) {
   if (isIndexOrDefaultFile(client) == true) {
-    if (!isCookieFound(client, path))
+    if (!isCookieFound(client, path)) {
       LOG_TRACE("Setting cookie");
-    client.getRes().addHeader("Set-Cookie", client.getClientSession().setSessionCookie());
+      client.getRes().addHeader("Set-Cookie", client.getClientSession().setSessionCookie());
+    }
   }
 }
 
