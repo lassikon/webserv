@@ -14,28 +14,29 @@ class Server;
 
 class SessionManager {
  private:
+  const int tokenLength = 20;
   const std::string charSet =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789";
 
-  const char* fileName = "sessions";
-  const int tokenLength = 20;
-  bool errorLogged = false;
+  // struct Cookie {
+  //   std::string token;
+  //   std::string body;
+  // };
+  // std::vector<std::shared_ptr<Cookie>> cookies;
 
-  std::fstream sessionsFile;
   // the key should be the token and value would be like an object or struct
   // this struct would have data which is client info or preferences like cookie details us just name and cookie for post request
   // for simple get request the value would be some default
-  //but in a real thing it would be a database with user preferences
+  // but in a real thing it would be a database with user preferences
+
   std::unordered_map<std::string, std::string> sessionIds{};
 
   Server& server;
   std::vector<std::shared_ptr<Client>> clients;
 
  private:
-  void generateOutfile(std::fstream& fs, const char* file);
-  void readSessionsFromFile(void);
   std::string setExpireTime(void);
 
  public:
@@ -43,16 +44,10 @@ class SessionManager {
   SessionManager(Server& server);
   ~SessionManager(void);
 
- public:
-  void debugPrintSessionsMap();
-
  public:  // setters
   std::string setSessionCookie(void);
 
  public:  // getters
-  std::string getSessionCookie(std::string);
-  std::string getSessionQuery(std::string);
-
- public:
+  std::string getSessionCookie(std::string sessionToken);
   bool isSessionCookie(std::string sessionToken);
 };
