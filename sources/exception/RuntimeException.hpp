@@ -35,6 +35,7 @@ class RuntimeException : public IException {
   }
 };
 
+// macros defined for all runtime errors by type
 #define configError(...) RuntimeException(RuntimeError::Config, LOGDATA, __VA_ARGS__)
 #define serverError(...) RuntimeException(RuntimeError::Server, LOGDATA, __VA_ARGS__)
 #define clientError(...) RuntimeException(RuntimeError::Client, LOGDATA, __VA_ARGS__)

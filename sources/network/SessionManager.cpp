@@ -1,10 +1,7 @@
-#include <Client.hpp>
-#include <Server.hpp>
 #include <SessionManager.hpp>
 
-SessionManager::SessionManager(Server& server) : server(server), lifetime(3600) {
+SessionManager::SessionManager(void) : lifetime(3600) {
   LOG_TRACE(Utility::getConstructor(*this));
-  clients = server.getClients();
 }
 
 SessionManager::~SessionManager(void) {

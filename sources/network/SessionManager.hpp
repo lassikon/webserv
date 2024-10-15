@@ -2,15 +2,13 @@
 
 #include <Logger.hpp>
 #include <Response.hpp>
+#include <Typedef.hpp>
 #include <Utility.hpp>
 
 #include <chrono>
 #include <cstdlib>
 #include <string>
 #include <unordered_map>
-#include <vector>
-
-class Server;
 
 class SessionManager {
  private:
@@ -32,9 +30,6 @@ class SessionManager {
   // for simple get request the value would be some default
   // but in a real thing it would be a database with user preferences
 
-  Server& server;
-  std::vector<std::shared_ptr<Client>> clients;
-
   const std::chrono::seconds lifetime;
   std::unordered_map<std::string, std::chrono::system_clock::time_point> sessionIds{};
 
@@ -43,8 +38,7 @@ class SessionManager {
   void debugPrintSessionsMap(void);
 
  public:
-  SessionManager(void) = delete;
-  SessionManager(Server& server);
+  SessionManager(void);
   ~SessionManager(void);
 
  public:  // setters
