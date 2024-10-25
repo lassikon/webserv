@@ -64,21 +64,18 @@ void ServerManager::initializePollManager(PollManager& pollManager) {
 
 void ServerManager::runServers(void) {
   PollManager pollManager;
-  if (servers.empty()) {
-    LOG_ERROR("No servers to run");
-    return;
-  }
   LOG_TRACE("Adding server sockets to pollManager");
   initializePollManager(pollManager);
-  while (Utility::statusOk()) {
+  while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
     if (epollCount == -1) {
+      LOG_ERROR("Failed to epoll fds");
       continue;
-      //throw serverError("Failed to epoll fds");
-    } else if (epollCount == 0 && Utility::statusOk()) {
+    } else if (epollCount == 0) {
+      RuntimeException::tryCatch(&ServerManager::handleNoEvents, this, pollManager);
       handleNoEvents(pollManager);
     } else {
-      serverLoop(pollManager);
+      RuntimeException::tryCatch(&ServerManager::serverLoop, this, pollManager);
     }
   }
 }

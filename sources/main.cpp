@@ -28,6 +28,10 @@ int main(int argc, char** argv) {
   // config.printServerConfig();
   ServerManager server;
   RuntimeException::tryCatch(&ServerManager::configServers, &server, config);
+  if (server.getServers().empty()) {
+    LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
+    return (int)RuntimeError::Server;
+  }
   RuntimeException::tryCatch(&ServerManager::runServers, &server);
   return g_ExitStatus;
 }

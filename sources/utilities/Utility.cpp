@@ -150,8 +150,8 @@ bool Utility::getIsFailed(int fd) {
   return false;
 }
 
-bool Utility::statusOk(void) noexcept {
-  return g_ExitStatus == 0 ? true : false;
+bool Utility::signalReceived(void) noexcept {
+  return g_ExitStatus == 0 ? false : true;
 }
 
 size_t Utility::convertSizetoBytes(std::string& size) {

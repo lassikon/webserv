@@ -86,13 +86,13 @@ bool PollManager::fdExists(int fd) {
   if (fd < 0) {
     return true;
   }
-  
+
   return interestFdsList.find(fd) != interestFdsList.end();
 }
 
 int PollManager::epollWait(void) {
   int numEvents;
-  while (Utility::statusOk()) {
+  while (!Utility::signalReceived()) {
     numEvents = epoll_wait(epollFd, epollEvents.data(), MAX_EVENTS, TIMEOUT);
     if (numEvents == -1) {
       if (errno == EINTR) {  // if interrupted by signal, try again

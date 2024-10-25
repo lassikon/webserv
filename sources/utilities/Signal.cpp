@@ -17,7 +17,6 @@ void Signal::signalHandler(int sigNum) noexcept {
   for (auto& cgiParam : g_CgiParams) {
     kill(cgiParam.pid, SIGKILL);
   }
-  //exit(g_ExitStatus);
 }
 
 void Signal::sigPipeHandler(int sigNum) noexcept {
