@@ -16,9 +16,14 @@ void Server::addServerConfig(ServerConfig& serverConfig) {
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
 }
 
+// Accepts a new incoming client connection on the server socket.
+// Configures the new connection as non-blocking and close-on-exec, adds it to the poll manager,
+// and tracks its last activity timestamp.
 void Server::acceptConnection(PollManager& pollManager) {
   struct sockaddr_storage theirAddr {};
   socklen_t addrSize = sizeof theirAddr;
+
+  // Accept the incoming connection and obtain the new socket file descriptor
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
   if (newFd < 0) {
     LOG_WARN("Failed to accept new connection:", IException::expandErrno());
@@ -29,11 +34,16 @@ void Server::acceptConnection(PollManager& pollManager) {
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs, session));
   LOG_DEBUG("Accepted new client fd:", newFd);
 
+  // Add the new client's file descriptor to the poll manager with EPOLLIN events
   pollManager.addFd(newFd, EPOLLIN, [&](int fd) { removeClient(fd); });
   clientLastActivity[newFd] = std::chrono::steady_clock::now();
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
+// Handles EPOLLIN events for a client connection.
+// This function finds the client by its file descriptor, processes the incoming event,
+// and modifies the client's poll events if needed. If the client should be closed,
+// it removes it from the poll manager.
 void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd) {
   auto it = std::find_if(
     clients.begin(), clients.end(),
@@ -44,6 +54,7 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
   }
   if (it != clients.end()) {
     bool isClose = false;
+    // Check if the event is for CGI or the main client socket
     if (eventFd == Utility::getOutReadFdFromClientFd(clientFd)) {
       LOG_DEBUG("Handling EPOLLIN event for cgi,", eventFd, " to client fd:", clientFd);
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
@@ -53,7 +64,10 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
       updateClientLastActivity(clientFd);
     }
+
+    // Modify the client's poll events based on its current state
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
+
     if (isClose == true) {
       LOG_TRACE("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
@@ -63,6 +77,10 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
   }
 }
 
+// Handles EPOLLOUT events for a client connection.
+// This function locates the client by its file descriptor, processes the outgoing event,
+// modifies the client's poll events if needed, and removes the client from the poll manager
+// if it should be closed.
 void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eventFd,
                              int clientFd) {
   auto it = std::find_if(
@@ -74,6 +92,7 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eve
   }
   if (it != clients.end()) {
     bool isClose = false;
+    // Check if the event is for CGI or the main client socket
     if (eventFd == Utility::getInWriteFdFromClientFd(clientFd)) {
       LOG_DEBUG("Handling EPOLLOUT event for cgi,", eventFd, " to client fd:", clientFd);
       isClose = (*it)->handleEpollEvents(revents, clientFd, eventFd);
@@ -83,7 +102,10 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eve
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
       updateClientLastActivity(clientFd);
     }
+
+    // Modify the client's poll events based on its current state
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
+
     if (isClose == true) {
       LOG_DEBUG("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");

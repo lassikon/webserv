@@ -94,7 +94,7 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);
-  std::ofstream file( path + fileName, std::ios::binary);
+  std::ofstream file(path + fileName, std::ios::binary);
   if (!file.is_open()) {
     throw clientError("Failed to open file");
   } else {
@@ -160,8 +160,7 @@ void PostHandler::setResponse(Client& client) {
     client.getRes().setResStatusMessage("See Other");
     htmlResponse = "<html><body><h1>File uploaded. Redirecting...</h1></body></html>";
     client.getRes().addHeader("Location", "/upload/");
-  }
-  else {
+  } else {
     htmlResponse = "<html><body><h1>POST request processed</h1><ul>";
   }
   client.getRes().addHeader("Content-Length", std::to_string(htmlResponse.size()));
