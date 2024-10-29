@@ -19,7 +19,6 @@ int main(int argc, char** argv) {
     Logger::loadDefaults();
     Signal::trackSignals();
   }
-
   Config config = ConfigInitializer::initializeConfig(argc, argv);
   RuntimeException::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers().empty()) {
