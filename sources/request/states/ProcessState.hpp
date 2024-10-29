@@ -6,7 +6,6 @@
 
 class Client;
 class Config;
-// class ServerConfig;
 
 class ProcessState : public IStateHandler {
  public:

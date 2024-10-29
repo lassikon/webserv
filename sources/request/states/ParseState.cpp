@@ -16,8 +16,7 @@ void ParseState::execute(Client& client) {
     parseHeaders(client);
   }
   if (client.getParsingState() == ParsingState::VERIFY) {
-    //verify request headers
-    verifyRequest(client);
+    verifyRequest(client); //verify request headers
   }
   if (client.getParsingState() == ParsingState::BODY) {
     parseBody(client);
@@ -186,7 +185,7 @@ void ParseState::parseChunkedBody(Client& client) {
   }
 }
 
-//helper functions
+// helper functions
 
 bool ParseState::substrKeyAndValue(std::string header, std::string& key, std::string& value) {
   auto pos = header.find(':');
@@ -201,7 +200,6 @@ bool ParseState::substrKeyAndValue(std::string header, std::string& key, std::st
 }
 
 bool ParseState::isHeaderEnd(std::string header) {
-  // return header.find("\r\n\r") != std::string::npos || header.empty() || header == "\r";
   return header.empty() || header == "\r";
 }
 

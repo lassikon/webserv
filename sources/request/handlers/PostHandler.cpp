@@ -9,7 +9,6 @@ void PostHandler::getContentType(Client& client) {
     throw clientError("Content-Type header not found");
   }
   if (contentType.find("multipart/form-data") != std::string::npos) {
-    // boundary = contentType.substr(contentType.find("boundary=") + 9);
     contentType = "multipart/form-data";
   }
   LOG_INFO("Content type:", contentType);
@@ -18,11 +17,8 @@ void PostHandler::getContentType(Client& client) {
 void PostHandler::processFormUrlEncoded(Client& client) {
   LOG_INFO("Processing application/x-www-form-urlencoded");
   std::string data(client.getReq().getBody().data(), client.getReq().getBody().size());
-  // LOG_DEBUG("Raw data:\n", data);
-  std::cout << "Raw data:\n" << data;
   std::istringstream iss(data);
   std::string pair;
-
   while (std::getline(iss, pair, '&')) {
     auto delimiterPos = pair.find('=');
     if (delimiterPos == std::string::npos) {
@@ -32,10 +28,11 @@ void PostHandler::processFormUrlEncoded(Client& client) {
     std::string value = pair.substr(delimiterPos + 1);
     formData[UrlEncoder::decode(key)] = UrlEncoder::decode(value);
   }
-  LOG_DEBUG("Parsed form data:");  // For testing purposes
-  for (const auto& [key, value] : formData) {
-    LOG_DEBUG(key, ":", value);
-  }
+  // For testing purposes
+  // LOG_DEBUG("Parsed form data:");
+  // for (const auto& [key, value] : formData) {
+  //   LOG_DEBUG(key, ":", value);
+  // }
 }
 
 std::string PostHandler::extractBoundary(Client& client) {
@@ -90,7 +87,6 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   std::string data = extractFileData(part);
   LOG_DEBUG("FileName:", fileName);
   LOG_DEBUG("Data:\n", data);
-
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);
