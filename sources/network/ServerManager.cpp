@@ -69,7 +69,9 @@ void ServerManager::runServers(void) {
   while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
     if (epollCount == -1) {
-      LOG_ERROR("Failed to epoll fds");
+      if (!Utility::signalReceived()) {
+        LOG_ERROR("Failed to epoll fds");
+      }
       continue;
     } else if (epollCount == 0) {
       RuntimeException::tryCatch(&ServerManager::handleNoEvents, this, pollManager);
@@ -114,28 +116,9 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
       }
     }
     pollManager.removeFd(fd);
-    /*     for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
-      if (it->outReadFd == fd) {
-        pollManager.removeFd(it->outReadFd);
-        //pollManager.removeFd(it->inWriteFd);
-        close(it->inWriteFd);
-        close(it->outReadFd);
-        g_CgiParams.erase(it);
-        break;
-      } else {
-        ++it;
-      }
-    } */
   } else if (event.events & EPOLLERR || event.events & EPOLLRDHUP) {
     LOG_ERROR("Epoll error or hangup on fd:", fd);
     pollManager.removeFd(fd);
-    /*     for (auto& server : servers) {
-      if (server->isClientFd(fd)) {
-        LOG_DEBUG("Removing client fd:", fd, "from server");
-        server->removeClient(fd);
-        break;
-      }
-    } */
   } else {
     LOG_WARN("EPoll on fd:", fd);
     LOG_WARN("errno:", IException::expandErrno());
@@ -215,24 +198,17 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
         pollManager.removeFd(it->outReadFd);
         pollManager.removeFd(it->inWriteFd);
         g_CgiParams.erase(it);
-        // throw exception?
       } else if (result > 0) {  // Child process has exited
         LOG_INFO("Child process", it->pid, "exited with status:", it->childExitStatus);
-        //close(it->outWriteFd);
-        //close(it->inReadFd);
         it->isExited = true;
         if (it->childExitStatus != 0) {
           LOG_ERROR("Child process exited with status:", it->childExitStatus);
           it->isFailed = true;
         }
-        //it = g_CgiParams.erase(it);
       } else if (result == 0 && childTimeout(it->start)) {
         LOG_ERROR("Child process", it->pid, "timed out");
         kill(it->pid, SIGKILL);
         it->isTimeout = true;
-        //pollManager.removeFd(it->outReadFd);
-        //pollManager.removeFd(it->inWriteFd);
-        //g_CgiParams.erase(it);
       }
     }
     ++it;

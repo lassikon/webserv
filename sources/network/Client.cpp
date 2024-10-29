@@ -37,8 +37,6 @@ void Client::handlePollInEvent(int readFd) {
   if (clientState == ClientState::READING) {
     readState.execute(*this);
     parseState.execute(*this);
-    //NetworkException::tryCatch(&ReadState::execute, &this->readState, *this);
-    //NetworkException::tryCatch(&ParseState::execute, &this->parseState, *this);
   }
 }
 
@@ -48,7 +46,6 @@ void Client::handlePollOutEvent(int writeFd) {
   setWriteFd(writeFd);
   if (clientState == ClientState::PROCESSING) {
     processState.execute(*this);
-    // NetworkException::tryCatch(&ProcessState::execute, &this->processState, *this);
   }
   if (clientState == ClientState::PREPARING) {
     LOG_DEBUG("Preparing response");

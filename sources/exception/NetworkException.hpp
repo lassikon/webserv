@@ -24,7 +24,6 @@ class NetworkException : public IException {
   NetworkException() = delete;
 
   template <typename... Args>
-  // @janrau, what does this do 😄
   NetworkException(Client& client, NetworkError errCode, const char* fileName, const char* funcName,
                    const size_t line, Args&&... args)
       : IException(errCode, fileName, funcName, line, std::forward<Args>(args)...) {
@@ -96,7 +95,6 @@ class NetworkException : public IException {
     client.getRes().setResBody(ibody);
     std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
     std::string mimeType = Utility::getMimeType(ext);
-    // client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
     client.getRes().addHeader("Content-Type", mimeType);
     client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
     client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);

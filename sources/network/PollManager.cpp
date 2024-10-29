@@ -14,12 +14,6 @@ PollManager::PollManager(void) {
 
 PollManager::~PollManager(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
-  /*   for (auto& fd : interestFdsList) {
-    if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
-      continue;
-    }
-    LOG_DEBUG("Removed fd:", fd, "from epollFd");
-  } */
   close(epollFd);
 }
 
@@ -27,11 +21,9 @@ void PollManager::addFd(int fd, uint32_t events, std::function<void(int)> cleanU
   struct epoll_event event;
   event.data.fd = fd;
   event.events = events;
-
   if (fd < 0) {
     return;
   }
-
   if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &event) == -1) {
     if (errno == EEXIST) {
       LOG_DEBUG("Fd:", fd, "already exists in epollFd");
@@ -45,10 +37,8 @@ void PollManager::addFd(int fd, uint32_t events, std::function<void(int)> cleanU
 }
 
 void PollManager::removeFd(int fd) {
-
   auto it = interestFdsList.find(fd);
   if (it != interestFdsList.end() && (fcntl(fd, F_GETFD) != -1)) {
-
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
       throw serverError("Failed to remove fd from epollFd");
     }
@@ -56,13 +46,11 @@ void PollManager::removeFd(int fd) {
     it->second(fd);
     interestFdsList.erase(it);
   }
-
   for (auto it = epollEvents.begin(); it != epollEvents.end(); it++) {
     if (it->data.fd == fd) {
       it->data.fd = -1;
     }
   }
-
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end(); it++) {
     if (it->outReadFd == fd || it->inWriteFd == fd) {
       g_CgiParams.erase(it);
@@ -75,7 +63,6 @@ void PollManager::modifyFd(int fd, uint32_t events) {
   struct epoll_event event;
   event.data.fd = fd;
   event.events = events;
-
   if (epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &event) == -1) {
     throw serverError("Failed to modify fd in epollFd");
   }
@@ -86,7 +73,6 @@ bool PollManager::fdExists(int fd) {
   if (fd < 0) {
     return true;
   }
-
   return interestFdsList.find(fd) != interestFdsList.end();
 }
 
