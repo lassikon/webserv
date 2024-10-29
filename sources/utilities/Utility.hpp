@@ -25,7 +25,7 @@ class Utility {
   static std::vector<char> readFile(std::string& path);
   static std::filesystem::path getExePath(std::filesystem::path& path);
   static std::string getMimeType(std::string& extension);
-  static bool statusOk(void) noexcept;
+  static bool signalReceived(void) noexcept;
   static size_t convertSizetoBytes(std::string& size);
   static void setNonBlocking(int& fd);
   static void setCloseOnExec(int& fd);

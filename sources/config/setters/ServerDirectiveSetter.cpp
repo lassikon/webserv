@@ -85,8 +85,7 @@ void ServerDirectiveSetter::setErrorPages(ServerConfig& server, std::string& val
     server.pagesCustom[error_code] = error;
 }
 
-// client body size limit is set in bytes, kilobytes k,K, megabytes m,M,
-// gigabytes g,G
+// client body size limit is set in bytes, kilobytes k,K, megabytes m,M, gigabytes g,G
 void ServerDirectiveSetter::setClientBodySizeLimit(ServerConfig& server, std::string& value,
                                                    int& lineNumber) {
   const std::regex size_pattern("^[0-9]+[kKmMgG]?$");

@@ -1,6 +1,7 @@
 #include <Client.hpp>
 #include <NetworkException.hpp>
 #include <ProcessTree.hpp>
+
 ProcessTree::ProcessTree(Validate validate, std::shared_ptr<ProcessTree> trueBranch,
                          std::shared_ptr<ProcessTree> falseBranch)
     : validate(validate), trueBranch(trueBranch), falseBranch(falseBranch) {}

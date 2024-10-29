@@ -14,11 +14,12 @@ class Response {
  private:  // from request
   RouteConfig routeConfig;
   ServerConfig serverConfig;
-  std::string reqURI;  // updated by ProcessTreeBuilder to full path
+
+  // updated by ProcessTreeBuilder to full path
+  std::string reqURI; 
 
  private:  // for response
   int resStatusCode = 0;
-  std::string resCookie; // is this needed?
   std::string resStatusMessage;
   std::vector<char> resBody = {};
   std::map<std::string, std::string> resHeaders = {};
@@ -35,19 +36,17 @@ class Response {
   std::vector<char>& getResContent(void) { return resContent; }
   std::vector<char>& getResBody(void) { return resBody; }
   std::string& getReqURI(void) { return reqURI; }
-  std::string& getCookie(void) { return resCookie; } // is this needed?
   RouteConfig& getRouteConfig(void) { return routeConfig; }
   ServerConfig& getServerConfig(void) { return serverConfig; }
   int getResStatusCode(void) { return resStatusCode; }
   std::map<std::string, std::string>& getResHeaders(void) { return resHeaders; }
-  std::string &getResHeader(std::string key) { return resHeaders.at(key); }
+  std::string& getResHeader(std::string key) { return resHeaders.at(key); }
 
  public:  // setters
   void setResStatusCode(int code) { resStatusCode = code; }
   void setResStatusMessage(std::string message) { resStatusMessage = message; }
   void addHeader(std::string key, std::string value) { resHeaders[key] = value; }
   void setReqURI(std::string uri) { reqURI = uri; }
-  void setCookie(std::string cookie) { resCookie = cookie; } // is this needed?
   void setResBody(std::vector<char> body) { resBody = std::move(body); }
   void setRouteConfig(RouteConfig& route) { routeConfig = route; }
   void setServerConfig(ServerConfig server) { serverConfig = server; }

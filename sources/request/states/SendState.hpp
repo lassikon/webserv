@@ -10,5 +10,4 @@ class SendState : public IStateHandler {
   SendState() = default;
   virtual ~SendState() = default;
   void execute(Client& client) override;
-
 };

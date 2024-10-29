@@ -1,6 +1,6 @@
 #include <Server.hpp>
 
-Server::Server(ServerConfig& serverConfig) : session(*this) {
+Server::Server(ServerConfig& serverConfig) {
   LOG_TRACE(Utility::getConstructor(*this));
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
   port = serverConfig.port;

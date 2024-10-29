@@ -2,51 +2,40 @@
 
 #include <Logger.hpp>
 #include <Response.hpp>
+#include <Typedef.hpp>
 #include <Utility.hpp>
 
+#include <chrono>
 #include <cstdlib>
-#include <fstream>
 #include <string>
 #include <unordered_map>
-#include <vector>
-
-class Server;
 
 class SessionManager {
  private:
+  const int tokenLength = 20;
   const std::string charSet =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789";
 
-  const char* fileName = "sessions";
-  const int tokenLength = 20;
-  bool errorLogged = false;
+  // in real case, the key should be a token and value like an object or struct
+  // this struct would have data which is client info or preferences
+  // backend would be a database with user information
 
-  std::fstream sessionsFile;
-  std::unordered_map<std::string, std::string> sessionIds{};
-  
-  Server &server;
-  std::vector<std::shared_ptr<Client>> clients;
+  const std::chrono::seconds lifetime;
+  std::unordered_map<std::string, std::chrono::system_clock::time_point> sessionIds{};
+
+ private:
+  std::string setExpireTime(void);
+  void debugPrintSessionsMap(void);
 
  public:
-  SessionManager(void) = delete;
-  SessionManager(Server &server);
+  SessionManager(void);
   ~SessionManager(void);
 
- public:
-  void generateOutfile(std::fstream& fs, const char* file);
-  void readSessionsFromFile(void);
-
- public:
-  void debugFillSessionsFile();
-  void debugPrintSessionsMap();
-
  public:  // setters
-  std::string setSessionCookie(Response& response);
+  std::string setSessionCookie(void);
 
  public:  // getters
-  SessionManager& getSessionManager(void) { return *this; }
-  std::string getSessionCookie(std::string);
-  std::string getSessionQuery(std::string);
+  bool isSessionCookie(std::string sessionToken);
 };

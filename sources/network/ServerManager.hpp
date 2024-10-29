@@ -23,7 +23,7 @@ class ServerManager {
 
  private:
   std::vector<std::shared_ptr<Server>> servers;
-  
+
  public:
   ServerManager(void);
   ~ServerManager(void);
@@ -47,4 +47,6 @@ class ServerManager {
   void handlePollOutEvent(PollManager& pollManager, struct epoll_event& event);
   void handleNoEvents(PollManager& pollManager);
 
+ public:  // getters
+  std::vector<std::shared_ptr<Server>>& getServers(void) { return servers; }
 };

@@ -24,12 +24,10 @@ class Socket {
   ~Socket(void);
 
   int getFd(void) const { return sockFd; }
-
   void setupSocket(ServerConfig& serverConfig);
 
  private:
   void closeSockedFd(void) { sockFd = 0; }
-
   void cleanupSocket(void);
   void setNonBlocking(void);
 };

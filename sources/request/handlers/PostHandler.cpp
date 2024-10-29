@@ -9,7 +9,6 @@ void PostHandler::getContentType(Client& client) {
     throw clientError("Content-Type header not found");
   }
   if (contentType.find("multipart/form-data") != std::string::npos) {
-    // boundary = contentType.substr(contentType.find("boundary=") + 9);
     contentType = "multipart/form-data";
   }
   LOG_INFO("Content type:", contentType);
@@ -18,11 +17,8 @@ void PostHandler::getContentType(Client& client) {
 void PostHandler::processFormUrlEncoded(Client& client) {
   LOG_INFO("Processing application/x-www-form-urlencoded");
   std::string data(client.getReq().getBody().data(), client.getReq().getBody().size());
-  // LOG_DEBUG("Raw data:\n", data);
-  //std::cout << "Raw data:\n" << data;
   std::istringstream iss(data);
   std::string pair;
-
   while (std::getline(iss, pair, '&')) {
     auto delimiterPos = pair.find('=');
     if (delimiterPos == std::string::npos) {
@@ -52,27 +48,16 @@ std::vector<std::string> PostHandler::splitByBoundary(std::string data, std::str
     std::vector<std::string> parts;
     size_t pos = 0;
 
-    // Find the first boundary, ignore anything before it
     if ((pos = data.find(boundary)) != std::string::npos) {
         data.erase(0, pos + boundary.length());
     }
-
-    // Continue splitting by boundary until we reach the end of data
     while ((pos = data.find(boundary)) != std::string::npos) {
-        // Extract the part between the current position and the next boundary
         std::string part = data.substr(0, pos);
-        
-        // Trim any leading or trailing newline or carriage return characters
         part.erase(0, part.find_first_not_of("\r\n"));
         part.erase(part.find_last_not_of("\r\n") + 1);
-        
-        // Add the cleaned part to parts
         if (!part.empty()) {
             parts.push_back(part);
-            //LOG_DEBUG("Extracted part:", part);
         }
-
-        // Move past the current boundary
         data.erase(0, pos + boundary.length());
     }
     return parts;
@@ -111,7 +96,6 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   }
   std::string data = extractFileData(part);
   LOG_DEBUG("FileName:", fileName);
-  // LOG_DEBUG("Data:\n", data);
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);

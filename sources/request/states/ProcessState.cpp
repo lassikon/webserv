@@ -24,8 +24,6 @@ void ProcessState::execute(Client& client) {
 }
 
 void ProcessState::processRequest(Client& client) {
-  //client.getRes().setServerConfig(chooseServerConfig(client));  // choose server config
-  //buildPath(client);
   if (client.getRes().getReqURI().find("/cgi-bin/") != std::string::npos) {
     client.getCgiHandler().executeRequest(client);
     if (client.getReq().getMethod() == "GET") {
@@ -65,22 +63,3 @@ void ProcessState::processCgiOutput(Client& client) {
   client.setCgiState(CgiState::DONE);
   client.setClientState(ClientState::PREPARING);
 }
-
-/* ServerConfig ProcessState::chooseServerConfig(Client& client) {
-  LOG_TRACE("Choosing server config for client fd:", client.getFd());
-  for (auto& serverConfig : client.getServerConfigs()) {
-    if (serverConfig->serverName == client.getReq().getHeaders()["Host"]) {
-      return *serverConfig;
-    }
-  }
-  return *(client.getServerConfigs().front());
-}
-
-void ProcessState::buildPath(Client& client) {
-  LOG_TRACE("Building path for client fd:", client.getFd());
-  std::shared_ptr<ProcessTreeBuilder> ptb =
-    std::make_shared<ProcessTreeBuilder>(client, client.getRes().getServerConfig());
-  client.getRes().setReqURI(client.getReq().getReqURI());
-  root = ptb->buildPathTree();
-  root->process(client);
-} */

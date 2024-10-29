@@ -9,12 +9,16 @@
 class NetworkException : public IException {
  private:
   std::unordered_map<NetworkError, std::string> errMsgMap = {
-    {NetworkError::BadRequest, "Bad Request"},    {NetworkError::Forbidden, "Forbidden"},
-    {NetworkError::Notfound, "Not Found"},        {NetworkError::Method, "Method Not Allowed"},
-    {NetworkError::Payload, "Payload Too Large"}, {NetworkError::Internal, "Internal Server Error"},
-    {NetworkError::BadGateway, "Bad Gateway"},    {NetworkError::GatewayTimeout, "Gateway Timeout"},
-    {NetworkError::Version, "HTTP Version Not Supported"}, {NetworkError::Length, "Length Required"}
-  };
+    {NetworkError::BadRequest, "Bad Request"},
+    {NetworkError::Forbidden, "Forbidden"},
+    {NetworkError::Notfound, "Not Found"},
+    {NetworkError::Method, "Method Not Allowed"},
+    {NetworkError::Payload, "Payload Too Large"},
+    {NetworkError::Internal, "Internal Server Error"},
+    {NetworkError::BadGateway, "Bad Gateway"},
+    {NetworkError::GatewayTimeout, "Gateway Timeout"},
+    {NetworkError::Version, "HTTP Version Not Supported"},
+    {NetworkError::Length, "Length Required"}};
 
  public:
   NetworkException() = delete;
@@ -91,7 +95,6 @@ class NetworkException : public IException {
     client.getRes().setResBody(ibody);
     std::string ext = errorPathStr.substr(errorPathStr.find_last_of(".") + 1);
     std::string mimeType = Utility::getMimeType(ext);
-   // client.getRes().addHeader("Cache-Control", "max-age=3600, must-revalidate");
     client.getRes().addHeader("Content-Type", mimeType);
     client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
     client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
@@ -118,6 +121,7 @@ class NetworkException : public IException {
   }
 };
 
+// macros defined for all network errors by type
 #define httpForbidden(client, ...) \
   NetworkException(client, NetworkError::Forbidden, LOGDATA, __VA_ARGS__)
 #define httpNotFound(client, ...) \

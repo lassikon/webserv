@@ -31,11 +31,9 @@ void DeleteHandler::deleteFile(std::filesystem::path fullPath, Client& client) {
 void DeleteHandler::executeRequest(Client& client) {
   LOG_INFO("Processing DELETE request for path:", client.getReq().getReqURI());
   LOG_TRACE("DeleteHandler: executingRequest");
-
   std::string filePath = sanitizePath(client.getReq().getReqURI());
   std::filesystem::path rootPath = client.getRes().getRouteConfig().root;
   std::filesystem::path fullPath = rootPath / filePath;
   LOG_TRACE("fullPath:", fullPath.string());
-
   NetworkException::tryCatch(&DeleteHandler::deleteFile, this, fullPath, std::ref(client));
 }

@@ -3,7 +3,7 @@
 #include <NetworkException.hpp>
 
 CgiHandler::CgiHandler(void) {
-  LOG_DEBUG(Utility::getConstructor(*this));
+  LOG_TRACE(Utility::getConstructor(*this));
 }
 
 void CgiHandler::generateEnvpVector(Client& client) {
@@ -17,8 +17,7 @@ void CgiHandler::generateEnvpVector(Client& client) {
 }
 
 CgiHandler::~CgiHandler(void) {
-  LOG_DEBUG(Utility::getDeconstructor(*this));
-  //closePipeFds();
+  LOG_TRACE(Utility::getDeconstructor(*this));
 }
 
 void CgiHandler::closePipeFds(void) {

@@ -49,6 +49,7 @@ class Logger {
   static bool isFiltered(std::string& fileName) noexcept;
 
  public:
+  // template function to expand log arguments to given ostringstream using lambda
   template <typename... Args> static void expandLogArgs(std::ostringstream& log, Args&&... args) {
     if (!sizeof...(Args)) {
       return;
@@ -58,6 +59,9 @@ class Logger {
   }
 
  public:
+  // template function called by macros defined at the bottom, recieves all passed arguments
+  // checks logging level and file (class) name for filtering
+  // can log entries into separate file if enabled
   template <typename... Args>
   static void Log(logLevel level, const char* title, const char* color, std::ostream& console,
                   std::string fileName, const char* funcName, int lineNbr, Args&&... args) {
@@ -73,8 +77,13 @@ class Logger {
   }
 };
 
+// helper macro to expand details of logging data
 #define LOGDATA __FILE__, __func__, __LINE__
 
+// defined macros to call each level of logging, does not need to be instantiated
+// takes primitive variadic arguments (string, int, ...)
+// does not support complex data types like std::vector or std::map
+// example: LOG_ERROR("Failed to listen on socket fd:", sockFd);
 #define LOG_TRACE(...) \
   (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_DEBUG(...) \

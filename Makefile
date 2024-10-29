@@ -5,7 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
-RUNCONFIG   := confDefault/jankku.conf
+RUNCONFIG   := confDefault/default.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 
@@ -45,14 +45,14 @@ VLGFLAGS    := --leak-check=full \
 # **************************************************************************** #
 
 MODULES := network \
-		   config \
-		   config/setters \
-		   request \
-		   request/handlers \
-		   request/states \
-		   response \
-		   response/actions \
-		   exception \
+           config \
+           config/setters \
+           request \
+           request/handlers \
+           request/states \
+           response \
+           response/actions \
+           exception \
            utilities
 
 SOURCES := main \

@@ -35,23 +35,18 @@ struct CgiParams {
 
 class CgiHandler : public IRequestHandler {
  private:
-  // static std::vector<pid_t> pids;
-  // static std::map<pid_t, int> pids;
-
- private:
   enum Fd { Read, Write };
 
   std::vector<std::string> envps{};
   std::vector<std::string> args{};
-  std::string cgi;  // delete this?
 
   int outPipeFd[2] = {-1, -1};
   int inPipeFd[2] = {-1, -1};
   int clientFd;
   int wstat;
   pid_t pid;
-
-   bool isBin = false;
+  std::string cgi;
+  bool isBin = false;
 
  public:
   /* CgiHandler(void) = delete; */
@@ -66,7 +61,7 @@ class CgiHandler : public IRequestHandler {
 
  private:
   void scriptLoader(Client& client);
-  void setGlobal(void); 
+  void setGlobal(void);
   void generateEnvpVector(Client& client);
   void forkChildProcess(Client& client);
   void executeCgiScript(Client& client);

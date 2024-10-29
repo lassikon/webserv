@@ -29,7 +29,7 @@ enum class RuntimeError {
 };
 
 enum class NetworkError {
-  NoError = 0,
+  NoError = 200,
   BadRequest = 400,
   Forbidden = 403,
   Notfound = 404,
@@ -42,6 +42,7 @@ enum class NetworkError {
   Version = 505
 };
 
+// interface for exceptios, inherits std::exception and logger
 class IException : public std::exception, public Logger {
  private:
   std::string logEntry;
@@ -52,9 +53,16 @@ class IException : public std::exception, public Logger {
  public:
   virtual ~IException(void) noexcept {}
 
+  // override function for custom throw and e.what()
   virtual const char* what() const noexcept { return logEntry.c_str(); }
 
  public:
+  // template function for network exception macros
+  // file, func, and line are passed with logger's LOGDATA
+  // get NetworkError error code for possible post prosessing
+  // takes variadic arguments for logging purposes but
+  // does not support complex data types like std::vector
+  // updates logEntry which is used by e.what() override
   template <typename... Args>
   IException(NetworkError err, const char* file, const char* func, int line, Args&&... args)
       : file(file), func(func), line(line) {
@@ -63,6 +71,13 @@ class IException : public std::exception, public Logger {
   };
 
  public:
+  // template function for runtime exception macros
+  // file, func, and line are passed with logger's LOGDATA
+  // gets RuntimeError for possible post prosessing
+  // takes variadic arguments for logging purposes but
+  // does not support complex data types like std::vector
+  // updates logEntry which is used by e.what() override
+  // was changed from fatal to non-fatal during development
   template <typename... Args>
   IException(RuntimeError err, const char* file, const char* func, int line, Args&&... args)
       : file(file), func(func), line(line) {
@@ -73,6 +88,10 @@ class IException : public std::exception, public Logger {
   };
 
  private:
+  // private template function used by public templates
+  // needs logLevel, title and error type from public template
+  // the rest of the arguments are obtained throug macro call
+  // uses logger to generate log entry into console and file
   template <typename... Args>
   std::string createLogEntry(logLevel lvl, const char* title, const char* errType, Args&&... args) {
     std::ostringstream oss;
@@ -87,6 +106,7 @@ class IException : public std::exception, public Logger {
   }
 
  public:
+  // function to expand errno, does not need to be instantiated
   static std::string expandErrno(void) noexcept {
     if (!errno) {
       return std::string();
