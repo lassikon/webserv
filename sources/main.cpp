@@ -12,7 +12,6 @@ sig_atomic_t g_ExitStatus;
 std::vector<struct CgiParams> g_CgiParams;
 
 int main(int argc, char** argv) {
-  
   if (argc > 2) {
     LOG_INFO(ERR_MSG_USAGE);
     return (int)RuntimeError::Args;
@@ -21,24 +20,14 @@ int main(int argc, char** argv) {
     Signal::trackSignals();
   }
 
-  // Parse config file and load it, exit if no valid servers
   Config config = ConfigInitializer::initializeConfig(argc, argv);
   RuntimeException::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers().empty()) {
     LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
     return (int)RuntimeError::Config;
   }
-
   ServerManager server;
-  // config.printServerConfig();
-
-  // Load valid configs to server, exit if none were added
   RuntimeException::tryCatch(&ServerManager::configServers, &server, config);
-  if (server.getServers().empty()) {
-    LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
-    return (int)RuntimeError::Server;
-  }
-
   RuntimeException::tryCatch(&ServerManager::runServers, &server);
   return g_ExitStatus;
 }
