@@ -46,6 +46,7 @@ void RouteDirectiveSetter::setMethods(RouteConfig& route, std::string& value, in
     }
   }
 }
+
 // must be an absolute path
 void RouteDirectiveSetter::setRoot(RouteConfig& route, std::string& value, int& lineNumber) {
   std::filesystem::path exePath;

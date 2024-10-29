@@ -14,7 +14,9 @@ class Response {
  private:  // from request
   RouteConfig routeConfig;
   ServerConfig serverConfig;
-  std::string reqURI;  // updated by ProcessTreeBuilder to full path
+
+  // updated by ProcessTreeBuilder to full path
+  std::string reqURI; 
 
  private:  // for response
   int resStatusCode = 0;
