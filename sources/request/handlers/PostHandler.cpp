@@ -3,7 +3,7 @@
 #include <PostHandler.hpp>
 
 void PostHandler::getContentType(Client& client) {
-  LOG_INFO("Getting content type");
+  LOG_TRACE("Getting content type");
   contentType = client.getReq().getHeaders()["Content-Type"];
   if (contentType.empty()) {
     throw clientError("Content-Type header not found");
@@ -11,11 +11,11 @@ void PostHandler::getContentType(Client& client) {
   if (contentType.find("multipart/form-data") != std::string::npos) {
     contentType = "multipart/form-data";
   }
-  LOG_INFO("Content type:", contentType);
+  LOG_DEBUG("Content type:", contentType);
 }
 
 void PostHandler::processFormUrlEncoded(Client& client) {
-  LOG_INFO("Processing application/x-www-form-urlencoded");
+  LOG_TRACE("Processing application/x-www-form-urlencoded");
   std::string data(client.getReq().getBody().data(), client.getReq().getBody().size());
   std::istringstream iss(data);
   std::string pair;
@@ -36,15 +36,15 @@ void PostHandler::processFormUrlEncoded(Client& client) {
 }
 
 std::string PostHandler::extractBoundary(Client& client) {
-  LOG_INFO("Extracting boundary");
+  LOG_TRACE("Extracting boundary");
   std::string contentType = client.getReq().getHeaders()["Content-Type"];
   std::string boundary = contentType.substr(contentType.find("boundary=") + 9);
-  LOG_INFO("Boundary:", boundary);
+  LOG_DEBUG("Boundary:", boundary);
   return boundary;
 }
 
 std::vector<std::string> PostHandler::splitByBoundary(std::string data, std::string boundary) {
- LOG_INFO("Splitting data by boundary");
+ LOG_TRACE("Splitting data by boundary");
     std::vector<std::string> parts;
     size_t pos = 0;
 
@@ -68,7 +68,7 @@ bool PostHandler::isFilePart(const std::string& part) {
 }
 
 std::string PostHandler::extractFileName(const std::string& part) {
-  LOG_INFO("Extracting filename");
+  LOG_TRACE("Extracting filename");
   size_t pos = part.find("filename=\"");
   if (pos == std::string::npos) {
     throw clientError("Invalid file part");
@@ -79,7 +79,7 @@ std::string PostHandler::extractFileName(const std::string& part) {
 }
 
 std::string PostHandler::extractFileData(const std::string& part) {
-  LOG_INFO("Extracting file data");
+  LOG_TRACE("Extracting file data");
   size_t pos = part.find("\r\n\r\n");
   if (pos == std::string::npos) {
     throw clientError("Invalid file part");
@@ -89,7 +89,7 @@ std::string PostHandler::extractFileData(const std::string& part) {
 }
 
 void PostHandler::processFilePart(Client& client, const std::string& part) {
-  LOG_INFO("Processing file part");
+  LOG_TRACE("Processing file part");
   std::string fileName = extractFileName(part);
   if (fileName.empty()){
     return;
@@ -99,11 +99,11 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);
-  std::ofstream file( path + fileName, std::ios::binary);
+  std::ofstream file(path + fileName, std::ios::binary);
   if (!file.is_open()) {
     throw clientError("Failed to open file");
   } else {
-    LOG_INFO("File opened successfully");
+    LOG_TRACE("File opened successfully");
     file.write(data.data(), data.length());
     file.close();
     upload = true;
@@ -111,7 +111,7 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
 }
 
 void PostHandler::processFormData(const std::string& part) {
-  LOG_INFO("Processing form data");
+  LOG_TRACE("Processing form data");
   std::istringstream iss(part);
   std::string pair;
   while (std::getline(iss, pair, '&')) {
@@ -131,7 +131,7 @@ void PostHandler::processFormData(const std::string& part) {
 }
 
 void PostHandler::processMultipartFormData(Client& client) {
-  LOG_INFO("Processing multipart/form-data");
+  LOG_TRACE("Processing multipart/form-data");
   // check for body existence
   const auto& body = client.getReq().getBody();
   LOG_DEBUG("Body size:", body.size());
@@ -155,7 +155,7 @@ void PostHandler::processMultipartFormData(Client& client) {
 }
 
 void PostHandler::setResponse(Client& client) {
-  LOG_INFO("Populating response");
+  LOG_TRACE("Populating response");
   client.getRes().setResStatusCode(200);
   client.getRes().setResStatusMessage("OK");
   client.getRes().addHeader("Content-Type", "text/html");
@@ -183,13 +183,13 @@ void PostHandler::setResponse(Client& client) {
 }
 
 void PostHandler::executeRequest(Client& client) {
-  LOG_INFO("Processing POST request for path:", client.getReq().getReqURI());
+  LOG_TRACE("Processing POST request for path:", client.getReq().getReqURI());
   client.setClientState(ClientState::PROCESSING);
   client.setParsingState(ParsingState::BODY);
   upload = false;
 
   getContentType(client);
-  LOG_TRACE("content type:", contentType);
+  LOG_DEBUG("content type:", contentType);
   if (contentType == "application/x-www-form-urlencoded") {
     processFormUrlEncoded(client);
   } else if (contentType == "multipart/form-data") {

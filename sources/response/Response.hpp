@@ -41,6 +41,7 @@ class Response {
   int getResStatusCode(void) { return resStatusCode; }
   std::map<std::string, std::string>& getResHeaders(void) { return resHeaders; }
   std::string& getResHeader(std::string key) { return resHeaders.at(key); }
+  std::string& getResStatusMessage(void) { return resStatusMessage; }
 
  public:  // setters
   void setResStatusCode(int code) { resStatusCode = code; }

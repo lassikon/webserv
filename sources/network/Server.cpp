@@ -16,9 +16,14 @@ void Server::addServerConfig(ServerConfig& serverConfig) {
   serverConfigs.emplace_back(std::make_shared<ServerConfig>(serverConfig));
 }
 
+// Accepts a new incoming client connection on the server socket.
+// Configures the new connection as non-blocking and close-on-exec, adds it to the poll manager,
+// and tracks its last activity timestamp.
 void Server::acceptConnection(PollManager& pollManager) {
   struct sockaddr_storage theirAddr {};
   socklen_t addrSize = sizeof theirAddr;
+
+  // Accept the incoming connection and obtain the new socket file descriptor
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
   if (newFd < 0) {
     LOG_WARN("Failed to accept new connection:", IException::expandErrno());
@@ -29,11 +34,16 @@ void Server::acceptConnection(PollManager& pollManager) {
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs, session));
   LOG_DEBUG("Accepted new client fd:", newFd);
 
+  // Add the new client's file descriptor to the poll manager with EPOLLIN events
   pollManager.addFd(newFd, EPOLLIN, [&](int fd) { removeClient(fd); });
   clientLastActivity[newFd] = std::chrono::steady_clock::now();
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
 
+// Handles EPOLLIN events for a client connection.
+// This function finds the client by its file descriptor, processes the incoming event,
+// and modifies the client's poll events if needed. If the client should be closed,
+// it removes it from the poll manager.
 void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd) {
   auto it = std::find_if(
     clients.begin(), clients.end(),
@@ -44,6 +54,7 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
   }
   if (it != clients.end()) {
     bool isClose = false;
+    // Check if the event is for CGI or the main client socket
     if (eventFd == Utility::getOutReadFdFromClientFd(clientFd)) {
       LOG_DEBUG("Handling EPOLLIN event for cgi,", eventFd, " to client fd:", clientFd);
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
@@ -53,7 +64,10 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
       updateClientLastActivity(clientFd);
     }
+
+    // Modify the client's poll events based on its current state
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
+
     if (isClose == true) {
       LOG_TRACE("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
@@ -63,6 +77,10 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents, int even
   }
 }
 
+// Handles EPOLLOUT events for a client connection.
+// This function locates the client by its file descriptor, processes the outgoing event,
+// modifies the client's poll events if needed, and removes the client from the poll manager
+// if it should be closed.
 void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eventFd,
                              int clientFd) {
   auto it = std::find_if(
@@ -74,6 +92,7 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eve
   }
   if (it != clients.end()) {
     bool isClose = false;
+    // Check if the event is for CGI or the main client socket
     if (eventFd == Utility::getInWriteFdFromClientFd(clientFd)) {
       LOG_DEBUG("Handling EPOLLOUT event for cgi,", eventFd, " to client fd:", clientFd);
       isClose = (*it)->handleEpollEvents(revents, clientFd, eventFd);
@@ -83,7 +102,10 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents, int eve
       isClose = (*it)->handleEpollEvents(revents, eventFd, clientFd);
       updateClientLastActivity(clientFd);
     }
+
+    // Modify the client's poll events based on its current state
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
+
     if (isClose == true) {
       LOG_DEBUG("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
@@ -101,7 +123,7 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   //removing fd in epoll interest list fds
   if (eventFd == clientFd && client->getClientState() == ClientState::CLOSE &&
       client->getCgiState() == CgiState::IDLE) {
-    LOG_INFO("EOF/Client closed writing end, CLOSING client fd:", clientFd);
+    LOG_DEBUG("EOF/Client closed writing end, CLOSING client fd:", clientFd);
     fd = eventFd;
     LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
     pollManager.removeFd(clientFd);
@@ -110,7 +132,7 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   //client reset to waiting for EPOLLIN / initial state
   if (eventFd == clientFd && client->getClientState() == ClientState::IDLE &&
       client->getCgiState() == CgiState::IDLE) {
-    LOG_INFO("Client:", clientFd, "Idle state, EPOLLIN, ~EPOLLOUT");
+    LOG_DEBUG("Client:", clientFd, "Idle state, EPOLLIN, ~EPOLLOUT");
     newEvents &= ~EPOLLOUT;
     newEvents |= EPOLLIN;
     fd = eventFd;
@@ -118,7 +140,7 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   // after epollin client reading request, waiting for eof in request reading
   if (eventFd == clientFd && client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::IDLE) {
-    LOG_INFO("Client:", clientFd, "Reading state, EPOLLIN, ~EPOLLOUT");
+    LOG_DEBUG("Client:", clientFd, "Reading state, EPOLLIN, ~EPOLLOUT");
     newEvents &= ~EPOLLOUT;
     newEvents |= EPOLLIN;
     fd = eventFd;
@@ -126,7 +148,7 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   //after reading eof request disabling epollin and enabling epollout for client
   if (eventFd == clientFd && client->getClientState() == ClientState::PROCESSING &&
       client->getCgiState() == CgiState::IDLE) {
-    LOG_INFO("Client:", clientFd, "Processing state, ~EPOLLIN, EPOLLOUT");
+    LOG_DEBUG("Client:", clientFd, "Processing state, ~EPOLLIN, EPOLLOUT");
     newEvents &= ~EPOLLIN;
     newEvents |= EPOLLOUT;
     fd = eventFd;
@@ -151,8 +173,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   //epollout to cgi stdin pipe
   if (eventFd == clientFd && client->getClientState() == ClientState::PROCESSING &&
       client->getCgiState() == CgiState::READING) {
-    LOG_INFO("Client:", clientFd, "Processing state, ~EPOLLIN, ~EPOLLOUT");
-    LOG_INFO("CGI:", Utility::getInWriteFdFromClientFd(clientFd), "Reading state");
+    LOG_DEBUG("Client:", clientFd, "Processing state, ~EPOLLIN, ~EPOLLOUT");
+    LOG_DEBUG("CGI:", Utility::getInWriteFdFromClientFd(clientFd), "Reading state");
     newEvents &= ~EPOLLIN;
     newEvents &= ~EPOLLOUT;
     fd = eventFd;
@@ -161,8 +183,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   if (eventFd == Utility::getInWriteFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::WRITING) {
-    LOG_INFO("Client:", clientFd, "Reading state, ~EPOLLOUT");
-    LOG_INFO("CGI:", Utility::getOutReadFdFromClientFd(clientFd), "Reading done, ~EPOLLOUT");
+    LOG_DEBUG("Client:", clientFd, "Reading state, ~EPOLLOUT");
+    LOG_DEBUG("CGI:", Utility::getOutReadFdFromClientFd(clientFd), "Reading done, ~EPOLLOUT");
     newEvents &= ~EPOLLOUT;
     fd = eventFd;
   }
@@ -171,8 +193,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   //Epollin from cgi stdout
   if (eventFd == clientFd && client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::WRITING) {
-    LOG_INFO("Client:", clientFd, "Reading state");
-    LOG_INFO("CGI writing state");
+    LOG_DEBUG("Client:", clientFd, "Reading state");
+    LOG_DEBUG("CGI writing state");
     newEvents = 0;
     fd = eventFd;
   }
@@ -180,8 +202,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   if (eventFd == clientFd && client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::WRITING &&
       Utility::getOutReadFdFromClientFd(clientFd) == -1) {
-    LOG_INFO("Client:", clientFd, "Reading state");
-    LOG_INFO("CGI writing state");
+    LOG_DEBUG("Client:", clientFd, "Reading state");
+    LOG_DEBUG("CGI writing state");
     newEvents |= EPOLLOUT;
     fd = eventFd;
   }
@@ -190,8 +212,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   if (eventFd == Utility::getOutReadFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::WRITING) {
-    LOG_INFO("Client:", clientFd, "Reading state");
-    LOG_INFO("CGI:", eventFd, "writing state, EPOLLIN, ~EPOLLOUT");
+    LOG_DEBUG("Client:", clientFd, "Reading state");
+    LOG_DEBUG("CGI:", eventFd, "writing state, EPOLLIN, ~EPOLLOUT");
     newEvents = EPOLLIN;
     fd = eventFd;
   }
@@ -199,8 +221,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   if (eventFd == Utility::getOutReadFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::PROCESSING &&
       client->getCgiState() == CgiState::DONE) {
-    LOG_INFO("Client:", clientFd, "Processing state , EPOLLOUT");
-    LOG_INFO("CGI:", eventFd, "done state");
+    LOG_DEBUG("Client:", clientFd, "Processing state , EPOLLOUT");
+    LOG_DEBUG("CGI:", eventFd, "done state");
     newEvents |= EPOLLOUT;
     fd = Utility::getClientFdFromCgiParams(eventFd);
   }
@@ -208,8 +230,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   if (eventFd == Utility::getOutReadFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::PREPARING &&
       client->getCgiState() == CgiState::DONE) {
-    LOG_INFO("Client:", clientFd, "Processing state , EPOLLOUT");
-    LOG_INFO("CGI:", eventFd, "done state");
+    LOG_DEBUG("Client:", clientFd, "Processing state , EPOLLOUT");
+    LOG_DEBUG("CGI:", eventFd, "done state");
     newEvents |= EPOLLOUT;
     fd = Utility::getClientFdFromCgiParams(eventFd);
   }
@@ -217,8 +239,8 @@ void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> cli
   //Client events after cgi done state, waiitng for sending eof
   if (eventFd == clientFd && client->getClientState() == ClientState::SENDING &&
       client->getCgiState() == CgiState::DONE) {
-    LOG_INFO("Client:", clientFd, "Sending state, EPOLLOUT");
-    LOG_INFO("CGI:", Utility::getOutReadFdFromClientFd(clientFd), "done state");
+    LOG_DEBUG("Client:", clientFd, "Sending state, EPOLLOUT");
+    LOG_DEBUG("CGI:", Utility::getOutReadFdFromClientFd(clientFd), "done state");
     newEvents &= ~EPOLLIN;
     newEvents |= EPOLLOUT;
     fd = eventFd;

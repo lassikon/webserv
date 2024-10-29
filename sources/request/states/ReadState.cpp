@@ -15,9 +15,9 @@ void ReadState::execute(Client& client) {
     return;
   }
   handleReadBuf(client, buffer, nbytes);
-  LOG_INFO("Receiving data from fd", client.getReadFd(), "at", client.getFd());
-  LOG_INFO("Received", nbytes, "bytes from client fd", client.getFd());
-  LOG_INFO("Data received:", buffer.data());
+  LOG_DEBUG("Receiving data from fd", client.getReadFd(), "at", client.getFd());
+  LOG_DEBUG("Received", nbytes, "bytes from client fd", client.getFd());
+  LOG_DEBUG("Data received:", buffer.data());
   ifCRLF(client);
   ifCgiOutput(client);
 }
@@ -27,12 +27,12 @@ void ReadState::handleReadBuf(Client& client, std::vector<char> buffer, ssize_t 
   std::shared_ptr<std::vector<char>> temp = std::make_shared<std::vector<char>>(nbytes);
   temp->assign(buffer.begin(), buffer.begin() + nbytes);
   if (client.getReadBuf() != nullptr) {
-    LOG_TRACE("APPENDING before size:", client.getReadBuf()->size());
+    LOG_DEBUG("APPENDING before size:", client.getReadBuf()->size());
     std::vector<char>& buf = *client.getReadBuf();
     buf.insert(buf.end(), temp->begin(), temp->end());
     client.setReadBuf(std::move(buf));
     client.setReadEnd(client.getReadBuf()->size());
-    LOG_TRACE("APPENDING after size:", client.getReadBuf()->size());
+    LOG_DEBUG("APPENDING after size:", client.getReadBuf()->size());
   } else {
     LOG_TRACE("CREATING new buffer");
     client.setReadBuf(std::make_shared<std::vector<char>>(temp->begin(), temp->end()));
@@ -45,14 +45,14 @@ void ReadState::ifCRLF(Client& client) {
   if (client.getParsingState() != ParsingState::IDLE) {
     return;
   }
-  LOG_DEBUG("Finding CRLF");
+  LOG_TRACE("Finding CRLF");
   std::vector<char> clrf = {'\r', '\n', '\r', '\n'};
   auto pos =
     std::search(client.getReadBuf()->begin(), client.getReadBuf()->end(), clrf.begin(), clrf.end());
   if (pos != client.getReadBuf()->end()) {
-    LOG_DEBUG("CRLF found");
-    LOG_TRACE("Read curr:", client.getReadCurr());
-    LOG_TRACE("Read end:", client.getReadEnd());
+    LOG_TRACE("CRLF found");
+    LOG_DEBUG("Read curr:", client.getReadCurr());
+    LOG_DEBUG("Read end:", client.getReadEnd());
     client.setParsingState(ParsingState::REQLINE);
   }
 }
