@@ -50,7 +50,7 @@ std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildGetProcessTree() {
     serveQuery, isDirectory);
   return isQuery;
 };
-
+// building path tree
 std::shared_ptr<ProcessTree> ProcessTreeBuilder::buildPathTree() {
   auto serveFile = std::make_shared<ProcessTree>(std::make_shared<ServeFileAction>());
   auto serveRedirect = std::make_shared<ProcessTree>(std::make_shared<ServeRedirectAction>());

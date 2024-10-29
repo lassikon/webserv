@@ -16,6 +16,7 @@ class PostHandler : public IRequestHandler {
   std::string contentType;
   std::string boundary;
   std::unordered_map<std::string, std::string> formData;
+  std::vector<std::string> details;
   bool upload;
 
  public:

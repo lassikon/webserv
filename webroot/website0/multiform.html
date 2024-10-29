@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multipart Form Data Example</title>
+</head>
+<body>
+
+<h2>Multipart Form Data Example</h2>
+
+<form action="/upload" method="POST" enctype="multipart/form-data">
+    <!-- Basic Information -->
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+    <br><br>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+    <br><br>
+
+    <!-- File Uploads -->
+    <label for="profilePicture">Profile Picture:</label>
+    <input type="file" id="profilePicture" name="profilePicture" accept="image/*">
+    <br><br>
+
+    <label for="additionalFile">Additional Document (optional):</label>
+    <input type="file" id="additionalFile" name="additionalFile">
+    <br><br>
+
+    <!-- Other Data -->
+    <label for="bio">Bio:</label>
+    <textarea id="bio" name="bio" rows="4" cols="50" placeholder="Tell us about yourself..."></textarea>
+    <br><br>
+
+    <!-- Submit Button -->
+    <button type="submit">Submit</button>
+</form>
+
+</body>
+</html>

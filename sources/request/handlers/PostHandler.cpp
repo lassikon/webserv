@@ -19,7 +19,7 @@ void PostHandler::processFormUrlEncoded(Client& client) {
   LOG_INFO("Processing application/x-www-form-urlencoded");
   std::string data(client.getReq().getBody().data(), client.getReq().getBody().size());
   // LOG_DEBUG("Raw data:\n", data);
-  std::cout << "Raw data:\n" << data;
+  //std::cout << "Raw data:\n" << data;
   std::istringstream iss(data);
   std::string pair;
 
@@ -34,6 +34,7 @@ void PostHandler::processFormUrlEncoded(Client& client) {
   }
   LOG_DEBUG("Parsed form data:");  // For testing purposes
   for (const auto& [key, value] : formData) {
+    details.push_back(value);
     LOG_DEBUG(key, ":", value);
   }
 }
@@ -47,20 +48,38 @@ std::string PostHandler::extractBoundary(Client& client) {
 }
 
 std::vector<std::string> PostHandler::splitByBoundary(std::string data, std::string boundary) {
-  LOG_INFO("Splitting data by boundary");
-  std::vector<std::string> parts;
-  size_t pos = 0;
-  while ((pos = data.find(boundary)) != std::string::npos) {
-    parts.push_back(data.substr(pos + boundary.length()));
-    LOG_DEBUG("part value:", data.substr(pos + boundary.length()));
-    LOG_DEBUG("boundary value:", boundary);
-    data.erase(0, pos + boundary.length());
-  }
-  return parts;
+ LOG_INFO("Splitting data by boundary");
+    std::vector<std::string> parts;
+    size_t pos = 0;
+
+    // Find the first boundary, ignore anything before it
+    if ((pos = data.find(boundary)) != std::string::npos) {
+        data.erase(0, pos + boundary.length());
+    }
+
+    // Continue splitting by boundary until we reach the end of data
+    while ((pos = data.find(boundary)) != std::string::npos) {
+        // Extract the part between the current position and the next boundary
+        std::string part = data.substr(0, pos);
+        
+        // Trim any leading or trailing newline or carriage return characters
+        part.erase(0, part.find_first_not_of("\r\n"));
+        part.erase(part.find_last_not_of("\r\n") + 1);
+        
+        // Add the cleaned part to parts
+        if (!part.empty()) {
+            parts.push_back(part);
+            //LOG_DEBUG("Extracted part:", part);
+        }
+
+        // Move past the current boundary
+        data.erase(0, pos + boundary.length());
+    }
+    return parts;
 }
 
 bool PostHandler::isFilePart(const std::string& part) {
-  return part.find("filename") != std::string::npos;
+ return part.find("filename") != std::string::npos;
 }
 
 std::string PostHandler::extractFileName(const std::string& part) {
@@ -87,10 +106,12 @@ std::string PostHandler::extractFileData(const std::string& part) {
 void PostHandler::processFilePart(Client& client, const std::string& part) {
   LOG_INFO("Processing file part");
   std::string fileName = extractFileName(part);
+  if (fileName.empty()){
+    return;
+  }
   std::string data = extractFileData(part);
   LOG_DEBUG("FileName:", fileName);
-  LOG_DEBUG("Data:\n", data);
-
+  // LOG_DEBUG("Data:\n", data);
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);
@@ -120,6 +141,7 @@ void PostHandler::processFormData(const std::string& part) {
   }
   LOG_DEBUG("Parsed form data:");
   for (const auto& [key, value] : formData) {
+    details.push_back(value);
     LOG_DEBUG(key, ":", value);
   }
 }
@@ -162,7 +184,14 @@ void PostHandler::setResponse(Client& client) {
     client.getRes().addHeader("Location", "/upload/");
   }
   else {
-    htmlResponse = "<html><body><h1>POST request processed</h1><ul>";
+    htmlResponse = "<html><h1>POST request processed</h1><body>";
+    std::string data;
+    for (const auto& detail : details) {
+      LOG_DEBUG("Detail:", detail);
+      data += detail + "<br>";
+    }
+    htmlResponse += "<p>Form Data:</p><pre>" + data + "</pre>";
+    htmlResponse += "</body></html>";
   }
   client.getRes().addHeader("Content-Length", std::to_string(htmlResponse.size()));
   std::vector<char> responseBody(htmlResponse.begin(), htmlResponse.end());
@@ -176,6 +205,7 @@ void PostHandler::executeRequest(Client& client) {
   upload = false;
 
   getContentType(client);
+  LOG_TRACE("content type:", contentType);
   if (contentType == "application/x-www-form-urlencoded") {
     processFormUrlEncoded(client);
   } else if (contentType == "multipart/form-data") {
