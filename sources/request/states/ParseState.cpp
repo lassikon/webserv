@@ -8,7 +8,7 @@ void ParseState::execute(Client& client) {
     return;
   }
   LOG_TRACE("Parsing request from client fd:", client.getFd());
-  LOG_INFO("DATA:", client.getReadBuf()->data());
+  LOG_DEBUG("DATA:", client.getReadBuf()->data());
   if (client.getParsingState() == ParsingState::REQLINE) {
     parseRequestLine(client);
   }
@@ -136,9 +136,9 @@ void ParseState::parseBodyWithContentLength(Client& client) {
   std::vector<char> bodyData(contentLength);
   bodyData.assign(buffer.begin() + curr, buffer.end());
   client.getReq().setBody(bodyData);
-  LOG_INFO("Read Bytes:", client.getReadNBytes());
-  LOG_INFO("Content-Length:", contentLength);
-  LOG_INFO("Distance:", end - curr);
+  LOG_DEBUG("Read Bytes:", client.getReadNBytes());
+  LOG_DEBUG("Content-Length:", contentLength);
+  LOG_DEBUG("Distance:", end - curr);
   if (end - curr == contentLength) {
     client.setParsingState(ParsingState::DONE);
   }

@@ -32,7 +32,7 @@ void SendState::execute(Client& client) {
 
   LOG_DEBUG("bytes sent:", nbytes);
   LOG_DEBUG("total bytes:", client.getRes().getResContent().size());
-  LOG_INFO("Response sent to fd:", client.getWriteFd(), " from fd:", client.getFd());
-  LOG_INFO("Response:", client.getRes().getResContent().data());
+  LOG_DEBUG("Response sent to fd:", client.getWriteFd(), " from fd:", client.getFd());
+  LOG_DEBUG("Response:", client.getRes().getResStatusMessage());
   client.setClientState(ClientState::SENDING);
 }

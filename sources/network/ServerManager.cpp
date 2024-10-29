@@ -45,9 +45,10 @@ void ServerManager::configServers(Config& config) {
 }
 
 void ServerManager::handleNoEvents(PollManager& pollManager) {
-  LOG_DEBUG("No events, checking for idle clients");
+  LOG_INFO("No events, checking for idle clients or expired cookies");
   for (auto& server : servers) {
     server->checkIdleClients(pollManager);
+    // server->getSession().checkExpiredCookies();
   }
 }
 
@@ -75,7 +76,7 @@ void ServerManager::runServers(void) {
       continue;
     } else if (epollCount == 0) {
       RuntimeException::tryCatch(&ServerManager::handleNoEvents, this, pollManager);
-      handleNoEvents(pollManager);
+      // handleNoEvents(pollManager);
     } else {
       RuntimeException::tryCatch(&ServerManager::serverLoop, this, pollManager);
     }

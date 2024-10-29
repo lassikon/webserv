@@ -85,10 +85,10 @@ class Logger {
 // does not support complex data types like std::vector or std::map
 // example: LOG_ERROR("Failed to listen on socket fd:", sockFd);
 #define LOG_TRACE(...) \
-  (Logger::Log(logLevel::Trace, "TRACE", CYAN, std::cout, LOGDATA, __VA_ARGS__))
+  (Logger::Log(logLevel::Trace, "TRACE", BLUE, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_DEBUG(...) \
   (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, LOGDATA, __VA_ARGS__))
-#define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", BLUE, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", CYAN, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_WARN(...) \
   (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, LOGDATA, __VA_ARGS__))

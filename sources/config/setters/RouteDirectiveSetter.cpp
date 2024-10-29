@@ -87,7 +87,7 @@ void RouteDirectiveSetter::setDefaultFile(RouteConfig& route, std::string& value
 
 void RouteDirectiveSetter::setUploadPath(RouteConfig& route, std::string& value, int& lineNumber) {
   if (!std::filesystem::exists(value)) {
-    LOG_WARN("Parse: Upload path not found,", value, " at line", lineNumber);
+    LOG_DEBUG("Parse: Upload path not found,", value, " at line", lineNumber);
     return;
   }
   if (!route.uploadPath.empty())
