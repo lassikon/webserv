@@ -67,6 +67,7 @@ void ServerManager::runServers(void) {
   PollManager pollManager;
   LOG_TRACE("Adding server sockets to pollManager");
   initializePollManager(pollManager);
+  LOG_INFO("Running servers");
   while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
     if (epollCount == -1) {

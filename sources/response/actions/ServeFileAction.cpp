@@ -40,7 +40,7 @@ bool ServeFileAction::isCookieFound(Client& client, std::string& path) {
         throw httpForbidden(client, "HTTP Error 403 - Forbidden");
       }
     } else {
-      LOG_WARN("Session cookie not found");
+      LOG_INFO("Session cookie not found");
       client.getRes().addHeader("Set-Cookie", client.getClientSession().setSessionCookie());
     }
     return true;
