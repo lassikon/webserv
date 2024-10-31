@@ -35,6 +35,7 @@ class ServerManager {
   void serverLoop(PollManager& pollManager);
   bool checkServerExists(ServerConfig& serverConfig);
   void initializePollManager(PollManager& pollManager);
+  void startupMessage(void);
 
  private:
   void checkChildProcesses(PollManager& pollManager);

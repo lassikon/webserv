@@ -10,6 +10,8 @@
 #include <string>
 #include <unordered_map>
 
+#define COOKIE_TIMEOUT 3600
+
 class SessionManager {
  private:
   const int tokenLength = 20;

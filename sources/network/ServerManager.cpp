@@ -48,7 +48,7 @@ void ServerManager::handleNoEvents(PollManager& pollManager) {
   LOG_INFO("No events, checking for idle clients or expired cookies");
   for (auto& server : servers) {
     server->checkIdleClients(pollManager);
-    // server->getSession().checkExpiredCookies();
+    server->getSession().checkExpiredCookies();
   }
 }
 
@@ -63,11 +63,17 @@ void ServerManager::initializePollManager(PollManager& pollManager) {
   }
 }
 
+void ServerManager::startupMessage(void) {
+  for (auto& server : servers) {
+    LOG_INFO("Server", server->getServerName(), "listening on port", server->getPort());
+  }
+}
+
 void ServerManager::runServers(void) {
   PollManager pollManager;
   LOG_TRACE("Adding server sockets to pollManager");
   initializePollManager(pollManager);
-  LOG_INFO("Running servers");
+  startupMessage();
   while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
     if (epollCount == -1) {
@@ -105,7 +111,7 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
   int fd = event.data.fd;
   int clientFd = Utility::getClientFdFromCgiParams(fd);
   if ((event.events & EPOLLHUP || event.events & EPOLLERR) && Utility::isCgiFd(fd)) {
-    LOG_WARN("EPoll hangup on CGI fd:", fd);
+    LOG_DEBUG("EPoll hangup on CGI fd:", fd);
     for (auto& server : servers) {
       if (server->isClientFd(clientFd)) {
         if (Utility::isOutReadFd(fd)) {
@@ -118,8 +124,11 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
       }
     }
     pollManager.removeFd(fd);
-  } else if (event.events & EPOLLERR || event.events & EPOLLRDHUP) {
-    LOG_ERROR("Epoll error or hangup on fd:", fd);
+  } else if (event.events & EPOLLERR) {
+    LOG_ERROR("Epoll error on fd:", fd);
+    pollManager.removeFd(fd);
+  } else if (event.events & EPOLLRDHUP) {
+    LOG_INFO("Epoll hangup on fd:", fd);
     pollManager.removeFd(fd);
   } else {
     LOG_WARN("EPoll on fd:", fd);
@@ -129,6 +138,7 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
 }
 
 void ServerManager::handlePollInEvent(PollManager& pollManager, struct epoll_event& event) {
+  LOG_DEBUG("Handling POLLIN event");
   int fd = event.data.fd;
   for (auto& server : servers) {
     if (fd == server->getSocketFd()) {
@@ -185,7 +195,7 @@ void ServerManager::checkForNewChildProcesses(PollManager& pollManager) {
 bool ServerManager::childTimeout(steady_time_point_t& start) {
   auto now = std::chrono::steady_clock::now();
   if (now - start > std::chrono::seconds(CHILD_TIMEOUT)) {
-    LOG_ERROR("Child process timed out");
+    LOG_DEBUG("Child process timed out");
     return true;
   }
   return false;
@@ -201,14 +211,15 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
         pollManager.removeFd(it->inWriteFd);
         g_CgiParams.erase(it);
       } else if (result > 0) {  // Child process has exited
-        LOG_INFO("Child process", it->pid, "exited with status:", it->childExitStatus);
         it->isExited = true;
+        // pollManager.removeFd(it->outReadFd);
+        // pollManager.removeFd(it->inWriteFd);
         if (it->childExitStatus != 0) {
-          LOG_ERROR("Child process exited with status:", it->childExitStatus);
+          LOG_DEBUG("Child process exited with status:", it->childExitStatus);
           it->isFailed = true;
         }
       } else if (result == 0 && childTimeout(it->start)) {
-        LOG_ERROR("Child process", it->pid, "timed out");
+        LOG_DEBUG("Child process", it->pid, "timed out");
         kill(it->pid, SIGKILL);
         it->isTimeout = true;
       }

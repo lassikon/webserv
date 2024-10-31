@@ -5,6 +5,7 @@
 void ReadState::execute(Client& client) {
   std::vector<char> buffer(4096, 0);
   ssize_t nbytes = 0;
+  LOG_DEBUG("hllo ", client.getReadFd());
   nbytes = read(client.getReadFd(), buffer.data(), buffer.size());
   client.setReadNBytes(nbytes + client.getReadNBytes());
   if (nbytes == -1) {
@@ -77,5 +78,8 @@ void ReadState::handleEOF(Client& client) {
   } else if (client.getReadBuf()->empty()) {
     LOG_DEBUG("Reading EOF from client fd:", client.getFd());
     client.setClientState(ClientState::PROCESSING);
+  } else {
+    LOG_DEBUG("Reading EOF from client fd:", client.getFd());
+    throw httpBadRequest(client, "Client fd:", client.getFd(), "has unexpected EOF");
   }
 }

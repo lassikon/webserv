@@ -33,6 +33,7 @@ void Client::handlePollInEvent(int readFd) {
   setReadFd(readFd);
   if (clientState == ClientState::IDLE) {
     clientState = ClientState::READING;
+    LOG_INFO("Client fd:", fd, "is reading");
   }
   if (clientState == ClientState::READING) {
     readState.execute(*this);
@@ -46,6 +47,7 @@ void Client::handlePollOutEvent(int writeFd) {
   setWriteFd(writeFd);
   if (clientState == ClientState::PROCESSING) {
     processState.execute(*this);
+    LOG_INFO("Client fd:", fd, "is processing");
   }
   if (clientState == ClientState::PREPARING) {
     LOG_DEBUG("Preparing response");
@@ -71,7 +73,7 @@ void Client::setFd(int newFd) {
 }
 
 void Client::cleanupClient(void) {
-  if (fd > 0) {
+  if (fd > 0 && fcntl(fd, F_GETFD) != -1) {
     LOG_DEBUG("closing fd:", fd);
     if (close(fd) == -1) {
       throw clientError("Failed to close fd:", fd);

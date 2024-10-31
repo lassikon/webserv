@@ -51,17 +51,19 @@ void RouteDirectiveSetter::setMethods(RouteConfig& route, std::string& value, in
 void RouteDirectiveSetter::setRoot(RouteConfig& route, std::string& value, int& lineNumber) {
   std::filesystem::path exePath;
   exePath = Utility::getExePath(exePath);
-  if (!std::filesystem::exists(value)) {
-    LOG_WARN("Parse: Root path not found,", value, " at line", lineNumber);
+  std::filesystem::path rootPath = std::filesystem::canonical(value);
+  std::string root = rootPath.string();
+  if (!std::filesystem::exists(root)) {
+    LOG_WARN("Parse: Root path not found,", root, " at line", lineNumber);
     return;
   }
 
-  if (value.compare(0, exePath.string().size(), exePath.string()) == 0) {
+  if (root.compare(0, exePath.string().size(), exePath.string()) == 0) {
     if (!route.root.empty())
       LOG_WARN("Parse: Root already set, updating with line", lineNumber);
-    route.root = value;
+    route.root = root;
   } else {
-    LOG_WARN("Parse: Root path is not allowed,", value, " at line", lineNumber);
+    LOG_WARN("Parse: Root path is not allowed,", root, " at line", lineNumber);
   }
 }
 
@@ -86,13 +88,30 @@ void RouteDirectiveSetter::setDefaultFile(RouteConfig& route, std::string& value
 }
 
 void RouteDirectiveSetter::setUploadPath(RouteConfig& route, std::string& value, int& lineNumber) {
-  if (!std::filesystem::exists(value)) {
-    LOG_DEBUG("Parse: Upload path not found,", value, " at line", lineNumber);
+  std::string webroot = route.root;
+  if (webroot.empty()) {
+    LOG_WARN("Parse: Root path not set, upload path not allowed at line", lineNumber);
+    return;
+  }
+  std::filesystem::path uploadPath = webroot + value;
+  if (!std::filesystem::exists(uploadPath)) {
+    LOG_DEBUG("Parse: Upload path not found,", uploadPath.string(), " at line", lineNumber);
+    LOG_DEBUG("Parse: Attempting to create upload path,", uploadPath.string());
+    //create
+    if (!std::filesystem::create_directories(uploadPath)) {
+      LOG_WARN("Parse: Failed to create upload path,", uploadPath.string(), " at line", lineNumber);
+    return;
+    }
+  }
+  std::string upload = uploadPath.string();
+  LOG_DEBUG("Upload path:", upload);
+  if (!std::filesystem::exists(upload)) {
+    LOG_DEBUG("Parse: Upload path not found,", upload, " at line", lineNumber);
     return;
   }
   if (!route.uploadPath.empty())
     LOG_WARN("Parse: Upload path already set, updating with line", lineNumber);
-  route.uploadPath = value;
+  route.uploadPath = upload;
 }
 // either a path or a redirect url
 void RouteDirectiveSetter::setRedirect(RouteConfig& route, std::string& value, int& lineNumber) {

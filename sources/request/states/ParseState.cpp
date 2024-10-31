@@ -8,7 +8,6 @@ void ParseState::execute(Client& client) {
     return;
   }
   LOG_TRACE("Parsing request from client fd:", client.getFd());
-  LOG_DEBUG("DATA:", client.getReadBuf()->data());
   if (client.getParsingState() == ParsingState::REQLINE) {
     parseRequestLine(client);
   }
@@ -111,7 +110,7 @@ void ParseState::parseBody(Client& client) {
 }
 
 void ParseState::parseBodyWithoutContentLength(Client& client) {
-  LOG_WARN("Content-Length header not found. Using EOF");
+  LOG_DEBUG("Content-Length header not found. Using EOF");
   std::vector<char>& buffer = *client.getReadBuf();
   size_t& curr = client.getReadCurr();
   size_t& end = client.getReadEnd();

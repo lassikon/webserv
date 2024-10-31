@@ -6,6 +6,7 @@ Server::Server(ServerConfig& serverConfig) {
   port = serverConfig.port;
   ipAddress = serverConfig.ipAddress;
   socket.setupSocket(serverConfig);
+  serverName = serverConfig.serverName;
 }
 
 Server::~Server(void) {
@@ -25,7 +26,7 @@ void Server::acceptConnection(PollManager& pollManager) {
 
   // Accept the incoming connection and obtain the new socket file descriptor
   int newFd = accept(socket.getFd(), (struct sockaddr*)&theirAddr, &addrSize);
-  if (newFd < 0) {
+  if (newFd < 2) {
     LOG_WARN("Failed to accept new connection:", IException::expandErrno());
     return;
   }

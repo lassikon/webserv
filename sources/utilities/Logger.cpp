@@ -55,8 +55,8 @@ std::array<bool, 4> Logger::enabledDetail;
 // define default settings for the logger
 void Logger::loadDefaults(void) {
   currentLevel = logLevel::Trace;
-  currentOutput = logOutput::Both;
-  setLogDetails(false, true, true, true);
+  currentOutput = logOutput::ConsoleOnly;
+  setLogDetails(true, true, true, true);
   if (currentOutput != logOutput::ConsoleOnly) {
     createLogFile();
   }

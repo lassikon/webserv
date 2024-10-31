@@ -86,7 +86,7 @@ class NetworkException : public IException {
     }
     std::filesystem::path errorPath = exePath / path;
     std::string errorPathStr = errorPath.string();
-    LOG_ERROR("Error page path:", errorPathStr);
+    LOG_DEBUG("Error page path:", errorPathStr);
     if (!std::filesystem::exists(errorPath) || !isValid(errorPathStr)) {
       setBasicErrorPage(client, errorCode, message);
       return;

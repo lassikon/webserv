@@ -14,6 +14,14 @@ PollManager::PollManager(void) {
 
 PollManager::~PollManager(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
+  for (auto it = interestFdsList.begin(); it != interestFdsList.end(); it++) {
+    if (epoll_ctl(epollFd, EPOLL_CTL_DEL, it->first, nullptr) == -1) {
+      LOG_DEBUG("Failed to remove fd from epollFd");
+    }
+    LOG_DEBUG("Removed fd:", it->first, "from epollFd");
+    it->second(it->first);
+  }
+  LOG_DEBUG("Closed epollFd");
   close(epollFd);
 }
 

@@ -33,6 +33,8 @@ class Request {
   size_t getBodySize(void) const { return reqBodySize; }
   std::map<std::string, std::string> getHeaders(void) const { return reqHeaders; }
   std::vector<char> getBody(void) const { return reqBody; }
+  size_t getContentLength(void) const;
+  
 
  public:  // setters
   void setMethod(std::string method) { reqMethod = method; }

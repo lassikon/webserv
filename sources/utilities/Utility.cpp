@@ -79,7 +79,10 @@ void Utility::setCloseOnExec(int& fd) {
 }
 
 bool Utility::isCgiFd(int fd) {
+  LOG_DEBUG("Checking if fd is a CGI fd:", fd);
   for (auto& cgi : g_CgiParams) {
+    LOG_DEBUG("cgi out fds:", cgi.outReadFd, cgi.outWriteFd);
+    LOG_DEBUG("cgi in fds:", cgi.inReadFd, cgi.inWriteFd);
     if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
       return true;
     }

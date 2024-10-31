@@ -21,12 +21,12 @@ void Signal::signalHandler(int sigNum) noexcept {
 
 void Signal::sigPipeHandler(int sigNum) noexcept {
   (void)sigNum;
-  LOG_ERROR("SIGPIPE received");
+  LOG_DEBUG("SIGPIPE received");
 }
 
 void Signal::sigChildHandler(int sigNum) noexcept {
   (void)sigNum;
-  LOG_INFO("Child process exited");
+  LOG_DEBUG("Child process exited");
 }
 
 void Signal::trackSignals(void) noexcept {
