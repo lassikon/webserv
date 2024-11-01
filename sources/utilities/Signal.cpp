@@ -36,6 +36,6 @@ void Signal::trackSignals(void) noexcept {
   signal(SIGTERM, signalHandler);
   signal(SIGKILL, signalHandler);
   signal(SIGPIPE, sigPipeHandler);
-  signal(SIGCHLD, sigChildHandler);
+  //signal(SIGCHLD, sigChildHandler);
   createSigMap();
 }

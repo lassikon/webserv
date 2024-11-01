@@ -76,6 +76,7 @@ void ServerManager::runServers(void) {
   startupMessage();
   while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
+    LOG_TRACE("Epoll count:", epollCount);
     if (epollCount == -1) {
       if (!Utility::signalReceived()) {
         LOG_ERROR("Failed to epoll fds");
@@ -92,7 +93,16 @@ void ServerManager::runServers(void) {
 
 void ServerManager::serverLoop(PollManager& pollManager) {
   checkChildProcesses(pollManager);
+/*   int i = 0;
+  for(auto& event : pollManager.getEpollEvents()) {
+    int fd = event.data.fd;
+    LOG_TRACE("Handling event on fd:", fd, "event:", (int)event.events, "index:", i);
+    i++;
+  } */
   for (auto& event : pollManager.getEpollEvents()) {
+   // int fd = event.data.fd;
+   // LOG_TRACE("Handling event on fd:", fd);
+    //LOG_TRACE("Event:", (int)event.events);
     if (event.data.fd == -1) {
       continue;
     }
@@ -112,6 +122,7 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
   int clientFd = Utility::getClientFdFromCgiParams(fd);
   if ((event.events & EPOLLHUP || event.events & EPOLLERR) && Utility::isCgiFd(fd)) {
     LOG_DEBUG("EPoll hangup on CGI fd:", fd);
+    Utility::setIsExited(fd, true);
     for (auto& server : servers) {
       if (server->isClientFd(clientFd)) {
         if (Utility::isOutReadFd(fd)) {
@@ -203,7 +214,8 @@ bool ServerManager::childTimeout(steady_time_point_t& start) {
 
 void ServerManager::checkChildProcesses(PollManager& pollManager) {
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
-    if (it->childExitStatus == -1) {
+    LOG_TRACE("Checking child process:", it->pid);
+    if (!it->isExited) {
       pid_t result = waitpid(it->pid, &it->childExitStatus, WNOHANG);
       if (result == -1) {
         LOG_ERROR("Failed to wait for child process:", IException::expandErrno());
@@ -214,6 +226,7 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
         it->isExited = true;
         // pollManager.removeFd(it->outReadFd);
         // pollManager.removeFd(it->inWriteFd);
+        LOG_DEBUG("Child process", it->pid, "exited with status:", it->childExitStatus);
         if (it->childExitStatus != 0) {
           LOG_DEBUG("Child process exited with status:", it->childExitStatus);
           it->isFailed = true;

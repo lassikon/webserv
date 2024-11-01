@@ -9,7 +9,9 @@ void ReadState::execute(Client& client) {
   nbytes = read(client.getReadFd(), buffer.data(), buffer.size());
   client.setReadNBytes(nbytes + client.getReadNBytes());
   if (nbytes == -1) {
-    throw httpInternal(client, "Failed to read from client fd:", client.getFd());
+    LOG_ERROR("Failed to read from client fd:", client.getFd(), IException::expandErrno(), "(", errno, ")");
+    client.setCloseConnection(true);
+    return;
   }
   if (nbytes == 0) {  // EOF
     handleEOF(client);
@@ -54,6 +56,7 @@ void ReadState::ifCRLF(Client& client) {
     LOG_TRACE("CRLF found");
     LOG_DEBUG("Read curr:", client.getReadCurr());
     LOG_DEBUG("Read end:", client.getReadEnd());
+    crlfFound = true;
     client.setParsingState(ParsingState::REQLINE);
   }
 }
@@ -78,8 +81,11 @@ void ReadState::handleEOF(Client& client) {
   } else if (client.getReadBuf()->empty()) {
     LOG_DEBUG("Reading EOF from client fd:", client.getFd());
     client.setClientState(ClientState::PROCESSING);
-  } else {
+  } else if (!crlfFound) {
     LOG_DEBUG("Reading EOF from client fd:", client.getFd());
     throw httpBadRequest(client, "Client fd:", client.getFd(), "has unexpected EOF");
+  } else if (client.getParsingState() == ParsingState::IDLE) {
+    LOG_DEBUG("Reading EOF from client fd:", client.getFd());
+    client.setClientState(ClientState::PROCESSING);
   }
 }

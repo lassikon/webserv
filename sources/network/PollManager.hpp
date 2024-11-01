@@ -14,7 +14,7 @@ class PollManager {
 
 #define MAX_CLIENTS 1000
 #define MAX_EVENTS 64
-#define TIMEOUT 10000
+#define TIMEOUT 1000
 
  private:
   int epollFd;
@@ -27,6 +27,7 @@ class PollManager {
 
   int epollWait(void);
   std::vector<struct epoll_event>& getEpollEvents(void);
+  std::map<int, std::function<void(int)>>& getInterestFdsList(void);
 
  public:
   void addFd(int fd, uint32_t events, std::function<void(int)> cleanUp);

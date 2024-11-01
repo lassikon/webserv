@@ -1,7 +1,9 @@
 #include <Client.hpp>
 #include <NetworkException.hpp>
 
-Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs, SessionManager &session)
+Client::Client(int socketFd,
+               std::vector<std::shared_ptr<ServerConfig>>& serverConfigs,
+               SessionManager& session)
     : fd(socketFd), serverConfigs(serverConfigs), session(session) {
   LOG_DEBUG(Utility::getConstructor(*this));
   clientState = ClientState::IDLE;
@@ -11,6 +13,7 @@ Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverC
 
 Client::~Client(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
+  kill(Utility::getPid(fd), SIGKILL);
   cleanupClient();
 }
 
@@ -20,9 +23,9 @@ bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
   }
   if (revents & EPOLLOUT) {
     NetworkException::tryCatch(&Client::handlePollOutEvent, this, writeFd);
-    if (shouldCloseConnection()) {
-      return true;
-    }
+  }
+  if (shouldCloseConnection()) {
+    return true;
   }
   return false;
 }
@@ -121,11 +124,17 @@ void Client::initClient(void) {
 }
 
 bool Client::shouldCloseConnection(void) {
-  if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
-      req.getHeaders()["Connection"] == "close") {
+  /*  if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
+       req.getHeaders()["Connection"] == "close") {
+     LOG_DEBUG("Connection: close");
+     return true;
+   } */
+  if (closeConnection) {
+    LOG_TRACE("WriteNBytes:", writeNBytes);
     return true;
   }
-  if (writeNBytes == -1 && (cgiState == CgiState::IDLE || cgiState == CgiState::DONE)) {
+  if (closeConnection) {
+    LOG_TRACE("WriteNBytes:", readNBytes);
     return true;
   }
   if (res.getResStatusCode() == 500) {
@@ -137,7 +146,8 @@ bool Client::shouldCloseConnection(void) {
 void Client::ifGatewayError(void) {
   for (auto& cgi : g_CgiParams) {
     if (cgi.clientFd == getFd() && cgi.isTimeout) {
-      throw httpGatewayTimeout(*this, "CGI process timed out for client fd:", getFd());
+      throw httpGatewayTimeout(*this,
+                               "CGI process timed out for client fd:", getFd());
     } else if (cgi.clientFd == getFd() && cgi.isFailed) {
       throw httpBadGateway(*this, "CGI process exited for client fd:", getFd());
     }

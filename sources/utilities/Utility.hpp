@@ -37,6 +37,10 @@ class Utility {
   static bool isInWriteFd(int fd);
   static bool getIsTimeout(int fd);
   static bool getIsFailed(int fd);
+  static bool getIsExited(int fd);
+  static void setIsExited(int fd, bool isExited);
+  static bool getPid(int clientFd);
+  
   static bool getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr,
                               size_t& end);
   void isValidFile(mode_t mode, int permission, const std::string& file, Client& client) const;

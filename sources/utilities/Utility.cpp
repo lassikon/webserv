@@ -79,10 +79,7 @@ void Utility::setCloseOnExec(int& fd) {
 }
 
 bool Utility::isCgiFd(int fd) {
-  LOG_DEBUG("Checking if fd is a CGI fd:", fd);
   for (auto& cgi : g_CgiParams) {
-    LOG_DEBUG("cgi out fds:", cgi.outReadFd, cgi.outWriteFd);
-    LOG_DEBUG("cgi in fds:", cgi.inReadFd, cgi.inWriteFd);
     if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
       return true;
     }
@@ -151,6 +148,32 @@ bool Utility::getIsFailed(int fd) {
     }
   }
   return false;
+}
+
+bool Utility::getIsExited(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      return cgi.isExited;
+    }
+  }
+  return false;
+}
+
+void Utility::setIsExited(int fd, bool isExited) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      cgi.isExited = isExited;
+    }
+  }
+}
+
+bool Utility::getPid(int clientFd){
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.clientFd == clientFd) {
+      return cgi.pid;
+    }
+  }
+  return -1;
 }
 
 bool Utility::signalReceived(void) noexcept {

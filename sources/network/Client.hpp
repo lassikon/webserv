@@ -40,6 +40,7 @@ class Client {
  private:
   Request req;
   Response res;
+  bool closeConnection = false;
   int fd;
 
  private:
@@ -113,6 +114,7 @@ class Client {
 
  public:  // getters
   int getFd(void) const { return fd; }
+  bool getCloseConnection(void) const { return closeConnection; }
   Request& getReq(void) { return req; }
   Response& getRes(void) { return res; }
   PostHandler& getPostHandler(void) { return postHandler; }
@@ -127,6 +129,7 @@ class Client {
 
  public:  //  setters
   void setFd(int fd);
+  void setCloseConnection(bool close) { closeConnection = close; }
   void setClientState(ClientState state) { clientState = state; }
   void setParsingState(ParsingState state) { parsingState = state; }
   void setCgiState(CgiState state) { cgiState = state; }

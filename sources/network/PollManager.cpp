@@ -25,7 +25,8 @@ PollManager::~PollManager(void) {
   close(epollFd);
 }
 
-void PollManager::addFd(int fd, uint32_t events, std::function<void(int)> cleanUp) {
+void PollManager::addFd(int fd, uint32_t events,
+                        std::function<void(int)> cleanUp) {
   struct epoll_event event;
   event.data.fd = fd;
   event.events = events;
@@ -53,16 +54,18 @@ void PollManager::removeFd(int fd) {
     LOG_DEBUG("Removed fd:", fd, "from epollFd");
     it->second(fd);
     interestFdsList.erase(it);
-  }
-  for (auto it = epollEvents.begin(); it != epollEvents.end(); it++) {
-    if (it->data.fd == fd) {
-      it->data.fd = -1;
+    for (auto it = epollEvents.begin(); it != epollEvents.end(); ++it) {
+      if (it->data.fd == fd) {
+        LOG_TRACE("Erasing fd:", fd, "from epollEvents");
+        it->data.fd = -1;
+      } 
     }
-  }
-  for (auto it = g_CgiParams.begin(); it != g_CgiParams.end(); it++) {
-    if (it->outReadFd == fd || it->inWriteFd == fd) {
-      g_CgiParams.erase(it);
-      break;
+    for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
+      if (it->outReadFd == fd || it->inWriteFd == fd) {
+        it = g_CgiParams.erase(it);  // Erase safely
+      } else {
+        ++it;  // Increment iterator only if not erased
+      }
     }
   }
 }
@@ -72,7 +75,7 @@ void PollManager::modifyFd(int fd, uint32_t events) {
   event.data.fd = fd;
   event.events = events;
   if (epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &event) == -1) {
-    throw serverError("Failed to modify fd in epollFd");
+    throw serverError("Failed to modify fd",fd, "in epollFd", "errno:", errno, ":", strerror(errno));
   }
   LOG_DEBUG("Modified events for fd:", fd, "in epollFd");
 }
@@ -87,6 +90,8 @@ bool PollManager::fdExists(int fd) {
 int PollManager::epollWait(void) {
   int numEvents;
   while (!Utility::signalReceived()) {
+    epollEvents.clear();
+    epollEvents.resize(MAX_EVENTS);
     numEvents = epoll_wait(epollFd, epollEvents.data(), MAX_EVENTS, TIMEOUT);
     if (numEvents == -1) {
       if (errno == EINTR) {  // if interrupted by signal, try again
@@ -102,4 +107,8 @@ int PollManager::epollWait(void) {
 
 std::vector<struct epoll_event>& PollManager::getEpollEvents(void) {
   return epollEvents;
+}
+
+std::map<int, std::function<void(int)>>& PollManager::getInterestFdsList(void) {
+  return interestFdsList;
 }

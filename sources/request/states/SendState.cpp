@@ -15,7 +15,8 @@ void SendState::execute(Client& client) {
           client.getRes().getResContent().size() - client.getWriteNBytes());
   client.setWriteNBytes(client.getWriteNBytes() + nbytes);
   if (nbytes == -1) {
-    LOG_ERROR("Failed to write to client fd:", client.getFd());
+    client.setCloseConnection(true);
+    LOG_ERROR("Failed to write to client fd:", client.getFd(), IException::expandErrno(), "(", errno, ")");
     return;
   }
 
