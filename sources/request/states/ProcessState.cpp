@@ -29,6 +29,8 @@ void ProcessState::processRequest(Client& client) {
     if (client.getReq().getMethod() == "GET") {
       client.setClientState(ClientState::READING);
       client.setCgiState(CgiState::WRITING);
+      LOG_ANNOUNCE("Client:", client.getFd(), "set to reading state");
+      LOG_ANNOUNCE("CGI:", client.getWriteFd(), "set to writing state");
       client.getReadBuf()->clear();
       client.setReadBuf(nullptr);
       return;
@@ -61,5 +63,6 @@ void ProcessState::processCgiOutput(Client& client) {
   std::vector<char> reqBody = client.getReq().getBody();
   client.getRes().setResBody(reqBody);
   client.setCgiState(CgiState::DONE);
+  LOG_ANNOUNCE("Cgi output processed for client fd:", client.getFd());
   client.setClientState(ClientState::PREPARING);
 }

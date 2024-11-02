@@ -278,3 +278,40 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
     ++it;
   }
 }
+
+// void ServerManager::checkChildProcesses(PollManager& pollManager) {
+//   std::vector<int> fdsToRemove;
+
+//   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
+//     if (it->childExitStatus == -1) {
+//       pid_t result = waitpid(it->pid, &it->childExitStatus, WNOHANG);
+//       if (result == -1) {  // Error waiting for child process
+//         LOG_ERROR("Failed to wait for child process:", IException::expandErrno());
+//       } else if (result > 0) {  // Child process has exited
+//         it->isExited = true;
+//         if (it->childExitStatus != 0) {
+//           LOG_DEBUG("Child process exited with status:", it->childExitStatus);
+//           it->isFailed = true;
+//         }
+//       } else if (result == 0 && childTimeout(it->start)) {  // Timeout case
+//         LOG_DEBUG("Child process", it->pid, "timed out");
+//         kill(it->pid, SIGKILL);
+//         it->isTimeout = true;
+//       }
+
+//       // If the child process finished or had an error, mark FDs for removal
+//       if (result != 0 || result == -1) {  // Exited, timed out, or wait error
+//         fdsToRemove.push_back(it->outReadFd);
+//         fdsToRemove.push_back(it->inWriteFd);
+//         it = g_CgiParams.erase(it);  // Erase and update iterator
+//         continue;  // Skip iterator increment
+//       }
+//     }
+//     ++it;
+//   }
+
+//   // Remove FDs from PollManager after iterating, to avoid segfaults
+//   for (int fd : fdsToRemove) {
+//     pollManager.removeFd(fd);
+//   }
+// }

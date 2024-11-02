@@ -289,6 +289,7 @@ void Server::checkIdleClients(PollManager& pollManager) {
                 idleTimeout.count(), "seconds");
       LOG_DEBUG("Removing client fd:", it->first, "from pollManager");
       pollManager.removeFd(it->first);
+      removeClient(pollManager, it->first);
       break;
     }
   }
