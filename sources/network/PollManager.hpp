@@ -14,7 +14,7 @@ class PollManager {
 
 #define MAX_CLIENTS 1000
 #define MAX_EVENTS 64
-#define TIMEOUT 1000
+#define TIMEOUT 20000
 
  private:
   int epollFd;
@@ -34,4 +34,5 @@ class PollManager {
   void removeFd(int fd);
   bool fdExists(int fd);
   void modifyFd(int fd, uint32_t events);
+  bool isValidFd(int fd);
 };

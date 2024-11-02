@@ -57,7 +57,7 @@ class Server {
   int getSocketFd(void) const { return socket.getFd(); }
 
   int getPort(void) const { return port; }
-  void removeClient(int clientFd);
+  void removeClient(PollManager& pollManager, int clientFd);
   std::string getServerName(void) const { return serverName; }
 
   SessionManager& getSession(void) { return session; }

@@ -41,15 +41,17 @@ void PollManager::addFd(int fd, uint32_t events,
       throw serverError("Failed to add fd to epollFd");
     }
   }
-  LOG_DEBUG("Added fd:", fd, "to epollFd");
   interestFdsList[fd] = cleanUp;
+  LOG_DEBUG("Added fd:", fd, "to epollFd");
 }
 
 void PollManager::removeFd(int fd) {
   auto it = interestFdsList.find(fd);
   if (it != interestFdsList.end() && (fcntl(fd, F_GETFD) != -1)) {
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
-      throw serverError("Failed to remove fd from epollFd");
+      LOG_ERROR("Failed to remove fd from epollFd");
+      return;
+      // throw serverError("Failed to remove fd",fd," from epollFd");
     }
     LOG_DEBUG("Removed fd:", fd, "from epollFd");
     it->second(fd);
@@ -58,10 +60,11 @@ void PollManager::removeFd(int fd) {
       if (it->data.fd == fd) {
         LOG_TRACE("Erasing fd:", fd, "from epollEvents");
         it->data.fd = -1;
-      } 
+      }
     }
     for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
-      if (it->outReadFd == fd || it->inWriteFd == fd) {
+      if (it->outReadFd == fd || it->inWriteFd == fd || it->outWriteFd == fd ||
+          it->inReadFd == fd || it->clientFd == fd) {
         it = g_CgiParams.erase(it);  // Erase safely
       } else {
         ++it;  // Increment iterator only if not erased
@@ -75,7 +78,11 @@ void PollManager::modifyFd(int fd, uint32_t events) {
   event.data.fd = fd;
   event.events = events;
   if (epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &event) == -1) {
-    throw serverError("Failed to modify fd",fd, "in epollFd", "errno:", errno, ":", strerror(errno));
+    LOG_ERROR("Failed to modify fd", fd, "in epollFd", "errno:", errno, ":",
+              strerror(errno));
+    return;
+    // throw serverError("Failed to modify fd",fd, "in epollFd", "errno:",
+    // errno, ":", strerror(errno));
   }
   LOG_DEBUG("Modified events for fd:", fd, "in epollFd");
 }
@@ -111,4 +118,13 @@ std::vector<struct epoll_event>& PollManager::getEpollEvents(void) {
 
 std::map<int, std::function<void(int)>>& PollManager::getInterestFdsList(void) {
   return interestFdsList;
+}
+
+bool PollManager::isValidFd(int fd) {
+  if (interestFdsList.find(fd) != interestFdsList.end() &&
+      fcntl(fd, F_GETFD) != -1) {
+    return true;
+  } else {
+    return false;
+  }
 }

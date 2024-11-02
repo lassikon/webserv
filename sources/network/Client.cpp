@@ -19,9 +19,18 @@ Client::~Client(void) {
 
 bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
   if (revents & EPOLLIN) {
+
+    LOG_TRACE("Client fd:", fd, "has POLLIN event checking states");
+    LOG_TRACE("Client state:", (int)clientState);
+    LOG_TRACE("Cgi state:", (int)cgiState);
+    LOG_TRACE("Parsing state:", (int)parsingState);
     NetworkException::tryCatch(&Client::handlePollInEvent, this, readFd);
   }
   if (revents & EPOLLOUT) {
+    LOG_TRACE("Client fd:", fd, "has POLLOUT event checking states");
+    LOG_TRACE("Client state:", (int)clientState);
+    LOG_TRACE("Cgi state:", (int)cgiState);
+    LOG_TRACE("Parsing state:", (int)parsingState);
     NetworkException::tryCatch(&Client::handlePollOutEvent, this, writeFd);
   }
   if (shouldCloseConnection()) {
@@ -119,7 +128,7 @@ void Client::initClient(void) {
   parsingState = ParsingState::IDLE;
   if (cgiState == CgiState::DONE) {
     cgiState = CgiState::IDLE;
-    cgiHandler.closePipeFds();
+    //cgiHandler.closePipeFds();
   }
 }
 

@@ -23,6 +23,7 @@ void ParseState::execute(Client& client) {
   }
   for (auto& cgi : g_CgiParams) {
     if (cgi.clientFd == client.getFd() && cgi.isExited) {
+      LOG_TRACE("Cgi process exited for client fd:", client.getFd());
       client.setCgiState(CgiState::DONE);
       client.setParsingState(ParsingState::DONE);
     }
@@ -97,6 +98,7 @@ void ParseState::verifyRequest(Client& client) {
 
 void ParseState::parseBody(Client& client) {
   if (!isWithBody(client)) {
+    LOG_TRACE("No body to parse");
     client.setParsingState(ParsingState::DONE);
     return;
   }

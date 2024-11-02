@@ -27,6 +27,7 @@ void Server::acceptConnection(PollManager& pollManager) {
   auto it = pollManager.getInterestFdsList().find(newFd);
   if (it != pollManager.getInterestFdsList().end()) {
     LOG_WARN("Client fd:", newFd, "already exists in pollManager");
+    //close(newFd);
     return;
   }
 
@@ -41,7 +42,7 @@ void Server::acceptConnection(PollManager& pollManager) {
 
   // Add the new client's file descriptor to the poll manager with EPOLLIN
   // events
-  pollManager.addFd(newFd, EPOLLIN, [&](int fd) { removeClient(fd); });
+  pollManager.addFd(newFd, EPOLLIN, [&](int fd) { removeClient(pollManager, fd); });
   clientLastActivity[newFd] = std::chrono::steady_clock::now();
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
@@ -80,7 +81,8 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents,
     if (isClose == true) {
       LOG_TRACE("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
-      pollManager.removeFd(clientFd);
+      removeClient(pollManager, clientFd);
+      //pollManager.removeFd(clientFd);
       return;
     }
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
@@ -121,7 +123,8 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents,
     if (isClose == true) {
       LOG_DEBUG("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
-      pollManager.removeFd(clientFd);
+      removeClient(pollManager, clientFd);
+      //pollManager.removeFd(clientFd);
       return;
     }
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
@@ -133,6 +136,10 @@ void Server::modifyFdEvent(PollManager& pollManager,
                            int clientFd) {
   uint32_t newEvents = 0;
   int fd = clientFd;
+  LOG_TRACE("Modifying events for client fd:", clientFd);
+  LOG_TRACE("Client state:", (int)client->getClientState());
+  LOG_TRACE("CGI state:", (int)client->getCgiState());
+  LOG_TRACE("Parsing state:", (int)client->getParsingState());
   // closing connection, detected close in client side
   // removing fd in epoll interest list fds
   if (eventFd == clientFd && client->getClientState() == ClientState::CLOSE &&
@@ -301,13 +308,25 @@ bool Server::isClientFd(int fd) const {
   return false;
 }
 
-void Server::removeClient(int clientFd) {
+void Server::removeClient(PollManager& pollManager, int clientFd) {
+  LOG_DEBUG("Removing client fd:", clientFd, "from clients");
   auto it = std::find_if(clients.begin(), clients.end(),
                          [clientFd](std::shared_ptr<Client>& client) {
                            return client->getFd() == clientFd;
                          });
   if (it != clients.end()) {
     clients.erase(it);
+  }
+  for (auto cgi = g_CgiParams.begin(); cgi != g_CgiParams.end();) {
+    if (cgi->clientFd == clientFd) {
+      pollManager.removeFd(cgi->outReadFd);
+      pollManager.removeFd(cgi->inWriteFd);
+      kill(cgi->pid, SIGKILL);
+      LOG_TRACE("Killed CGI process:", cgi->pid);
+      break;
+    } else {
+      ++cgi;
+    }
   }
 
   for (auto it = clientLastActivity.begin(); it != clientLastActivity.end();) {
