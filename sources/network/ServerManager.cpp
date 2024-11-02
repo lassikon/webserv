@@ -118,14 +118,16 @@ void ServerManager::serverLoop(PollManager& pollManager) {
     }
     LOG_TRACE("Handled event for fd:", (int)event.data.fd);
   }
+  LOG_TRACE("Checking for new child processes");
   checkForNewChildProcesses(pollManager);
+  LOG_TRACE("Finished handling events");
 }
 
 void ServerManager::handlePollErrors(PollManager& pollManager,
                                      struct epoll_event& event) {
   int fd = event.data.fd;
   int clientFd = Utility::getClientFdFromCgiParams(fd);
- /*  if (!pollManager.isValidFd(clientFd)) {
+/*   if (!pollManager.isValidFd(clientFd)) {
     LOG_DEBUG("Invalid fd:", clientFd, "cgi fd:", fd);
     pollManager.removeFd(fd);
     return;
