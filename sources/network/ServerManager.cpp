@@ -49,7 +49,7 @@ void ServerManager::configServers(Config& config) {
 }
 
 void ServerManager::handleNoEvents(PollManager& pollManager) {
-  LOG_INFO("No events, checking for idle clients or expired cookies");
+  //LOG_INFO("No events, checking for idle clients or expired cookies");
   checkChildProcesses(pollManager);
   for (auto& server : servers) {
     server->checkIdleClients(pollManager);
@@ -84,7 +84,7 @@ void ServerManager::runServers(void) {
   startupMessage();
   while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
-    LOG_TRACE("Epoll count:", epollCount);
+    //LOG_TRACE("Epoll count:", epollCount);
     if (epollCount == -1) {
       if (!Utility::signalReceived()) {
         LOG_ERROR("Failed to epoll fds");
@@ -258,11 +258,7 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
         g_CgiParams.erase(it);
       } else if (result > 0) {  // Child process has exited
         it->isExited = true;
-        //close(it->outWriteFd);
-        //close(it->inReadFd);
         LOG_TRACE("client fd:", it->clientFd);
-        // pollManager.removeFd(it->outReadFd);
-        // pollManager.removeFd(it->inWriteFd);
         LOG_DEBUG("Child process", it->pid,
                   "exited with status:", it->childExitStatus);
         if (it->childExitStatus != 0) {
@@ -274,7 +270,24 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
         kill(it->pid, SIGKILL);
         it->isTimeout = true;
       }
+    } else {
+      LOG_TRACE("Child process exited", it->pid);
+      for (auto& server : servers) {
+        if (server->isClientFd(it->clientFd)) {
+         auto clientIt = std::find_if(server->getClients().begin(), server->getClients().end(), [&](const std::shared_ptr<Client>& client) {
+            return client->getFd() == it->clientFd;
+          });
+          if (clientIt != server->getClients().end()) {
+            LOG_TRACE("Cgi process exited for client fd:", it->clientFd);
+            (*clientIt)->setCgiState(CgiState::DONE);
+            (*clientIt)->setParsingState(ParsingState::DONE);
+            (*clientIt)->setClientState(ClientState::PROCESSING);
+            pollManager.modifyFd(it->clientFd, EPOLLOUT);
+          break;
+        }
+      }
     }
-    ++it;
   }
+  ++it;
+}
 }

@@ -261,6 +261,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     LOG_DEBUG("Client:", clientFd, "Processing state , EPOLLOUT");
     LOG_DEBUG("CGI:", eventFd, "done state");
     newEvents |= EPOLLOUT;
+    pollManager.removeFd(eventFd);
     fd = Utility::getClientFdFromCgiParams(eventFd);
   }
 
@@ -273,9 +274,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents &= ~EPOLLIN;
     newEvents |= EPOLLOUT;
     fd = eventFd;
-  }
-  if (Utility::isCgiFd(fd) && Utility::getIsExited(fd)) {
-    return;
+    pollManager.removeFd(eventFd);
   }
     pollManager.modifyFd(fd, newEvents);
 }

@@ -110,12 +110,12 @@ void ParseState::parseBody(Client& client) {
   } else {
     if (client.getCgiState() != CgiState::IDLE) {
       parseBodyWithoutContentLength(client);
-      LOG_TRACE("out read fd:", Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd())));
-      if (Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd()))) {
-        client.setParsingState(ParsingState::DONE);
-        client.setClientState(ClientState::PROCESSING);
-        client.setCgiState(CgiState::DONE);
-      }
+      // LOG_TRACE("out read fd:", Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd())));
+      // if (Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd()))) {
+      //   client.setParsingState(ParsingState::DONE);
+      //   client.setClientState(ClientState::PROCESSING);
+      //   client.setCgiState(CgiState::DONE);
+      // }
     } else {
       throw httpLength(client, "Content-Length header not found for client fd:",
                        client.getFd());
