@@ -100,6 +100,12 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);
+  // Check for permission to write to the file
+  if (!access(path.c_str(), W_OK)) {
+    LOG_DEBUG("Permission to write to file");
+  } else {
+    throw httpForbidden(client, "Permission denied to write to file");
+  }
   std::ofstream file(path + fileName, std::ios::binary);
   if (!file.is_open()) {
     throw httpBadRequest(client, "Failed to open file");
