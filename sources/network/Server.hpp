@@ -55,16 +55,12 @@ class Server {
 
  public:
   int getSocketFd(void) const { return socket.getFd(); }
-
   int getPort(void) const { return port; }
   void removeClient(PollManager& pollManager, int clientFd);
   std::string getServerName(void) const { return serverName; }
-
   SessionManager& getSession(void) { return session; }
-
   std::vector<std::shared_ptr<Client>>& getClients(void) { return clients; }
-
+  std::vector<std::shared_ptr<ServerConfig>>& getServerConfigs(void) { return serverConfigs;}
   std::string getIpAddress(void) const { return ipAddress; }
-
   bool isClientFd(int fd) const;
 };

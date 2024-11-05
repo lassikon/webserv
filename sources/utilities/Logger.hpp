@@ -93,5 +93,5 @@ class Logger {
 #define LOG_ANNOUNCE(...) (Logger::Log(logLevel::Announce, "INFO", MAGENTA, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_WARN(...) \
   (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, LOGDATA, __VA_ARGS__))
-#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, LOGDATA, __VA_ARGS__))
+#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", BRIGHTRED, std::cerr, LOGDATA, __VA_ARGS__))
 #define LOG_FATAL(...) (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, LOGDATA, __VA_ARGS__))

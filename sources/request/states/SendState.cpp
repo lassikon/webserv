@@ -34,10 +34,10 @@ void SendState::execute(Client& client) {
   LOG_DEBUG("bytes sent:", nbytes);
   LOG_DEBUG("total bytes:", client.getRes().getResContent().size());
   LOG_DEBUG("Response sent to fd:", client.getWriteFd(), " from fd:", client.getFd());
-  if (client.getRes().getResStatusCode() < 300 && client.getRes().getResStatusCode() != 0) {
+  if (client.getRes().getResStatusCode() < 400 && client.getRes().getResStatusCode() != 0) {
     LOG_ANNOUNCE("Client fd:", client.getFd(), "response:", client.getRes().getResStatusCode(), client.getRes().getResStatusMessage());
   }
-  else if (client.getRes().getResStatusCode() >= 300) {
+  else if (client.getRes().getResStatusCode() >= 400) {
     LOG_WARN("Client fd:", client.getFd(), "response:", client.getRes().getResStatusCode(), client.getRes().getResStatusMessage());
   }
   client.setClientState(ClientState::SENDING);

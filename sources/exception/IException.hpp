@@ -12,7 +12,8 @@
 #include <Logger.hpp>
 
 #define ERR_MSG_USAGE "Usage: ./webserv OR ./webserv <path>/<config>"
-#define ERR_MSG_NOSERVER "No valid server found in:"
+#define ERR_MSG_CONFIG "No valid server found in:"
+#define ERR_MSG_SERVER "Could not setup any servers from:"
 #define ERR_MSG_NOFILE "Could not access file:"
 #define ERR_MSG_EMPTYFILE "Config file is empty:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
@@ -81,7 +82,7 @@ class IException : public std::exception, public Logger {
   template <typename... Args>
   IException(RuntimeError err, const char* file, const char* func, int line, Args&&... args)
       : file(file), func(func), line(line) {
-    logEntry = createLogEntry(logLevel::Fatal, "FATAL", "Runtime", std::forward<Args>(args)...);
+    logEntry = createLogEntry(logLevel::Error, "ERROR", "Runtime", std::forward<Args>(args)...);
     // g_ExitStatus = (int)err;
     (void)err;
     g_ExitStatus = 0;
@@ -95,13 +96,13 @@ class IException : public std::exception, public Logger {
   template <typename... Args>
   std::string createLogEntry(logLevel lvl, const char* title, const char* errType, Args&&... args) {
     std::ostringstream oss;
-    oss << errType << "error:";
+    oss << errType << " error:";
     expandLogArgs(oss, std::forward<Args>(args)...);
     if (lvl == logLevel::Fatal) {
       oss << expandErrno();
     }
     std::ostringstream log;
-    Log(lvl, title, RED, log, file, func, line, oss.str());
+    Log(lvl, title, BRIGHTRED, log, file, func, line, oss.str());
     return log.str();
   }
 

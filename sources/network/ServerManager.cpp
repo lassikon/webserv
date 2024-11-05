@@ -36,8 +36,8 @@ void ServerManager::configServers(Config& config) {
         // Try to create a new server and add it to the list
         servers.emplace_back(std::make_shared<Server>(serverConfig.second));
       } catch (const std::exception& e) {
-        LOG_ERROR("Failed to create server on port:", serverConfig.second.port,
-                  e.what());
+        LOG_ERROR("Failed to create server on port:", std::to_string(serverConfig.second.port) +
+                  '\n', e.what());
         // Remove the server that failed to initialize
         if (!servers.empty() &&
             servers.back()->getPort() == serverConfig.second.port) {
@@ -88,8 +88,12 @@ void ServerManager::initializePollManager(PollManager& pollManager) {
 
 void ServerManager::startupMessage(void) {
   for (auto& server : servers) {
-    LOG_ANNOUNCE("Server", server->getServerName(), "listening on port",
-             server->getPort());
+    // LOG_ANNOUNCE("Server", server->getServerName(), "listening on port",
+    //          server->getPort());
+    for (auto& serverConfig : server->getServerConfigs()) {
+      LOG_ANNOUNCE("Server config", serverConfig->serverName, "listening on port",
+               serverConfig->port);
+    }
   }
 }
 

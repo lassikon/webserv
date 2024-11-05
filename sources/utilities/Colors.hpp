@@ -2,6 +2,8 @@
 
 #define RESET "\033[0m"
 
+#define BRIGHTRED "\033[38;5;210m"
+
 #define BLACK "\033[30m"
 #define RED "\033[31m"
 #define GREEN "\033[32m"

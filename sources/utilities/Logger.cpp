@@ -112,11 +112,13 @@ void Logger::insertLogDetails(std::ostringstream& log, std::string src, const ch
 
 // helper fuction to print log entry into target ostream and ostringstream
 void Logger::printLogEntry(std::ostream& console, std::ostringstream& logEntry) {
+  std::ostringstream logFinal;
+  logFinal << logEntry.str() << RESET << '\n';
   if (currentOutput != logOutput::FileOnly) {
-    console << logEntry.str() << RESET << std::endl;
+    console << logFinal.str();
   }
   if (currentOutput != logOutput::ConsoleOnly && logFile.is_open()) {
-    logFile << logEntry.str() << RESET << std::endl;
+    logFile << logFinal.str();
   }
 }
 

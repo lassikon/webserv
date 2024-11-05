@@ -8,7 +8,7 @@
 #include <SessionManager.hpp>
 #include <Signal.hpp>
 
-// POTENTIAL ISSUE: default file path allows ../../ing to access files outside of webroot
+// POTENTIAL ISSUE: cgi.py POST method undefined behavior
 // TEST CHUNKED DATA
 
 // check Config.hpp for http status codes
@@ -38,13 +38,20 @@
 // Testing upload and download
 // curl -o download.png http://localhost:3490/upload/poke3.png
 
+// Chrome -> inspect -> network -> localhost
 
-//siege --delay=3 -c1 http://localhost:3490/cgi-bin/helloworld.cgi
+// Directory listing easy.conf
+// http://localhost:3490/upload or /directory
 
+// Google redirects to https
+// http://localhost:3490/redirect/
 
 // Virtual Hosts virtual.conf
 // curl -H "Host: default-server.com" http://localhost:3490
 // curl -H "Host: other-server.com" http://localhost:3490/
+
+//siege --delay=3 -c1 http://localhost:3490/cgi-bin/helloworld.cgi
+
 sig_atomic_t g_ExitStatus;
 std::vector<struct CgiParams> g_CgiParams;
 
@@ -59,11 +66,15 @@ int main(int argc, char** argv) {
   Config config = ConfigInitializer::initializeConfig(argc, argv);
   RuntimeException::tryCatch(&Config::parseConfigFile, &config);
   if (config.getServers().empty()) {
-    LOG_FATAL(ERR_MSG_NOSERVER, config.getFilePath());
+    LOG_FATAL(ERR_MSG_CONFIG, config.getFilePath());
     return (int)RuntimeError::Config;
   }
   ServerManager server;
   RuntimeException::tryCatch(&ServerManager::configServers, &server, config);
+  if (server.getServers().empty()) {
+    LOG_FATAL(ERR_MSG_SERVER, config.getFilePath());
+    return (int)RuntimeError::Config;
+  }
   RuntimeException::tryCatch(&ServerManager::runServers, &server);
   return g_ExitStatus;
 }
