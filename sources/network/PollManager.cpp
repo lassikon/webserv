@@ -38,7 +38,7 @@ void PollManager::addFd(int fd, uint32_t events,
       LOG_DEBUG("Fd:", fd, "already exists in epollFd");
       return;
     } else {
-      throw serverError("Failed to add fd to epollFd");
+      throw serverError("Failed to add fd", fd, "to epollFd");
     }
   }
   interestFdsList[fd] = cleanUp;
@@ -49,7 +49,8 @@ void PollManager::removeFd(int fd) {
   auto it = interestFdsList.find(fd);
   if (it != interestFdsList.end() && (fcntl(fd, F_GETFD) != -1)) {
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
-      LOG_ERROR("Failed to remove fd from epollFd");
+      LOG_ERROR("Failed to remove fd",fd, " from epollFd");
+      LOG_ERROR("errno:", errno, ":", strerror(errno));
       return;
       // throw serverError("Failed to remove fd",fd," from epollFd");
     }

@@ -87,8 +87,9 @@ void ParseState::parseHeaders(Client& client) {
 void ParseState::verifyRequest(Client& client) {
   LOG_TRACE("Verifying request");
   if (client.getReq().getVersion() != "HTTP/1.1") {
-    throw httpVersion(
-        client, "Unsupported HTTP version for client fd:", client.getFd());
+    throw httpVersion(client, "Unsupported HTTP version",
+                      client.getReq().getVersion(),
+                      "for client fd:", client.getFd());
   }
   client.getRes().setServerConfig(
       chooseServerConfig(client));  // choose server config
@@ -110,8 +111,11 @@ void ParseState::parseBody(Client& client) {
   } else {
     if (client.getCgiState() != CgiState::IDLE) {
       parseBodyWithoutContentLength(client);
-      // LOG_TRACE("out read fd:", Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd())));
-      // if (Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd()))) {
+      // LOG_TRACE("out read fd:",
+      // Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd())));
+      // if
+      // (Utility::getIsExited(Utility::getOutReadFdFromClientFd(client.getFd())))
+      // {
       //   client.setParsingState(ParsingState::DONE);
       //   client.setClientState(ClientState::PROCESSING);
       //   client.setCgiState(CgiState::DONE);

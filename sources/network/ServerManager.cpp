@@ -277,7 +277,7 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
          auto clientIt = std::find_if(server->getClients().begin(), server->getClients().end(), [&](const std::shared_ptr<Client>& client) {
             return client->getFd() == it->clientFd;
           });
-          if (clientIt != server->getClients().end()) {
+          if (clientIt != server->getClients().end() && (*clientIt)->getClientState() != ClientState::IDLE) {
             LOG_TRACE("Cgi process exited for client fd:", it->clientFd);
             (*clientIt)->setCgiState(CgiState::DONE);
             (*clientIt)->setParsingState(ParsingState::DONE);

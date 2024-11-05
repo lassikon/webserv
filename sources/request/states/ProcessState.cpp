@@ -14,7 +14,7 @@ void ProcessState::execute(Client& client) {
     client.getRes().setResBody(client.getReq().getBody());
     client.getRes().makeBodytoCgi();
     client.setClientState(ClientState::SENDING);
-  } else if (client.getFd() != client.getReadFd()) {
+  } else if (client.getFd() != client.getReadFd() && client.getRes().getResStatusCode() == 0) {
     LOG_TRACE("Processing CGI output for client fd:", client.getFd());
     processCgiOutput(client);
   } else {

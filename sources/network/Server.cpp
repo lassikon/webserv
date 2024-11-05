@@ -27,22 +27,23 @@ void Server::acceptConnection(PollManager& pollManager) {
   auto it = pollManager.getInterestFdsList().find(newFd);
   if (it != pollManager.getInterestFdsList().end()) {
     LOG_WARN("Client fd:", newFd, "already exists in pollManager");
-    //close(newFd);
+    // close(newFd);
     return;
   }
 
-  if (newFd < 2 ) {
+  if (newFd < 2) {
     LOG_WARN("Failed to accept new connection:", IException::expandErrno());
     return;
   }
   Utility::setCloseOnExec(newFd);
   Utility::setNonBlocking(newFd);
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs, session));
-  LOG_DEBUG("Accepted new client fd:", newFd);
+  LOG_INFO("Accepted new client fd:", newFd);
 
   // Add the new client's file descriptor to the poll manager with EPOLLIN
   // events
-  pollManager.addFd(newFd, EPOLLIN, [&](int fd) { removeClient(pollManager, fd); });
+  pollManager.addFd(newFd, EPOLLIN,
+                    [&](int fd) { removeClient(pollManager, fd); });
   clientLastActivity[newFd] = std::chrono::steady_clock::now();
   LOG_DEBUG("Added client fd:", newFd, "to pollManager");
 }
@@ -82,7 +83,7 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents,
       LOG_TRACE("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
       removeClient(pollManager, clientFd);
-      //pollManager.removeFd(clientFd);
+      // pollManager.removeFd(clientFd);
       return;
     }
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
@@ -124,7 +125,7 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents,
       LOG_DEBUG("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
       removeClient(pollManager, clientFd);
-      //pollManager.removeFd(clientFd);
+      // pollManager.removeFd(clientFd);
       return;
     }
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
@@ -156,6 +157,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     LOG_DEBUG("Client:", clientFd, "Idle state, EPOLLIN, ~EPOLLOUT");
     newEvents &= ~EPOLLOUT;
     newEvents |= EPOLLIN;
+
     fd = eventFd;
   }
   // after epollin client reading request, waiting for eof in request reading
@@ -274,9 +276,12 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents &= ~EPOLLIN;
     newEvents |= EPOLLOUT;
     fd = eventFd;
-    pollManager.removeFd(eventFd);
+    pollManager.removeFd(Utility::getOutReadFdFromClientFd(clientFd));
+    pollManager.removeFd(Utility::getInWriteFdFromClientFd(clientFd));
+    client->getCgiHandler().closePipeFds();
+    // pollManager.removeFd(eventFd);
   }
-    pollManager.modifyFd(fd, newEvents);
+  pollManager.modifyFd(fd, newEvents);
 }
 
 void Server::checkIdleClients(PollManager& pollManager) {

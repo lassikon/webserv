@@ -83,6 +83,11 @@ void RouteDirectiveSetter::setDefaultFile(RouteConfig& route, std::string& value
   std::stringstream ss(value);
   std::string defaultFile;
   while (std::getline(ss, defaultFile, ' ')) {
+    //sanitize the default file removing relative path
+    if (defaultFile.find("..") != std::string::npos) {
+      LOG_WARN("Parse: Invalid default file,", defaultFile, " at line", lineNumber);
+      continue;
+    }
     route.defaultFile.push_back(defaultFile);
   }
 }

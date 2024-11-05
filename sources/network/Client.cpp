@@ -133,11 +133,6 @@ void Client::initClient(void) {
 }
 
 bool Client::shouldCloseConnection(void) {
-  /*  if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
-       req.getHeaders()["Connection"] == "close") {
-     LOG_DEBUG("Connection: close");
-     return true;
-   } */
   if (closeConnection) {
     LOG_TRACE("WriteNBytes:", writeNBytes);
     return true;
@@ -146,13 +141,16 @@ bool Client::shouldCloseConnection(void) {
     LOG_TRACE("WriteNBytes:", readNBytes);
     return true;
   }
-  if (res.getResStatusCode() == 500) {
+ /*  if (res.getResStatusCode() >= 500) {
     return true;
-  }
+  } */
   return false;
 }
 
 void Client::ifGatewayError(void) {
+  if (res.getResStatusCode() >= 500) {
+    return;
+  }
   for (auto& cgi : g_CgiParams) {
     if (cgi.clientFd == getFd() && cgi.isTimeout) {
       throw httpGatewayTimeout(*this,

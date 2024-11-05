@@ -104,13 +104,13 @@ void CgiHandler::forkChildProcess(Client& client) {
     throw httpBadGateway(client, "Could not duplicate pipe fd");
   } else if (isChildProcess()) {
     LOG_DEBUG("Child pid:", getpid());
-     close(outPipeFd[Fd::Read]);
-     close(inPipeFd[Fd::Write]);
+    close(outPipeFd[Fd::Read]);
+    close(inPipeFd[Fd::Write]);
     executeCgiScript(client);
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-     //close(outPipeFd[Fd::Write]);
-     //close(inPipeFd[Fd::Read]);
+    // close(outPipeFd[Fd::Write]);
+    // close(inPipeFd[Fd::Read]);
     setGlobal();
   }
 }
@@ -191,11 +191,20 @@ void CgiHandler::executeRequest(Client& client) {
   LOG_TRACE("CgiHandler: executingRequest");
   cgi = client.getRes().getReqURI();
   std::string ext = cgi.substr(cgi.find_last_of(".") + 1);
-  if (ext == "py")
+  if (ext == "py") {
+    // is exist
+    if (client.getRes().getServerConfig().cgiInterpreters.find("py") ==
+        client.getRes().getServerConfig().cgiInterpreters.end()) {
+      throw httpBadGateway(client, "Python interpreter not found");
+    }
     args.push_back(client.getRes().getServerConfig().cgiInterpreters["py"]);
-  else if (ext == "php")
+  } else if (ext == "php") {
+    if (client.getRes().getServerConfig().cgiInterpreters.find("php") ==
+        client.getRes().getServerConfig().cgiInterpreters.end()) {
+      throw httpBadGateway(client, "PHP interpreter not found");
+    }
     args.push_back(client.getRes().getServerConfig().cgiInterpreters["php"]);
-  else {
+  } else {
     LOG_TRACE("Using binary:", cgi);
     isBin = true;
   }
