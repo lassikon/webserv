@@ -128,7 +128,6 @@ void Client::initClient(void) {
   parsingState = ParsingState::IDLE;
   if (cgiState == CgiState::DONE) {
     cgiState = CgiState::IDLE;
-    //cgiHandler.closePipeFds();
   }
 }
 
@@ -141,9 +140,6 @@ bool Client::shouldCloseConnection(void) {
     LOG_TRACE("WriteNBytes:", readNBytes);
     return true;
   }
- /*  if (res.getResStatusCode() >= 500) {
-    return true;
-  } */
   return false;
 }
 
@@ -156,7 +152,7 @@ void Client::ifGatewayError(void) {
       throw httpGatewayTimeout(*this,
                                "CGI process timed out for client fd:", getFd());
     } else if (cgi.clientFd == getFd() && cgi.isFailed) {
-      throw httpBadGateway(*this, "CGI process exited for client fd:", getFd());
+      throw httpBadGateway(*this, "CGI process failed for client fd:", getFd());
     }
   }
 }

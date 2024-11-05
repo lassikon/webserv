@@ -44,8 +44,6 @@ void ProcessState::processRequest(Client& client) {
     client.getPostHandler().executeRequest(client);
   } else if (client.getReq().getMethod() == "DELETE") {
     client.getDeleteHandler().executeRequest(client);
-  } else {
-    LOG_ERROR("Unsupported method in client:", client.getFd());
   }
   client.setClientState(ClientState::PREPARING);
 }

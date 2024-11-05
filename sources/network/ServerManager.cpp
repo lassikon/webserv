@@ -62,10 +62,8 @@ void ServerManager::logIdleCheck() {
     }
 }
 
-
 void ServerManager::handleNoEvents(PollManager& pollManager) {
   logIdleCheck();
-  // LOG_INFO("No events, checking for idle clients or expired cookies");
   checkChildProcesses(pollManager);
   for (auto& server : servers) {
     server->checkIdleClients(pollManager);
@@ -88,8 +86,6 @@ void ServerManager::initializePollManager(PollManager& pollManager) {
 
 void ServerManager::startupMessage(void) {
   for (auto& server : servers) {
-    // LOG_ANNOUNCE("Server", server->getServerName(), "listening on port",
-    //          server->getPort());
     for (auto& serverConfig : server->getServerConfigs()) {
       LOG_ANNOUNCE("Server config", serverConfig->serverName, "listening on port",
                serverConfig->port);
@@ -104,7 +100,6 @@ void ServerManager::runServers(void) {
   startupMessage();
   while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
-    //LOG_TRACE("Epoll count:", epollCount);
     if (epollCount == -1) {
       if (!Utility::signalReceived()) {
         LOG_ERROR("Failed to epoll fds");
@@ -143,15 +138,9 @@ void ServerManager::serverLoop(PollManager& pollManager) {
   LOG_TRACE("Finished handling events");
 }
 
-void ServerManager::handlePollErrors(PollManager& pollManager,
-                                     struct epoll_event& event) {
+void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_event& event) {
   int fd = event.data.fd;
   int clientFd = Utility::getClientFdFromCgiParams(fd);
-/*   if (!pollManager.isValidFd(clientFd)) {
-    LOG_DEBUG("Invalid fd:", clientFd, "cgi fd:", fd);
-    pollManager.removeFd(fd);
-    return;
-  } */
   if ((event.events & EPOLLHUP || event.events & EPOLLERR) &&
       Utility::isCgiFd(fd)) {
     LOG_DEBUG("EPoll hangup on CGI fd:", fd);
@@ -183,8 +172,7 @@ void ServerManager::handlePollErrors(PollManager& pollManager,
   }
 }
 
-void ServerManager::handlePollInEvent(PollManager& pollManager,
-                                      struct epoll_event& event) {
+void ServerManager::handlePollInEvent(PollManager& pollManager, struct epoll_event& event) {
   LOG_DEBUG("Handling POLLIN event");
   int fd = event.data.fd;
   for (auto& server : servers) {
@@ -210,8 +198,7 @@ void ServerManager::handlePollInEvent(PollManager& pollManager,
   }
 }
 
-void ServerManager::handlePollOutEvent(PollManager& pollManager,
-                                       struct epoll_event& event) {
+void ServerManager::handlePollOutEvent(PollManager& pollManager, struct epoll_event& event) {
   LOG_DEBUG("Handling POLLOUT event");
   int fd = event.data.fd;
   for (auto& server : servers) {

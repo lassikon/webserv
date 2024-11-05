@@ -52,7 +52,6 @@ void PollManager::removeFd(int fd) {
       LOG_ERROR("Failed to remove fd",fd, " from epollFd");
       LOG_ERROR("errno:", errno, ":", strerror(errno));
       return;
-      // throw serverError("Failed to remove fd",fd," from epollFd");
     }
     LOG_DEBUG("Removed fd:", fd, "from epollFd");
     it->second(fd);
@@ -63,12 +62,22 @@ void PollManager::removeFd(int fd) {
         it->data.fd = -1;
       }
     }
+
+
     for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
       if (it->outReadFd == fd || it->inWriteFd == fd || it->outWriteFd == fd ||
           it->inReadFd == fd || it->clientFd == fd) {
-        it = g_CgiParams.erase(it);  // Erase safely
+        if(it->outReadFd == fd && it->inWriteFd != -1) {
+          auto it2 = interestFdsList.find(it->inWriteFd);
+          if(it2 != interestFdsList.end() && (fcntl(it->inWriteFd, F_GETFD) != -1)) {
+            epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr);
+            it2->second(it2->first);
+            interestFdsList.erase(it2);
+          }
+        }
+        it = g_CgiParams.erase(it);
       } else {
-        ++it;  // Increment iterator only if not erased
+        ++it;
       }
     }
   }
@@ -82,8 +91,6 @@ void PollManager::modifyFd(int fd, uint32_t events) {
     LOG_ERROR("Failed to modify fd", fd, "in epollFd", "errno:", errno, ":",
               strerror(errno));
     return;
-    // throw serverError("Failed to modify fd",fd, "in epollFd", "errno:",
-    // errno, ":", strerror(errno));
   }
   LOG_DEBUG("Modified events for fd:", fd, "in epollFd");
 }
