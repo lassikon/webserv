@@ -46,3 +46,7 @@
 // siege -b http://localhost:3490
 // siege -b http://localhost:3490/cgi-bin/helloworld.cgi
 // siege -c5 http://localhost:3490/cgi-bin/infinite.cgi
+
+// Testing chunked data | terminal needs to be in where webserv binary is
+curl -X POST http://localhost:3490/upload -F "file=@tests.txt"
+curl -X POST http://localhost:3490/upload -F "file=@./webroot/website0/download.png"
