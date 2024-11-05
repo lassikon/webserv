@@ -48,8 +48,24 @@ void ServerManager::configServers(Config& config) {
   }
 }
 
+#include <chrono>
+#include <iostream>
+
+void ServerManager::logIdleCheck() {
+    static auto lastLogTime = std::chrono::steady_clock::now();
+    auto currentTime = std::chrono::steady_clock::now();
+    auto durationSinceLastLog = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastLogTime);
+
+    if (durationSinceLastLog.count() >= IDLE_MSG_COOLDOWN) {
+        LOG_INFO("No events, checking for idle clients or expired cookies");
+        lastLogTime = currentTime;
+    }
+}
+
+
 void ServerManager::handleNoEvents(PollManager& pollManager) {
-  //LOG_INFO("No events, checking for idle clients or expired cookies");
+  logIdleCheck();
+  // LOG_INFO("No events, checking for idle clients or expired cookies");
   checkChildProcesses(pollManager);
   for (auto& server : servers) {
     server->checkIdleClients(pollManager);
@@ -72,7 +88,7 @@ void ServerManager::initializePollManager(PollManager& pollManager) {
 
 void ServerManager::startupMessage(void) {
   for (auto& server : servers) {
-    LOG_INFO("Server", server->getServerName(), "listening on port",
+    LOG_ANNOUNCE("Server", server->getServerName(), "listening on port",
              server->getPort());
   }
 }

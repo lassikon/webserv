@@ -40,7 +40,7 @@ bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
 }
 
 void Client::handlePollInEvent(int readFd) {
-  LOG_INFO("Client fd:", fd, "has POLLIN event");
+  LOG_DEBUG("Client fd:", fd, "has POLLIN event");
   ifGatewayError();
   setReadFd(readFd);
   if (clientState == ClientState::IDLE) {
@@ -54,7 +54,7 @@ void Client::handlePollInEvent(int readFd) {
 }
 
 void Client::handlePollOutEvent(int writeFd) {
-  LOG_INFO("Client fd:", fd, "has POLLOUT event");
+  LOG_DEBUG("Client fd:", fd, "has POLLOUT event");
   ifGatewayError();
   setWriteFd(writeFd);
   if (clientState == ClientState::PROCESSING) {

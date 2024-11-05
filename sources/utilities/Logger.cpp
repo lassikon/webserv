@@ -56,7 +56,7 @@ std::array<bool, 4> Logger::enabledDetail;
 void Logger::loadDefaults(void) {
   currentLevel = logLevel::Info;
   currentOutput = logOutput::ConsoleOnly;
-  setLogDetails(true, true, true, true);
+  setLogDetails(true, false, false, false);
   if (currentOutput != logOutput::ConsoleOnly) {
     createLogFile();
   }
@@ -91,7 +91,7 @@ std::string Logger::getDateTimeStamp(void) {
   auto now = std::chrono::system_clock::now();
   auto tt = std::chrono::system_clock::to_time_t(now);
   std::ostringstream oss;
-  oss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
+  oss << std::put_time(std::localtime(&tt), "%X");
   return oss.str();
 }
 

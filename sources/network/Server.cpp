@@ -38,14 +38,14 @@ void Server::acceptConnection(PollManager& pollManager) {
   Utility::setCloseOnExec(newFd);
   Utility::setNonBlocking(newFd);
   clients.emplace_back(std::make_shared<Client>(newFd, serverConfigs, session));
-  LOG_INFO("Accepted new client fd:", newFd);
+  LOG_INFO("New Client fd:", newFd, "accepted");
 
   // Add the new client's file descriptor to the poll manager with EPOLLIN
   // events
   pollManager.addFd(newFd, EPOLLIN,
                     [&](int fd) { removeClient(pollManager, fd); });
   clientLastActivity[newFd] = std::chrono::steady_clock::now();
-  LOG_DEBUG("Added client fd:", newFd, "to pollManager");
+  LOG_DEBUG("Added Client fd:", newFd, "to pollManager");
 }
 
 // Handles EPOLLIN events for a client connection.
