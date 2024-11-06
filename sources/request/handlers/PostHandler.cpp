@@ -121,7 +121,7 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   }
   std::ofstream file(path + fileName, std::ios::binary);
   if (!file.is_open()) {
-    throw httpBadRequest(client, "Failed to open file");
+    throw httpInternal(client, "Failed to open file");
   } else {
     LOG_TRACE("File opened successfully");
     file.write(data.data(), data.length());

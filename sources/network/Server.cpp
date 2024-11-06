@@ -27,7 +27,6 @@ void Server::acceptConnection(PollManager& pollManager) {
   auto it = pollManager.getInterestFdsList().find(newFd);
   if (it != pollManager.getInterestFdsList().end()) {
     LOG_WARN("Client fd:", newFd, "already exists in pollManager");
-    // close(newFd);
     return;
   }
 
