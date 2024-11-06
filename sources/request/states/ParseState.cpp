@@ -166,10 +166,12 @@ void ParseState::parseChunkedBody(Client& client) {
     if (chunkSizeHex.back() == '\r') {
       chunkSizeHex.pop_back();
     }
-    LOG_DEBUG("Chunk size:", chunkSizeHex);
+    LOG_DEBUG("Chunk size hex:", chunkSizeHex);
     size_t bodySize = client.getReq().getBodySize();
     size_t chunkSize = std::stoi(chunkSizeHex, 0, 16);
+    LOG_DEBUG("Chunk size:", chunkSize);
     bodySize += chunkSize;
+    LOG_DEBUG("Body size:", bodySize);
     client.getReq().setBodySize(bodySize);
     if (chunkSize == 0) {
       client.setParsingState(ParsingState::DONE);
@@ -178,6 +180,7 @@ void ParseState::parseChunkedBody(Client& client) {
     // check for client body size limit
     if (bodySize > Utility::convertSizetoBytes(
                        client.getRes().getServerConfig().clientBodySizeLimit)) {
+                        LOG_DEBUG("Client bodysize limit", client.getRes().getServerConfig().clientBodySizeLimit);
       throw httpPayload(
           client,
           "Client body size limit exceeded for client fd:", client.getFd());

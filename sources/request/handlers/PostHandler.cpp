@@ -65,6 +65,7 @@ std::vector<std::string> PostHandler::splitByBoundary(std::string data, std::str
 }
 
 bool PostHandler::isFilePart(const std::string& part) {
+  LOG_DEBUG("Checking if part is file", part);
  return part.find("filename") != std::string::npos;
 }
 

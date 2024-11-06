@@ -26,7 +26,7 @@ class Utility {
   static std::filesystem::path getExePath(std::filesystem::path& path);
   static std::string getMimeType(std::string& extension);
   static bool signalReceived(void) noexcept;
-  static size_t convertSizetoBytes(std::string& size);
+  static size_t convertSizetoBytes(std::string size);
   static void setNonBlocking(int& fd);
   static void setCloseOnExec(int& fd);
   static bool isCgiFd(int fd);
