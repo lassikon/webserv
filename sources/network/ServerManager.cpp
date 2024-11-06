@@ -254,7 +254,7 @@ bool ServerManager::childTimeout(steady_time_point_t& start) {
 
 void ServerManager::checkChildProcesses(PollManager& pollManager) {
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
-    LOG_TRACE("Checking child process:", it->pid);
+    //LOG_TRACE("Checking child process:", it->pid);
     if (!it->isExited) {
       pid_t result = waitpid(it->pid, &it->childExitStatus, WNOHANG);
       if (result == -1) {

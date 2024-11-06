@@ -110,6 +110,9 @@ void ParseState::parseBody(Client& client) {
     parseBodyWithContentLength(client);
   } else {
     if (client.getCgiState() != CgiState::IDLE) {
+      LOG_ANNOUNCE("beforw request body", client.getReq().getBody().data());
+      client.getReq().clearBody();
+      LOG_ANNOUNCE("afer request body", client.getReq().getBody().data());
       parseBodyWithoutContentLength(client);
     } else {
       throw httpLength(client, "Content-Length header not found for client fd:",
@@ -175,6 +178,7 @@ void ParseState::parseChunkedBody(Client& client) {
     client.getReq().setBodySize(bodySize);
     if (chunkSize == 0) {
       client.setParsingState(ParsingState::DONE);
+      isChunked = false;
       break;
     }
     // check for client body size limit
@@ -198,6 +202,7 @@ void ParseState::parseChunkedBody(Client& client) {
     client.getReq().setBody(body);
     curr += chunkSize + 2;  // skip CRLF
   }
+
 }
 
 // helper functions
