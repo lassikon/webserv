@@ -107,12 +107,27 @@ void PostHandler::processFilePart(Client& client, const std::string& part) {
   } else {
     throw httpForbidden(client, "Permission denied to write to file");
   }
+  std::filesystem::path fsPath(path);
+  try {
+    auto spaceInfo = std::filesystem::space(fsPath);
+    LOG_DEBUG("Available space:", spaceInfo.available);
+    LOG_DEBUG("File size:", data.size());
+    if (spaceInfo.available < data.size()) {
+      throw httpInternal(client, "Insufficient disk space");
+    }
+  } catch (const std::filesystem::filesystem_error& e) {
+    LOG_ERROR("Filesystem error: ", e.what());
+    throw httpInternal(client, "Failed to retrieve filesystem information");
+  }
   std::ofstream file(path + fileName, std::ios::binary);
   if (!file.is_open()) {
     throw httpBadRequest(client, "Failed to open file");
   } else {
     LOG_TRACE("File opened successfully");
     file.write(data.data(), data.length());
+    if (file.fail()) {
+      throw httpInternal(client, "Failed to write to file");
+    }
     file.close();
     upload = true;
   }

@@ -110,9 +110,7 @@ void ParseState::parseBody(Client& client) {
     parseBodyWithContentLength(client);
   } else {
     if (client.getCgiState() != CgiState::IDLE) {
-      LOG_ANNOUNCE("beforw request body", client.getReq().getBody().data());
       client.getReq().clearBody();
-      LOG_ANNOUNCE("afer request body", client.getReq().getBody().data());
       parseBodyWithoutContentLength(client);
     } else {
       throw httpLength(client, "Content-Length header not found for client fd:",

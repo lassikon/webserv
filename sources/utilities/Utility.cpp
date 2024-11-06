@@ -197,7 +197,6 @@ size_t Utility::convertSizetoBytes(std::string size) {
   try {
     LOG_DEBUG("multiplier", multiplier);  
     bytes = std::stoull(size) * multiplier;
-    LOG_ANNOUNCE("bytes", bytes);
   } catch (const std::invalid_argument&) {
     // Handle invalid argument
     bytes = 0;
