@@ -29,7 +29,7 @@ class Server {
   std::map<int, steady_time_point_t> clientLastActivity;
 
  private:
-  const std::chrono::seconds idleTimeout = std::chrono::seconds(10);
+  const std::chrono::seconds idleTimeout = std::chrono::seconds(g_timeOut);
 
  private:
   std::string ipAddress;

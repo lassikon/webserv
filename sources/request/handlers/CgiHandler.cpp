@@ -76,13 +76,10 @@ void CgiHandler::executeCgiScript(Client& client) {
       exitError(2, "Could not duplicate pipe fd2");
     }
   }
-  // close(outPipeFd[Fd::Write]);
-  // close(inPipeFd[Fd::Read]);
   std::filesystem::path path(client.getRes().getReqURI());
   std::string pathStr = path.parent_path().c_str();
   std::string pathMsg = "Changing execution directory to: " + pathStr;
   LOG_CGI(pathMsg);
-  // chdir(path.parent_path().c_str());
   LOG_INFO("Executing CGI script:", argv[0]);
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
     exitError(2, "Could not duplicate pipe fd3");
@@ -191,7 +188,6 @@ void CgiHandler::executeRequest(Client& client) {
   cgi = client.getRes().getReqURI();
   std::string ext = cgi.substr(cgi.find_last_of(".") + 1);
   if (ext == "py") {
-    // is exist
     if (client.getRes().getServerConfig().cgiInterpreters.find("py") ==
         client.getRes().getServerConfig().cgiInterpreters.end()) {
       throw httpBadGateway(client, "Python interpreter not found");

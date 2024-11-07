@@ -113,7 +113,7 @@ class IException : public std::exception, public Logger {
       return std::string();
     }
     std::ostringstream oss;
-    oss << " [" << errno << "] " << strerror(errno);
+    oss << "| errno [" << errno << "] " << strerror(errno);
     return oss.str();
   }
 };

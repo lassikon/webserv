@@ -8,6 +8,7 @@
 #include <SessionManager.hpp>
 #include <Signal.hpp>
 
+std::atomic<int> g_timeOut = 5;
 sig_atomic_t g_ExitStatus;
 std::vector<struct CgiParams> g_CgiParams;
 

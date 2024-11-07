@@ -21,8 +21,7 @@ void ServerManager::configServers(Config& config) {
   LOG_TRACE("Initializing servers");
   for (auto& serverConfig : config.getServers()) {
     if (checkServerExists(serverConfig.second)) {
-      LOG_DEBUG("Server already exists, adding config to its port:",
-                serverConfig.second.port);
+      LOG_DEBUG("Server already exists, adding config to its port:", serverConfig.second.port);
       for (auto& server : servers) {
         if (server->getPort() == serverConfig.second.port) {
           server->addServerConfig(serverConfig.second);
@@ -30,17 +29,13 @@ void ServerManager::configServers(Config& config) {
         }
       }
     } else {
-      LOG_DEBUG("Creating new server config in port:",
-                serverConfig.second.port);
+      LOG_DEBUG("Creating new server config in port:", serverConfig.second.port);
       try {
         // Try to create a new server and add it to the list
         servers.emplace_back(std::make_shared<Server>(serverConfig.second));
       } catch (const std::exception& e) {
-        LOG_ERROR("Failed to create server on port:", std::to_string(serverConfig.second.port) +
-                  '\n', e.what());
-        // Remove the server that failed to initialize
-        if (!servers.empty() &&
-            servers.back()->getPort() == serverConfig.second.port) {
+        LOG_ERROR("Failed to create server on port:", std::to_string(serverConfig.second.port) + '\n', e.what());
+        if (!servers.empty() && servers.back()->getPort() == serverConfig.second.port) {  // Remove failed server
           servers.pop_back();
         }
       }
@@ -48,18 +43,14 @@ void ServerManager::configServers(Config& config) {
   }
 }
 
-#include <chrono>
-#include <iostream>
-
 void ServerManager::logIdleCheck() {
-    static auto lastLogTime = std::chrono::steady_clock::now();
-    auto currentTime = std::chrono::steady_clock::now();
-    auto durationSinceLastLog = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastLogTime);
-
-    if (durationSinceLastLog.count() >= IDLE_MSG_COOLDOWN) {
-        LOG_INFO("No events, checking for idle clients or expired cookies");
-        lastLogTime = currentTime;
-    }
+  static auto lastLogTime = std::chrono::steady_clock::now();
+  auto currentTime = std::chrono::steady_clock::now();
+  auto durationSinceLastLog = std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastLogTime);
+  if (durationSinceLastLog.count() >= IDLE_MSG_COOLDOWN) {
+    LOG_INFO("No events, checking for idle clients or expired cookies");
+    lastLogTime = currentTime;
+  }
 }
 
 void ServerManager::handleNoEvents(PollManager& pollManager) {
@@ -75,11 +66,10 @@ void ServerManager::handleNoEvents(PollManager& pollManager) {
 void ServerManager::initializePollManager(PollManager& pollManager) {
   for (auto& server : servers) {
     if (server->getSocketFd() < 0) {
-      LOG_ERROR("Invalid socket fd for server", server->getServerName());
+      LOG_ERROR("Invalid socket fd for server:", server->getServerName());
       continue;
     }
-    pollManager.addFd(server->getSocketFd(), EPOLLIN,
-                      [&](int fd) { (void)fd; });
+    pollManager.addFd(server->getSocketFd(), EPOLLIN, [&](int fd) { (void)fd; });
     LOG_DEBUG("Added server", server->getServerName(), "to pollManager");
   }
 }
@@ -87,8 +77,7 @@ void ServerManager::initializePollManager(PollManager& pollManager) {
 void ServerManager::startupMessage(void) {
   for (auto& server : servers) {
     for (auto& serverConfig : server->getServerConfigs()) {
-      LOG_ANNOUNCE("Server config", serverConfig->serverName, "listening on port",
-               serverConfig->port);
+      LOG_ANNOUNCE("Server config", serverConfig->serverName, "listening on port", serverConfig->port);
     }
   }
 }
@@ -101,13 +90,12 @@ void ServerManager::runServers(void) {
   while (!Utility::signalReceived()) {
     int epollCount = pollManager.epollWait();
     if (epollCount == -1) {
-      if (!Utility::signalReceived()) {
+      if (!Utility::signalReceived()) {  // log error if not signaled
         LOG_ERROR("Failed to epoll fds");
       }
       continue;
     } else if (epollCount == 0) {
-      RuntimeException::tryCatch(&ServerManager::handleNoEvents, this,
-                                 pollManager);
+      RuntimeException::tryCatch(&ServerManager::handleNoEvents, this, pollManager);
     } else {
       RuntimeException::tryCatch(&ServerManager::serverLoop, this, pollManager);
     }
@@ -141,8 +129,7 @@ void ServerManager::serverLoop(PollManager& pollManager) {
 void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_event& event) {
   int fd = event.data.fd;
   int clientFd = Utility::getClientFdFromCgiParams(fd);
-  if ((event.events & EPOLLHUP || event.events & EPOLLERR) &&
-      Utility::isCgiFd(fd)) {
+  if ((event.events & EPOLLHUP || event.events & EPOLLERR) && Utility::isCgiFd(fd)) {
     LOG_DEBUG("EPoll hangup on CGI fd:", fd);
     Utility::setIsExited(fd, true);
     for (auto& server : servers) {
@@ -150,9 +137,7 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
         if (Utility::isOutReadFd(fd)) {
           server->handleClientIn(pollManager, EPOLLIN, fd, clientFd);
         } else {
-          server->handleClientIn(pollManager, EPOLLIN,
-                                 Utility::getOutReadFdFromClientFd(clientFd),
-                                 clientFd);
+          server->handleClientIn(pollManager, EPOLLIN, Utility::getOutReadFdFromClientFd(clientFd), clientFd);
         }
         break;
       }
@@ -166,29 +151,26 @@ void ServerManager::handlePollErrors(PollManager& pollManager, struct epoll_even
     LOG_INFO("Epoll hangup on fd:", fd);
     pollManager.removeFd(fd);
   } else {
-    LOG_WARN("EPoll on fd:", fd);
-    LOG_WARN("errno:", IException::expandErrno());
+    LOG_WARN("EPoll removing fd:", fd, IException::expandErrno());
     pollManager.removeFd(fd);
   }
 }
 
 void ServerManager::handlePollInEvent(PollManager& pollManager, struct epoll_event& event) {
-  LOG_DEBUG("Handling POLLIN event");
   int fd = event.data.fd;
+  LOG_TRACE("Handling POLLIN event");
   for (auto& server : servers) {
     if (fd == server->getSocketFd()) {
-      LOG_TRACE("Listening socket, accept new connection");
+      LOG_DEBUG("Listening socket, accept new connection");
       server->acceptConnection(pollManager);
       break;
     } else if (server->isClientFd(fd)) {
       LOG_DEBUG("Handling client", fd, "EPOLLIN communication");
       server->handleClientIn(pollManager, event.events, fd, fd);
       break;
-    } else if (Utility::isCgiFd(fd) &&
-               server->isClientFd(Utility::getClientFdFromCgiParams(fd))) {
+    } else if (Utility::isCgiFd(fd) && server->isClientFd(Utility::getClientFdFromCgiParams(fd))) {
       int clientFd = Utility::getClientFdFromCgiParams(fd);
-      LOG_DEBUG("Handling CGI", fd,
-                "EPOLLIN communication with clientFd:", clientFd);
+      LOG_DEBUG("Handling CGI", fd, "EPOLLIN communication with clientFd:", clientFd);
       server->handleClientIn(pollManager, event.events, fd, clientFd);
       break;
     }
@@ -199,20 +181,18 @@ void ServerManager::handlePollInEvent(PollManager& pollManager, struct epoll_eve
 }
 
 void ServerManager::handlePollOutEvent(PollManager& pollManager, struct epoll_event& event) {
-  LOG_DEBUG("Handling POLLOUT event");
   int fd = event.data.fd;
+  LOG_TRACE("Handling POLLOUT event");
   for (auto& server : servers) {
     if (server->isClientFd(fd)) {
-      LOG_TRACE("Client socket ready for writing");
+      LOG_DEBUG("Client socket ready for writing");
       LOG_DEBUG("Handling client", fd, "POLLOUT communication");
       server->handleClientOut(pollManager, event.events, fd, fd);
       break;
     }
-    if (Utility::isCgiFd(fd) &&
-        server->isClientFd(Utility::getClientFdFromCgiParams(fd))) {
+    if (Utility::isCgiFd(fd) && server->isClientFd(Utility::getClientFdFromCgiParams(fd))) {
       int clientFd = Utility::getClientFdFromCgiParams(fd);
-      LOG_DEBUG("Handling CGI", fd,
-                " POLLOUT communication with clientFd:", clientFd);
+      LOG_DEBUG("Handling CGI", fd, "POLLOUT communication with clientFd:", clientFd);
       server->handleClientOut(pollManager, event.events, fd, clientFd);
       break;
     }
@@ -227,25 +207,22 @@ void ServerManager::handlePollOutEvent(PollManager& pollManager, struct epoll_ev
 void ServerManager::checkForNewChildProcesses(PollManager& pollManager) {
   for (auto& cgiParam : g_CgiParams) {
     if (!pollManager.fdExists(cgiParam.outReadFd)) {
-      LOG_DEBUG("Adding cgi out read fd:", cgiParam.outReadFd,
-                " to pollManager");
+      LOG_DEBUG("Adding cgi out read fd:", cgiParam.outReadFd, "to pollManager");
       Utility::setNonBlocking(cgiParam.outReadFd);
-      pollManager.addFd(cgiParam.outReadFd, EPOLLIN,
-                        [&](int fd) { close(fd); });
+      pollManager.addFd(cgiParam.outReadFd, EPOLLIN, [&](int fd) { close(fd); });
     }
     if (!pollManager.fdExists(cgiParam.inWriteFd)) {
-      LOG_DEBUG("Adding cgi in write fd:", cgiParam.inWriteFd,
-                " to pollManager");
+      LOG_DEBUG("Adding cgi in write fd:", cgiParam.inWriteFd, "to pollManager");
       Utility::setNonBlocking(cgiParam.inWriteFd);
-      pollManager.addFd(cgiParam.inWriteFd, EPOLLOUT,
-                        [&](int fd) { close(fd); });
+      pollManager.addFd(cgiParam.inWriteFd, EPOLLOUT, [&](int fd) { close(fd); });
     }
   }
 }
 
 bool ServerManager::childTimeout(steady_time_point_t& start) {
   auto now = std::chrono::steady_clock::now();
-  if (now - start > std::chrono::seconds(CHILD_TIMEOUT)) {
+  // make sure child process times out before client
+  if (now - start > std::chrono::seconds(g_timeOut - 1)) {
     LOG_DEBUG("Child process timed out");
     return true;
   }
@@ -254,20 +231,17 @@ bool ServerManager::childTimeout(steady_time_point_t& start) {
 
 void ServerManager::checkChildProcesses(PollManager& pollManager) {
   for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
-    //LOG_TRACE("Checking child process:", it->pid);
     if (!it->isExited) {
       pid_t result = waitpid(it->pid, &it->childExitStatus, WNOHANG);
       if (result == -1) {
-        LOG_ERROR("Failed to wait for child process:",
-                  IException::expandErrno());
+        LOG_ERROR("Failed to wait for child process", IException::expandErrno());
         pollManager.removeFd(it->outReadFd);
         pollManager.removeFd(it->inWriteFd);
         g_CgiParams.erase(it);
-      } else if (result > 0) {  // Child process has exited
+      } else if (result > 0) {
         it->isExited = true;
-        LOG_TRACE("client fd:", it->clientFd);
-        LOG_DEBUG("Child process", it->pid,
-                  "exited with status:", it->childExitStatus);
+        LOG_TRACE("Client fd:", it->clientFd);
+        LOG_DEBUG("Child process", it->pid, "exited with status:", it->childExitStatus);
         if (it->childExitStatus != 0) {
           LOG_DEBUG("Child process exited with status:", it->childExitStatus);
           it->isFailed = true;
@@ -278,7 +252,7 @@ void ServerManager::checkChildProcesses(PollManager& pollManager) {
         it->isTimeout = true;
       }
     } else {
-      LOG_TRACE("Child process exited", it->pid);
+      LOG_TRACE("Child process", it->pid, "exited");
       for (auto& server : servers) {
         if (server->isClientFd(it->clientFd)) {
          auto clientIt = std::find_if(server->getClients().begin(), server->getClients().end(), [&](const std::shared_ptr<Client>& client) {

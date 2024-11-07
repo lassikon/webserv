@@ -131,15 +131,15 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents,
   }
 }
 
-void Server::modifyFdEvent(PollManager& pollManager,
-                           std::shared_ptr<Client> client, int eventFd,
-                           int clientFd) {
+void Server::modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> client, int eventFd, int clientFd) {
   uint32_t newEvents = 0;
   int fd = clientFd;
+
   LOG_TRACE("Modifying events for client fd:", clientFd);
   LOG_TRACE("Client state:", (int)client->getClientState());
   LOG_TRACE("CGI state:", (int)client->getCgiState());
   LOG_TRACE("Parsing state:", (int)client->getParsingState());
+
   // closing connection, detected close in client side
   // removing fd in epoll interest list fds
   if (eventFd == clientFd && client->getClientState() == ClientState::CLOSE &&
@@ -150,6 +150,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     pollManager.removeFd(clientFd);
     return;
   }
+
   // client reset to waiting for EPOLLIN / initial state
   if (eventFd == clientFd && client->getClientState() == ClientState::IDLE &&
       client->getCgiState() == CgiState::IDLE) {
@@ -159,6 +160,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
 
     fd = eventFd;
   }
+
   // after epollin client reading request, waiting for eof in request reading
   if (eventFd == clientFd && client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::IDLE) {
@@ -167,6 +169,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents |= EPOLLIN;
     fd = eventFd;
   }
+
   // after reading eof request disabling epollin and enabling epollout for
   // client
   if (eventFd == clientFd &&
@@ -177,6 +180,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents |= EPOLLOUT;
     fd = eventFd;
   }
+
   // after sending response to client, waiting for eof on send
   if (eventFd == clientFd &&
       client->getClientState() == ClientState::PREPARING &&
@@ -186,6 +190,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents |= EPOLLOUT;
     fd = eventFd;
   }
+
   // after sending response to client, waiting for eof on send
   if (eventFd == clientFd && client->getClientState() == ClientState::SENDING &&
       client->getCgiState() == CgiState::IDLE) {
@@ -194,6 +199,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents |= EPOLLOUT;
     fd = eventFd;
   }
+
   // disable epollin and epollout for Client after cgi post, sending body to cgi
   // epollout to cgi stdin pipe
   if (eventFd == clientFd &&
@@ -206,6 +212,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents &= ~EPOLLOUT;
     fd = eventFd;
   }
+
   // disable epollout for CGI after sending body to cgi and eof on send
   if (eventFd == Utility::getInWriteFdFromClientFd(clientFd) &&
       client->getClientState() == ClientState::READING &&
@@ -227,6 +234,7 @@ void Server::modifyFdEvent(PollManager& pollManager,
     newEvents &= ~EPOLLOUT;
     fd = eventFd;
   }
+
   // cgi error before fork
   if (eventFd == clientFd && client->getClientState() == ClientState::READING &&
       client->getCgiState() == CgiState::WRITING &&
@@ -278,8 +286,8 @@ void Server::modifyFdEvent(PollManager& pollManager,
     pollManager.removeFd(Utility::getOutReadFdFromClientFd(clientFd));
     pollManager.removeFd(Utility::getInWriteFdFromClientFd(clientFd));
     client->getCgiHandler().closePipeFds();
-    // pollManager.removeFd(eventFd);
   }
+
   pollManager.modifyFd(fd, newEvents);
 }
 
@@ -313,10 +321,9 @@ bool Server::isClientFd(int fd) const {
 
 void Server::removeClient(PollManager& pollManager, int clientFd) {
   LOG_DEBUG("Removing client fd:", clientFd, "from clients");
-  auto it = std::find_if(clients.begin(), clients.end(),
-                         [clientFd](std::shared_ptr<Client>& client) {
-                           return client->getFd() == clientFd;
-                         });
+  auto it = std::find_if(clients.begin(), clients.end(), [clientFd](std::shared_ptr<Client>& client) {
+    return client->getFd() == clientFd;
+  });
   if (it != clients.end()) {
     clients.erase(it);
   }
@@ -331,7 +338,6 @@ void Server::removeClient(PollManager& pollManager, int clientFd) {
       ++cgi;
     }
   }
-
   for (auto it = clientLastActivity.begin(); it != clientLastActivity.end();) {
     if (it->first == clientFd) {
       clientLastActivity.erase(it);

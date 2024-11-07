@@ -107,7 +107,7 @@ int PollManager::epollWait(void) {
   while (!Utility::signalReceived()) {
     epollEvents.clear();
     epollEvents.resize(MAX_EVENTS);
-    numEvents = epoll_wait(epollFd, epollEvents.data(), MAX_EVENTS, TIMEOUT);
+    numEvents = epoll_wait(epollFd, epollEvents.data(), MAX_EVENTS, 0);
     if (numEvents == -1) {
       if (errno == EINTR) {  // if interrupted by signal, try again
         continue;
