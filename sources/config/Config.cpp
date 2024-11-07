@@ -1,5 +1,4 @@
 #include <Config.hpp>
-#include <regex>
 
 int Config::_lineNumber = 0;
 
@@ -17,21 +16,18 @@ Config::~Config() {
 
 void Config::parseConfigFile() {
   std::stringstream configFile;
-   if (std::filesystem::path(_configFilePath).extension() != ".conf") {
-    LOG_ERROR("Incorrect file extension");
-    // configError("Incorrect file extension");
-    return;
-  }
   std::vector<char> content = Utility::readFile(_configFilePath);
+  if (std::filesystem::path(_configFilePath).extension() != ".conf") {
+    throw configError("Incorrect file extension");
+  }
   if (content.empty()) {
-    LOG_ERROR("Empty config file");
-    // configError("Empty config file");
-    return;
+    throw configError("Empty config file");
   }
   configFile.str(std::string(content.begin(), content.end()));
   while (callGetLine(configFile)) {
-    if (_line.empty())
+    if (_line.empty()) {
       continue;
+    }
     if (_line.compare("[server]") == 0) {
       _bStack.push("[server]");
       parseServerBlock(configFile);
@@ -47,29 +43,28 @@ void Config::parseServerBlock(std::stringstream& configFile) {
   ServerConfig serverConfig;
   serverConfig = ServerConfig{};
   while (callGetLine(configFile)) {
-    if (_line.empty())
+    if (_line.empty()) {
       continue;
+    }
     auto delimiter_pos = _line.find(":");
-    if (delimiter_pos != std::string::npos)
+    if (delimiter_pos != std::string::npos) {
       populateServer(serverConfig, delimiter_pos);
-    else if (_line.compare("[server]") == 0)
+    } else if (_line.compare("[server]") == 0) {
       return;
-    else if (_line.compare("[route]") == 0) {
+    } else if (_line.compare("[route]") == 0) {
       _bStack.push("[route]");
       parseRouteBlock(serverConfig, configFile);
       closeRouteBlock(configFile);
-    } else if (_line.compare("[/server]") == 0 &&
-               (!_bStack.empty() && _bStack.top() == "[server]")) {
+    } else if (_line.compare("[/server]") == 0 && (!_bStack.empty() && _bStack.top() == "[server]")) {
       _bStack.pop();
       addServerToMap(serverConfig);
       return;
     } else
       LOG_WARN("Parse: Invalid directive,", _line, " in server block at line", _lineNumber);
-    _pos = configFile.tellg();
+      _pos = configFile.tellg();
   }
 }
 
-// populate route block
 void Config::parseRouteBlock(ServerConfig& serverConfig, std::stringstream& configFile) {
   RouteConfig routeConfig;
   routeConfig = RouteConfig{};
@@ -98,7 +93,11 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
   std::string value = _line.substr(pos + 1);
   value = Utility::trimComments(value);
   value = Utility::trimWhitespaces(value);
-  _serverDirective->handleDirective(&serverConfig, key, value, _lineNumber);
+  try {
+    _serverDirective->handleDirective(&serverConfig, key, value, _lineNumber);
+  } catch (const std::exception &e) {
+    LOG_ERROR("Error populating server information,", e.what(), IException::expandErrno());
+  }
 }
 
 void Config::populateRoute(RouteConfig& routeConfig, std::size_t& pos) {
@@ -108,27 +107,28 @@ void Config::populateRoute(RouteConfig& routeConfig, std::size_t& pos) {
   std::string value = _line.substr(pos + 1);
   value = Utility::trimComments(value);
   value = Utility::trimWhitespaces(value);
-  _routeDirective->handleDirective(&routeConfig, key, value, _lineNumber);
+  try {
+    _routeDirective->handleDirective(&routeConfig, key, value, _lineNumber);
+  } catch (const std::exception &e) {
+    LOG_ERROR("Error populating route information,", e.what(), IException::expandErrno());
+  }
 }
 
 // NGINX uses ip:port first, server_name second and default server last
 // add server to map but with different ip, port or server name
 void Config::addServerToMap(ServerConfig& serverConfig) {
+  std::string hostName;
   if (serverConfig.port == 0) {
     LOG_WARN("Parse: Missing port in server block at line ", _lineNumber);
     return;
   }
   for (auto& server : _servers) {
-    if (server.second.port == serverConfig.port &&
-        server.second.serverName == serverConfig.serverName) {
-      LOG_WARN("Parse: Server with port  ", serverConfig.port, " and servername",
-               serverConfig.serverName, " already exists");
+    if (server.second.port == serverConfig.port && server.second.serverName == serverConfig.serverName) {
+      LOG_WARN("Parse: Server with port  ", serverConfig.port, " and servername", serverConfig.serverName, " already exists");
       return;
     }
   }
-  std::string hostName;
-  hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port) + " " +
-             serverConfig.serverName;
+  hostName = serverConfig.ipAddress + ":" + std::to_string(serverConfig.port) + " " + serverConfig.serverName;
   _servers.insert(std::pair<std::string, ServerConfig>(hostName, serverConfig));
 }
 
@@ -155,8 +155,7 @@ void Config::closeRouteBlock(std::stringstream& configFile) {
 }
 
 bool Config::callGetLine(std::stringstream& configFile) {
-  // handle unexpected EOF
-  if (!std::getline(configFile, _line))
+  if (!std::getline(configFile, _line)) // handle unexpected EOF
     return false;
   _line = Utility::trimComments(_line);
   _line = Utility::trimWhitespaces(_line);
@@ -169,17 +168,17 @@ void Config::validateServer(std::map<std::string, ServerConfig>& servers) {
     auto& server = serverIt->second;
     for (auto routeIt = server.routes.begin(); routeIt != server.routes.end();) {
       if (routeIt->location.empty()) {
-        LOG_WARN("Parse: Missing location in route block, deleting route...");
+        LOG_WARN("Missing location in route block, deleting route...");
         routeIt = server.routes.erase(routeIt);
       } else
-        ++routeIt;
+        routeIt++;
     }
   }
 }
 
 void Config::printServerConfig() {
-  LOG_INFO("Printing server config");
   int serverCount = 1;
+  LOG_INFO("Printing server config");
   for (const auto& server_pair : _servers) {
     const auto& server = server_pair.second;
     LOG_INFO("#Server: ", serverCount);
@@ -190,8 +189,8 @@ void Config::printServerConfig() {
     for (const auto& error : server.pagesCustom) {
       LOG_INFO(error.first, "  path: ", error.second);
     }
-    LOG_INFO("Server client body size limit: ", server.clientBodySizeLimit);
     int routeCount = 1;
+    LOG_INFO("Server client body size limit: ", server.clientBodySizeLimit);
     for (const auto& route : server.routes) {
       LOG_INFO("#Server: ", serverCount, " route: ", routeCount);
       LOG_INFO("  Route location: ", route.location);

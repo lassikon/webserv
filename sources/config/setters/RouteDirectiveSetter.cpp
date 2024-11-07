@@ -1,7 +1,6 @@
 #include <RouteDirectiveSetter.hpp>
 
-void RouteDirectiveSetter::handleDirective(void* data, std::string& key, std::string& value,
-                                           int& lineNumber) {
+void RouteDirectiveSetter::handleDirective(void* data, std::string& key, std::string& value, int& lineNumber) {
   RouteConfig* route = static_cast<RouteConfig*>(data);
   if (key == "location") {
     setLocation(*route, value, lineNumber);
@@ -57,18 +56,17 @@ void RouteDirectiveSetter::setRoot(RouteConfig& route, std::string& value, int& 
     LOG_WARN("Parse: Root path not found,", root, " at line", lineNumber);
     return;
   }
-
   if (root.compare(0, exePath.string().size(), exePath.string()) == 0) {
-    if (!route.root.empty())
+    if (!route.root.empty()) {
       LOG_WARN("Parse: Root already set, updating with line", lineNumber);
+    }
     route.root = root;
   } else {
     LOG_WARN("Parse: Root path is not allowed,", root, " at line", lineNumber);
   }
 }
 
-void RouteDirectiveSetter::setDirectoryListing(RouteConfig& route, std::string& value,
-                                               int& lineNumber) {
+void RouteDirectiveSetter::setDirectoryListing(RouteConfig& route, std::string& value, int& lineNumber) {
   if (value == "on")
     route.directoryListing = true;
   else if (value == "off")
@@ -102,7 +100,6 @@ void RouteDirectiveSetter::setUploadPath(RouteConfig& route, std::string& value,
   if (!std::filesystem::exists(uploadPath)) {
     LOG_DEBUG("Parse: Upload path not found,", uploadPath.string(), " at line", lineNumber);
     LOG_DEBUG("Parse: Attempting to create upload path,", uploadPath.string());
-    //create
     if (!std::filesystem::create_directories(uploadPath)) {
       LOG_WARN("Parse: Failed to create upload path,", uploadPath.string(), " at line", lineNumber);
     return;
@@ -118,6 +115,7 @@ void RouteDirectiveSetter::setUploadPath(RouteConfig& route, std::string& value,
     LOG_WARN("Parse: Upload path already set, updating with line", lineNumber);
   route.uploadPath = upload;
 }
+
 // either a path or a redirect url
 void RouteDirectiveSetter::setRedirect(RouteConfig& route, std::string& value, int& lineNumber) {
   if (!route.redirect.empty())

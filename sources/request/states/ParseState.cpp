@@ -120,7 +120,7 @@ void ParseState::parseBody(Client& client) {
 }
 
 void ParseState::parseBodyWithoutContentLength(Client& client) {
-  LOG_DEBUG("Content-Length header not found. Using EOF");
+  LOG_TRACE("Content-Length header not found. Using EOF");
   std::vector<char>& buffer = *client.getReadBuf();
   size_t& curr = client.getReadCurr();
   size_t& end = client.getReadEnd();
@@ -136,12 +136,11 @@ void ParseState::parseBodyWithoutContentLength(Client& client) {
 }
 
 void ParseState::parseBodyWithContentLength(Client& client) {
-  LOG_DEBUG("Parsing body with content length");
+  LOG_TRACE("Parsing body with content length");
   std::vector<char>& buffer = *client.getReadBuf();
   size_t& curr = client.getReadCurr();
   size_t& end = client.getReadEnd();
-  size_t contentLength =
-      std::stoi(client.getReq().getHeaders()["Content-Length"]);
+  size_t contentLength = std::stoi(client.getReq().getHeaders()["Content-Length"]);
   client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);
   bodyData.assign(buffer.begin() + curr, buffer.end());
@@ -162,8 +161,7 @@ void ParseState::parseChunkedBody(Client& client) {
   std::string chunkSizeHex;
   size_t saveCurr = curr;
   size_t saveEnd = end;
-  while (Utility::getLineVectoStr(buffer, chunkSizeHex, curr, end) &&
-         chunkSizeHex != "\r") {
+  while (Utility::getLineVectoStr(buffer, chunkSizeHex, curr, end) && chunkSizeHex != "\r") {
     if (chunkSizeHex.back() == '\r') {
       chunkSizeHex.pop_back();
     }

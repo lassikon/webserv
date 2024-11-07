@@ -37,22 +37,17 @@ struct CgiParams {
 class CgiHandler : public IRequestHandler {
  private:
   enum Fd { Read, Write };
-
   std::vector<std::string> envps{};
   std::vector<std::string> args{};
-
   int outPipeFd[2] = {-1, -1};
   int inPipeFd[2] = {-1, -1};
   int clientFd;
-  int wstat;
   pid_t pid;
   std::string cgi;
   bool isBin = false;
 
  public:
-  /* CgiHandler(void) = delete; */
-  CgiHandler();  // delete this
-  CgiHandler(const Client& client);
+  CgiHandler();
   virtual ~CgiHandler(void);
 
  public:
@@ -75,9 +70,6 @@ class CgiHandler : public IRequestHandler {
   bool isValidScript(void) const;
   bool isParentProcess(void) const;
   bool isChildProcess(void) const;
-
- private:
-  static inline const pid_t& addNewProcessId(void) noexcept;
 
  public:
   static void killAllChildPids(void);

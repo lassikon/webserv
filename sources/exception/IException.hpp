@@ -15,7 +15,6 @@
 #define ERR_MSG_CONFIG "No valid server found in:"
 #define ERR_MSG_SERVER "Could not setup any servers from:"
 #define ERR_MSG_NOFILE "Could not access file:"
-#define ERR_MSG_EMPTYFILE "Config file is empty:"
 #define ERR_MSG_SIGNAL "Server interrupted by signal:"
 
 enum class RuntimeError {
@@ -43,7 +42,6 @@ enum class NetworkError {
   Version = 505
 };
 
-// interface for exceptios, inherits std::exception and logger
 class IException : public std::exception, public Logger {
  private:
   std::string logEntry;
@@ -68,7 +66,7 @@ class IException : public std::exception, public Logger {
   IException(NetworkError err, const char* file, const char* func, int line, Args&&... args)
       : file(file), func(func), line(line) {
     logEntry = createLogEntry(logLevel::Error, "ERROR", "Network", std::forward<Args>(args)...);
-    (void)err;
+    (void)err;  // unused
   };
 
  public:
@@ -83,9 +81,7 @@ class IException : public std::exception, public Logger {
   IException(RuntimeError err, const char* file, const char* func, int line, Args&&... args)
       : file(file), func(func), line(line) {
     logEntry = createLogEntry(logLevel::Error, "ERROR", "Runtime", std::forward<Args>(args)...);
-    // g_ExitStatus = (int)err;
-    (void)err;
-    g_ExitStatus = 0;
+    (void)err;  // unused
   };
 
  private:
@@ -107,7 +103,6 @@ class IException : public std::exception, public Logger {
   }
 
  public:
-  // function to expand errno, does not need to be instantiated
   static std::string expandErrno(void) noexcept {
     if (!errno) {
       return std::string();
