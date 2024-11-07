@@ -1,10 +1,7 @@
 webserv
-sessions
 **/*.vscode
 **/*.deps
 **/*build
 **/*.log
-**/*.txt
 **/*.pdf
 **/*.sh
-.clang-format
