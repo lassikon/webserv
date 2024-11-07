@@ -12,7 +12,7 @@ Socket::~Socket(void) {
 // Configures the socket with appropriate options, binds it to the specified port,
 // and begins listening for incoming connections.
 void Socket::setupSocket(ServerConfig& serverConfig) {
-  struct addrinfo hints = {}, *addr;
+  struct addrinfo hints = {};
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
@@ -47,11 +47,12 @@ void Socket::setupSocket(ServerConfig& serverConfig) {
   if (listen(sockFd, BACKLOG) == -1) {
     throw socketError("Failed to listen on socket fd:", sockFd);
   }
-
-  freeaddrinfo(addr);
 }
 
 void Socket::cleanupSocket(void) {
+  if (addr != nullptr) {
+    freeaddrinfo(addr);
+  }
   if (sockFd > 0) {
     LOG_DEBUG("Closing fd:", sockFd);
     if (close(sockFd) == -1) {

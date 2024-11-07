@@ -12,22 +12,22 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-class Socket {
-
 #define BACKLOG 10
 
+class Socket {
  private:
+  struct addrinfo *addr = nullptr;
   int sockFd = -1;
 
  public:
   Socket(void);
   ~Socket(void);
 
+ public:
   int getFd(void) const { return sockFd; }
   void setupSocket(ServerConfig& serverConfig);
 
  private:
   void closeSockedFd(void) { sockFd = 0; }
   void cleanupSocket(void);
-  void setNonBlocking(void);
 };
