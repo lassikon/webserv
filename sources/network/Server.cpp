@@ -81,8 +81,7 @@ void Server::handleClientIn(PollManager& pollManager, uint32_t revents,
     if (isClose == true) {
       LOG_TRACE("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
-      removeClient(pollManager, clientFd);
-      // pollManager.removeFd(clientFd);
+      pollManager.removeFd(clientFd);
       return;
     }
     modifyFdEvent(pollManager, *it, eventFd, clientFd);
@@ -123,8 +122,7 @@ void Server::handleClientOut(PollManager& pollManager, uint32_t revents,
     if (isClose == true) {
       LOG_DEBUG("Closing client fd:", clientFd);
       LOG_DEBUG("Removing client fd:", clientFd, "from pollManager");
-      removeClient(pollManager, clientFd);
-      // pollManager.removeFd(clientFd);
+      pollManager.removeFd(clientFd);
       return;
     }
     modifyFdEvent(pollManager, *it, eventFd, clientFd);

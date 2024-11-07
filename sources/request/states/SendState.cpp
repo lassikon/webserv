@@ -27,6 +27,10 @@ void SendState::execute(Client& client) {
       client.setCgiState(CgiState::WRITING);
       client.setClientState(ClientState::READING);
     }
+    if (client.getRes().getResStatusCode() >= 400) {
+      LOG_DEBUG("closing connection for client fd:", client.getFd());
+      client.setCloseConnection(true);
+    }
     client.initClient();
     return;
   }
