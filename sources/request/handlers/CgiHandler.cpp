@@ -66,15 +66,11 @@ void CgiHandler::exitError(int status, const std::string& message) {
 void CgiHandler::executeCgiScript(Client& client) {
   std::vector<char*> argv = convertStringToChar(args);
   std::vector<char*> envp = convertStringToChar(envps);
-  if (outPipeFd[Fd::Write] != -1) {
-    if (dup2(outPipeFd[Fd::Write], STDOUT_FILENO) == -1) {
-      exitError(2, "Could not duplicate pipe fd1");
-    }
+  if (outPipeFd[Fd::Write] != -1 && dup2(outPipeFd[Fd::Write], STDOUT_FILENO) == -1) {
+    exitError((int)RuntimeError::Cgi, "Could not duplicate pipe fd1");
   }
-  if (inPipeFd[Fd::Read] != -1) {
-    if (dup2(inPipeFd[Fd::Read], STDIN_FILENO) == -1) {
-      exitError(2, "Could not duplicate pipe fd2");
-    }
+  if (inPipeFd[Fd::Read] != -1 && dup2(inPipeFd[Fd::Read], STDIN_FILENO) == -1) {
+    exitError((int)RuntimeError::Cgi, "Could not duplicate pipe fd2");
   }
   std::filesystem::path path(client.getRes().getReqURI());
   std::string pathStr = path.parent_path().c_str();
@@ -82,7 +78,7 @@ void CgiHandler::executeCgiScript(Client& client) {
   LOG_CGI(pathMsg);
   LOG_INFO("Executing CGI script:", argv[0]);
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
-    exitError(2, "Could not duplicate pipe fd3");
+    exitError((int)RuntimeError::Cgi, "Could not execute CGI script");
   }
 }
 
@@ -92,6 +88,22 @@ bool CgiHandler::isParentProcess(void) const {
 
 bool CgiHandler::isChildProcess(void) const {
   return this->pid == 0 ? true : false;
+}
+
+void CgiHandler::setGlobal(void) {
+  CgiParams cgiParam;
+  cgiParam.pid = this->pid;
+  cgiParam.outReadFd = outPipeFd[Fd::Read];
+  cgiParam.outWriteFd = outPipeFd[Fd::Write];
+  cgiParam.inReadFd = inPipeFd[Fd::Read];
+  cgiParam.inWriteFd = inPipeFd[Fd::Write];
+  cgiParam.clientFd = clientFd;
+  cgiParam.isExited = false;
+  cgiParam.isTimeout = false;
+  cgiParam.isFailed = false;
+  cgiParam.start = std::chrono::steady_clock::now();
+  cgiParam.childExitStatus = -1;
+  g_CgiParams.push_back(cgiParam);
 }
 
 void CgiHandler::forkChildProcess(Client& client) {
@@ -111,44 +123,37 @@ void CgiHandler::forkChildProcess(Client& client) {
   }
 }
 
-void CgiHandler::setGlobal(void) {
-  CgiParams cgiParam;
-  cgiParam.pid = this->pid;
-  cgiParam.outReadFd = outPipeFd[Fd::Read];
-  cgiParam.outWriteFd = outPipeFd[Fd::Write];
-  cgiParam.inReadFd = inPipeFd[Fd::Read];
-  cgiParam.inWriteFd = inPipeFd[Fd::Write];
-  cgiParam.clientFd = clientFd;
-  cgiParam.isExited = false;
-  cgiParam.isTimeout = false;
-  cgiParam.isFailed = false;
-  cgiParam.start = std::chrono::steady_clock::now();
-  cgiParam.childExitStatus = -1;
-  g_CgiParams.push_back(cgiParam);
-}
-
-bool CgiHandler::isValidScript(void) const {
-  struct stat s;
-  if (!stat(cgi.c_str(), &s) && !S_ISREG(s.st_mode)) {
-    LOG_ERROR("File is a folder:", cgi);
-    return false;
-  }
+bool CgiHandler::isValidPerm(void) const {
+  namespace fs = std::filesystem;
+  fs::perms perms = fs::status(cgi).permissions();
   if (isBin) {
-    if (access(cgi.c_str(), X_OK)) {
-      LOG_ERROR("No permission to execute binary file:", cgi);
+    if ((perms & (fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec)) == fs::perms::none) {
+      LOG_ERROR("No execute permission for binary file: ", cgi);
       return false;
     }
   } else {
-    if (access(cgi.c_str(), R_OK)) {
-      LOG_ERROR("No permission to execute CGI script", cgi);
+    if ((perms & (fs::perms::owner_read | fs::perms::group_read | fs::perms::others_read)) == fs::perms::none) {
+      LOG_ERROR("No execute permission for binary file: ", cgi);
       return false;
     }
   }
   return true;
 }
 
+bool CgiHandler::isValidFile(void) const {
+  if (!std::filesystem::exists(cgi)) {
+    LOG_ERROR("File does not exist: ", cgi);
+    return false;
+  } else if (!std::filesystem::is_regular_file(cgi)) {
+    LOG_ERROR("File is a folder or not a regular file: ", cgi);
+    return false;
+  }
+  return true;
+}
+
 void CgiHandler::scriptLoader(Client& client) {
-  if (!isValidScript()) {
+  LOG_TRACE("Running new CGI instance");
+  if (!isValidFile() || !isValidPerm()) {
     throw httpBadGateway(client, "Failed to execute CGI script");
   }
   if (client.getReq().getMethod() == "POST") {
@@ -178,13 +183,8 @@ void CgiHandler::scriptLoader(Client& client) {
   forkChildProcess(client);
 }
 
-void CgiHandler::runScript(Client& client) {
-  LOG_TRACE("Running new CGI instance");
-  scriptLoader(client);
-}
-
 void CgiHandler::executeRequest(Client& client) {
-  LOG_TRACE("CgiHandler: executingRequest");
+  LOG_TRACE("Executing CGI request");
   cgi = client.getRes().getReqURI();
   std::string ext = cgi.substr(cgi.find_last_of(".") + 1);
   if (ext == "py") {
@@ -200,11 +200,11 @@ void CgiHandler::executeRequest(Client& client) {
     }
     args.push_back(client.getRes().getServerConfig().cgiInterpreters["php"]);
   } else {
-    LOG_TRACE("Using binary:", cgi);
+    LOG_DEBUG("Using CGI file:", cgi);
     isBin = true;
   }
-  clientFd = client.getFd();
   args.push_back(cgi);
+  clientFd = client.getFd();
   generateEnvpVector(client);
-  runScript(client);
+  scriptLoader(client);
 }
