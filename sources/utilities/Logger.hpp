@@ -20,9 +20,6 @@ enum class logDetail { Time, File, Func, Line };
 
 class Logger {
  private:
-  static std::unordered_map<std::string, bool> classFilter;
-
- private:
   static const char* fileName;
   static std::ofstream logFile;
   static logOutput currentOutput;
@@ -46,7 +43,6 @@ class Logger {
   static void printLogEntry(std::ostream& console, std::ostringstream& logEntry);
   static std::string getDateTimeStamp(void);
   static std::string filterClassName(std::string& fileName);
-  static bool isFiltered(std::string& fileName) noexcept;
 
  public:
   // template function to expand log arguments to given ostringstream using lambda
@@ -59,13 +55,12 @@ class Logger {
   }
 
  public:
-  // template function called by macros defined at the bottom, recieves all passed arguments
-  // checks logging level and file (class) name for filtering
-  // can log entries into separate file if enabled
+  // template function called by macros defined at the bottom, receives all passed arguments
+  // checks logging level, can log entries into separate file if enabled
   template <typename... Args>
   static void Log(logLevel level, const char* title, const char* color, std::ostream& console,
                   std::string fileName, const char* funcName, int lineNbr, Args&&... args) {
-    if (level < currentLevel || (level < logLevel::Warn && isFiltered(fileName))) {
+    if (level < currentLevel) {
       return;
     } else {
       std::ostringstream logEntry;
@@ -84,14 +79,11 @@ class Logger {
 // takes primitive variadic arguments (string, int, ...)
 // does not support complex data types like std::vector or std::map
 // example: LOG_ERROR("Failed to listen on socket fd:", sockFd);
-#define LOG_TRACE(...) \
-  (Logger::Log(logLevel::Trace, "TRACE", BLUE, std::cout, LOGDATA, __VA_ARGS__))
-#define LOG_DEBUG(...) \
-  (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_TRACE(...) (Logger::Log(logLevel::Trace, "TRACE", BLUE, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_DEBUG(...) (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", CYAN, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_CGI(...) (Logger::Log(logLevel::Announce, "INFO", MAGENTA, std::cerr, LOGDATA, __VA_ARGS__))
 #define LOG_ANNOUNCE(...) (Logger::Log(logLevel::Announce, "INFO", MAGENTA, std::cout, LOGDATA, __VA_ARGS__))
-#define LOG_WARN(...) \
-  (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_WARN(...) (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", BRIGHTRED, std::cerr, LOGDATA, __VA_ARGS__))
 #define LOG_FATAL(...) (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, LOGDATA, __VA_ARGS__))

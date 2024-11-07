@@ -8,7 +8,7 @@ SessionManager::~SessionManager(void) {
   LOG_TRACE(Utility::getDeconstructor(*this));
 }
 
-void SessionManager::debugPrintSessionsMap(void) {
+void SessionManager::debugPrintTokens(void) {
   for (const auto& [token, cookie] : sessionIds) {
     LOG_DEBUG("Cookie token:", token);
   }
@@ -26,19 +26,22 @@ std::string SessionManager::setExpireTime(void) {
 
 std::string SessionManager::setSessionCookie(void) {
   std::string token, expires;
-  token.reserve(tokenLength);
-  for (int i = 0; i < tokenLength; i++) {
-    token += charSet[rand() % (sizeof(charSet) - 1)];
+  std::random_device randomSeed;
+  std::mt19937 generator(randomSeed());
+
+  // Create a distribution to uniformly select from all characters
+  std::uniform_int_distribution<> distribute(0, charSet.size() - 1);
+  for (size_t i = 0; i < tokenLength; i++) {
+    token += charSet[distribute(generator)];
   }
   std::string cookie = "sessionId=" + token + "; " + setExpireTime() + "; Secure";
+  LOG_DEBUG("Generated session cookie:", cookie);
   auto now = std::chrono::system_clock::now();
   sessionIds.insert(std::make_pair(token, now + lifetime));
-  LOG_DEBUG("Generated session cookie:", cookie);
   return cookie;
 }
 
 bool SessionManager::isSessionCookie(std::string sessionToken) {
-  std::string cookie;
   sessionToken = sessionToken.substr(10, 10 + tokenLength);
   LOG_DEBUG("Checking session token:", sessionToken);
   auto it = sessionIds.find(sessionToken);
@@ -55,7 +58,7 @@ void SessionManager::checkExpiredCookies(void) {
       LOG_INFO("Session cookie expired:", it->first);
       it = sessionIds.erase(it);
     } else {
-      ++it;
+      it++;
     }
   }
 }
