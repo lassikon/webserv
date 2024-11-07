@@ -31,6 +31,7 @@ struct RouteConfig {
   std::vector<std::string> cgi;
 };
 
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
 struct ServerConfig {
   std::string ipAddress;
   std::string serverName;

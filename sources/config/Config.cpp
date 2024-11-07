@@ -1,4 +1,5 @@
 #include <Config.hpp>
+#include <regex>
 
 int Config::_lineNumber = 0;
 
@@ -16,9 +17,15 @@ Config::~Config() {
 
 void Config::parseConfigFile() {
   std::stringstream configFile;
+   if (std::filesystem::path(_configFilePath).extension() != ".conf") {
+    LOG_ERROR("Incorrect file extension");
+    // configError("Incorrect file extension");
+    return;
+  }
   std::vector<char> content = Utility::readFile(_configFilePath);
   if (content.empty()) {
-    configError("Empty config file");
+    LOG_ERROR("Empty config file");
+    // configError("Empty config file");
     return;
   }
   configFile.str(std::string(content.begin(), content.end()));

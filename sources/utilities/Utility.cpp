@@ -150,11 +150,38 @@ bool Utility::getIsFailed(int fd) {
   return false;
 }
 
+bool Utility::getIsExited(int fd) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      return cgi.isExited;
+    }
+  }
+  return false;
+}
+
+void Utility::setIsExited(int fd, bool isExited) {
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.outReadFd == fd || cgi.inWriteFd == fd) {
+      cgi.isExited = isExited;
+    }
+  }
+}
+
+bool Utility::getPid(int clientFd){
+  for (auto& cgi : g_CgiParams) {
+    if (cgi.clientFd == clientFd) {
+      return cgi.pid;
+    }
+  }
+  return -1;
+}
+
 bool Utility::signalReceived(void) noexcept {
   return g_ExitStatus == 0 ? false : true;
 }
 
-size_t Utility::convertSizetoBytes(std::string& size) {
+size_t Utility::convertSizetoBytes(std::string size) {
+  LOG_DEBUG("utility Client bodysize limit", size);
   size_t bytes = 0;
   size_t multiplier = 1;
   if (size.back() == 'k' || size.back() == 'K') {
@@ -168,6 +195,7 @@ size_t Utility::convertSizetoBytes(std::string& size) {
     size.pop_back();
   }
   try {
+    LOG_DEBUG("multiplier", multiplier);  
     bytes = std::stoull(size) * multiplier;
   } catch (const std::invalid_argument&) {
     // Handle invalid argument
@@ -176,7 +204,6 @@ size_t Utility::convertSizetoBytes(std::string& size) {
     // Handle out of range
     bytes = SIZE_MAX;
   }
-  bytes = std::stoull(size) * multiplier;
   return bytes;
 }
 

@@ -1,5 +1,6 @@
 #include <Client.hpp>
 #include <ProcessTreeBuilder.hpp>
+#include <NetworkException.hpp>
 
 ProcessTreeBuilder::ProcessTreeBuilder(Client& client, ServerConfig& ServerConfig)
     : client(client), serverConfig(ServerConfig) {
@@ -149,7 +150,13 @@ bool ProcessTreeBuilder::isPathExist(std::string& path) {
   std::filesystem::path fullpath = rootPath / path;
   path = fullpath.string();
   LOG_TRACE("Full path:", path);
-  return std::filesystem::exists(path);
+  bool isExist = false;
+  try {
+    isExist = std::filesystem::exists(path);
+  } catch (std::exception& e) {
+    throw httpForbidden(client, "Permission denied");
+  }
+  return isExist;
 }
 
 bool ProcessTreeBuilder::isQuery(std::string& path) {
@@ -161,8 +168,8 @@ bool ProcessTreeBuilder::isQuery(std::string& path) {
   std::string pathSub = path.substr(0, it);
   client.getReq().setQuery(path.substr(it + 1, path.size() - it));
   path = pathSub;
-  LOG_INFO("Query:", client.getReq().getQuery());
-  LOG_INFO("Path:", path);
+  LOG_DEBUG("Query:", client.getReq().getQuery());
+  LOG_DEBUG("Path:", path);
   return true;
 }
 
@@ -190,7 +197,7 @@ bool ProcessTreeBuilder::isClientBodySizeAllowed(std::string& path) {
   } else {
     limit = Utility::convertSizetoBytes(clientBodySizeLimit);
   }
-  if (client.getReq().getBodySize() > limit) {
+  if (client.getReq().getBodySize() > limit ||  client.getReq().getContentLength()> limit) {
     return false;
   }
   return true;

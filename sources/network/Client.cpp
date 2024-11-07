@@ -1,7 +1,9 @@
 #include <Client.hpp>
 #include <NetworkException.hpp>
 
-Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverConfigs, SessionManager &session)
+Client::Client(int socketFd,
+               std::vector<std::shared_ptr<ServerConfig>>& serverConfigs,
+               SessionManager& session)
     : fd(socketFd), serverConfigs(serverConfigs), session(session) {
   LOG_DEBUG(Utility::getConstructor(*this));
   clientState = ClientState::IDLE;
@@ -11,28 +13,39 @@ Client::Client(int socketFd, std::vector<std::shared_ptr<ServerConfig>>& serverC
 
 Client::~Client(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
+  kill(Utility::getPid(fd), SIGKILL);
   cleanupClient();
 }
 
 bool Client::handleEpollEvents(uint32_t revents, int readFd, int writeFd) {
   if (revents & EPOLLIN) {
+
+    LOG_TRACE("Client fd:", fd, "has POLLIN event checking states");
+    LOG_TRACE("Client state:", (int)clientState);
+    LOG_TRACE("Cgi state:", (int)cgiState);
+    LOG_TRACE("Parsing state:", (int)parsingState);
     NetworkException::tryCatch(&Client::handlePollInEvent, this, readFd);
   }
   if (revents & EPOLLOUT) {
+    LOG_TRACE("Client fd:", fd, "has POLLOUT event checking states");
+    LOG_TRACE("Client state:", (int)clientState);
+    LOG_TRACE("Cgi state:", (int)cgiState);
+    LOG_TRACE("Parsing state:", (int)parsingState);
     NetworkException::tryCatch(&Client::handlePollOutEvent, this, writeFd);
-    if (shouldCloseConnection()) {
-      return true;
-    }
+  }
+  if (shouldCloseConnection()) {
+    return true;
   }
   return false;
 }
 
 void Client::handlePollInEvent(int readFd) {
-  LOG_INFO("Client fd:", fd, "has POLLIN event");
+  LOG_DEBUG("Client fd:", fd, "has POLLIN event");
   ifGatewayError();
   setReadFd(readFd);
   if (clientState == ClientState::IDLE) {
     clientState = ClientState::READING;
+    LOG_INFO("Client fd:", fd, "is reading");
   }
   if (clientState == ClientState::READING) {
     readState.execute(*this);
@@ -41,11 +54,12 @@ void Client::handlePollInEvent(int readFd) {
 }
 
 void Client::handlePollOutEvent(int writeFd) {
-  LOG_INFO("Client fd:", fd, "has POLLOUT event");
+  LOG_DEBUG("Client fd:", fd, "has POLLOUT event");
   ifGatewayError();
   setWriteFd(writeFd);
   if (clientState == ClientState::PROCESSING) {
     processState.execute(*this);
+    LOG_INFO("Client fd:", fd, "is processing");
   }
   if (clientState == ClientState::PREPARING) {
     LOG_DEBUG("Preparing response");
@@ -71,7 +85,7 @@ void Client::setFd(int newFd) {
 }
 
 void Client::cleanupClient(void) {
-  if (fd > 0) {
+  if (fd > 0 && fcntl(fd, F_GETFD) != -1) {
     LOG_DEBUG("closing fd:", fd);
     if (close(fd) == -1) {
       throw clientError("Failed to close fd:", fd);
@@ -114,30 +128,31 @@ void Client::initClient(void) {
   parsingState = ParsingState::IDLE;
   if (cgiState == CgiState::DONE) {
     cgiState = CgiState::IDLE;
-    cgiHandler.closePipeFds();
   }
 }
 
 bool Client::shouldCloseConnection(void) {
-  if (req.getHeaders().find("Connection") != req.getHeaders().end() &&
-      req.getHeaders()["Connection"] == "close") {
+  if (closeConnection) {
+    LOG_TRACE("WriteNBytes:", writeNBytes);
     return true;
   }
-  if (writeNBytes == -1 && (cgiState == CgiState::IDLE || cgiState == CgiState::DONE)) {
-    return true;
-  }
-  if (res.getResStatusCode() == 500) {
+  if (closeConnection) {
+    LOG_TRACE("WriteNBytes:", readNBytes);
     return true;
   }
   return false;
 }
 
 void Client::ifGatewayError(void) {
+  if (res.getResStatusCode() >= 500) {
+    return;
+  }
   for (auto& cgi : g_CgiParams) {
     if (cgi.clientFd == getFd() && cgi.isTimeout) {
-      throw httpGatewayTimeout(*this, "CGI process timed out for client fd:", getFd());
+      throw httpGatewayTimeout(*this,
+                               "CGI process timed out for client fd:", getFd());
     } else if (cgi.clientFd == getFd() && cgi.isFailed) {
-      throw httpBadGateway(*this, "CGI process exited for client fd:", getFd());
+      throw httpBadGateway(*this, "CGI process failed for client fd:", getFd());
     }
   }
 }

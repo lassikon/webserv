@@ -31,10 +31,10 @@ class PostHandler : public IRequestHandler {
   std::string extractBoundary(Client& client);
   std::vector<std::string> splitByBoundary(std::string data, std::string boundary);
   bool isFilePart(const std::string& part);
-  std::string extractFileName(const std::string& part);
-  std::string extractFileData(const std::string& part);
+  std::string extractFileName(const std::string& part, Client& client);
+  std::string extractFileData(const std::string& part, Client& client);
   void processFilePart(Client& client, const std::string& part);
-  void processFormData(const std::string& part);
+  void processFormData(const std::string& part, Client& client);
 
   void setResponse(Client& client);
 };

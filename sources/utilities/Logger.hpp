@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <utility>
 
-enum class logLevel { Trace, Debug, Info, Warn, Error, Fatal };
+enum class logLevel { Trace, Debug, Info, Announce, Warn, Error, Fatal };
 enum class logOutput { ConsoleOnly, FileOnly, Both };
 enum class logDetail { Time, File, Func, Line };
 
@@ -89,7 +89,9 @@ class Logger {
 #define LOG_DEBUG(...) \
   (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_INFO(...) (Logger::Log(logLevel::Info, "INFO", CYAN, std::cout, LOGDATA, __VA_ARGS__))
+#define LOG_CGI(...) (Logger::Log(logLevel::Announce, "INFO", MAGENTA, std::cerr, LOGDATA, __VA_ARGS__))
+#define LOG_ANNOUNCE(...) (Logger::Log(logLevel::Announce, "INFO", MAGENTA, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_WARN(...) \
   (Logger::Log(logLevel::Warn, "WARNING", YELLOW, std::cout, LOGDATA, __VA_ARGS__))
-#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", RED, std::cerr, LOGDATA, __VA_ARGS__))
+#define LOG_ERROR(...) (Logger::Log(logLevel::Error, "ERROR", BRIGHTRED, std::cerr, LOGDATA, __VA_ARGS__))
 #define LOG_FATAL(...) (Logger::Log(logLevel::Fatal, "FATAL", RED, std::cerr, LOGDATA, __VA_ARGS__))

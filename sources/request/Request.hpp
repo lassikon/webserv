@@ -33,6 +33,8 @@ class Request {
   size_t getBodySize(void) const { return reqBodySize; }
   std::map<std::string, std::string> getHeaders(void) const { return reqHeaders; }
   std::vector<char> getBody(void) const { return reqBody; }
+  size_t getContentLength(void) const;
+  
 
  public:  // setters
   void setMethod(std::string method) { reqMethod = method; }
@@ -41,4 +43,5 @@ class Request {
   void setBody(std::vector<char> body) { reqBody = std::move(body); }
   void setBodySize(size_t size) { reqBodySize = size; }
   void setQuery(std::string query) { reqQuery = query; }
+  void clearBody(void) { reqBody.clear(); }
 };

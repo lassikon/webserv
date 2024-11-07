@@ -5,7 +5,7 @@
 NAME        := webserv
 BUILDLOG    := build.log
 SERVERLOG   := webserv.log
-RUNCONFIG   := confDefault/default.conf
+RUNCONFIG   := confDefault/easy.conf
 SOURCEDIR   := sources
 BUILDDIR    := build
 

@@ -14,7 +14,7 @@ void ProcessState::execute(Client& client) {
     client.getRes().setResBody(client.getReq().getBody());
     client.getRes().makeBodytoCgi();
     client.setClientState(ClientState::SENDING);
-  } else if (client.getFd() != client.getReadFd()) {
+  } else if (client.getFd() != client.getReadFd() && client.getRes().getResStatusCode() == 0) {
     LOG_TRACE("Processing CGI output for client fd:", client.getFd());
     processCgiOutput(client);
   } else {
@@ -44,8 +44,6 @@ void ProcessState::processRequest(Client& client) {
     client.getPostHandler().executeRequest(client);
   } else if (client.getReq().getMethod() == "DELETE") {
     client.getDeleteHandler().executeRequest(client);
-  } else {
-    LOG_ERROR("Unsupported method in client:", client.getFd());
   }
   client.setClientState(ClientState::PREPARING);
 }

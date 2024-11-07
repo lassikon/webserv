@@ -2,22 +2,24 @@
 #include <Client.hpp>
 #include <NetworkException.hpp>
 
-CgiHandler::CgiHandler(void) {
-  LOG_TRACE(Utility::getConstructor(*this));
-}
+CgiHandler::CgiHandler(void) { LOG_TRACE(Utility::getConstructor(*this)); }
 
 void CgiHandler::generateEnvpVector(Client& client) {
   envps.push_back(std::string("REQUEST_METHOD=") + client.getReq().getMethod());
-  envps.push_back(std::string("SCRIPT_FILENAME=") + client.getRes().getReqURI());
+  envps.push_back(std::string("SCRIPT_FILENAME=") +
+                  client.getRes().getReqURI());
   envps.push_back(std::string("PATH_INFO=") + client.getRes().getReqURI());
-  envps.push_back(std::string("CONTENT_TYPE=") + client.getReq().getHeaders()["Content-Type"]);
-  envps.push_back(std::string("CONTENT_LENGTH=") + std::to_string(client.getReq().getBodySize()));
+  envps.push_back(std::string("CONTENT_TYPE=") +
+                  client.getReq().getHeaders()["Content-Type"]);
+  envps.push_back(std::string("CONTENT_LENGTH=") +
+                  std::to_string(client.getReq().getBodySize()));
   envps.push_back(std::string("QUERY_STRING=") + client.getReq().getQuery());
   envps.push_back(std::string("HTTP_COOKIE=") + "FILLME");
 }
 
 CgiHandler::~CgiHandler(void) {
   LOG_TRACE(Utility::getDeconstructor(*this));
+  closePipeFds();
 }
 
 void CgiHandler::closePipeFds(void) {
@@ -46,7 +48,8 @@ void CgiHandler::killAllChildPids(void) {
   }
 }
 
-std::vector<char*> CgiHandler::convertStringToChar(std::vector<std::string>& vec) {
+std::vector<char*> CgiHandler::convertStringToChar(
+    std::vector<std::string>& vec) {
   std::vector<char*> vector{};
   for (auto& string : vec) {
     vector.push_back(&string.front());
@@ -61,7 +64,6 @@ void CgiHandler::exitError(int status, const std::string& message) {
 }
 
 void CgiHandler::executeCgiScript(Client& client) {
-  LOG_TRACE("Log entry from child process");
   std::vector<char*> argv = convertStringToChar(args);
   std::vector<char*> envp = convertStringToChar(envps);
   if (outPipeFd[Fd::Write] != -1) {
@@ -74,11 +76,14 @@ void CgiHandler::executeCgiScript(Client& client) {
       exitError(2, "Could not duplicate pipe fd2");
     }
   }
-  close(outPipeFd[Fd::Write]);
-  close(inPipeFd[Fd::Read]);
+  // close(outPipeFd[Fd::Write]);
+  // close(inPipeFd[Fd::Read]);
   std::filesystem::path path(client.getRes().getReqURI());
-  LOG_TRACE("Changing execution directory to:", path.parent_path().c_str());
-  chdir(path.parent_path().c_str());
+  std::string pathStr = path.parent_path().c_str();
+  std::string pathMsg = "Changing execution directory to: " + pathStr;
+  LOG_CGI(pathMsg);
+  // chdir(path.parent_path().c_str());
+  LOG_INFO("Executing CGI script:", argv[0]);
   if (execve(argv[0], argv.data(), envp.data()) == -1) {
     exitError(2, "Could not duplicate pipe fd3");
   }
@@ -104,8 +109,7 @@ void CgiHandler::forkChildProcess(Client& client) {
     executeCgiScript(client);
   } else if (isParentProcess()) {
     LOG_DEBUG("Parent pid:", getpid());
-    close(outPipeFd[Fd::Write]);
-    close(inPipeFd[Fd::Read]);
+    envps.clear();
     setGlobal();
   }
 }
@@ -128,29 +132,51 @@ void CgiHandler::setGlobal(void) {
 
 bool CgiHandler::isValidScript(void) const {
   struct stat s;
+  if (!stat(cgi.c_str(), &s) && !S_ISREG(s.st_mode)) {
+    LOG_ERROR("File is a folder:", cgi);
+    return false;
+  }
   if (isBin) {
-    if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), X_OK)) {
-      return true;
+    if (access(cgi.c_str(), X_OK)) {
+      LOG_ERROR("No permission to execute binary file:", cgi);
+      return false;
     }
   } else {
-    if (!stat(cgi.c_str(), &s) && S_ISREG(s.st_mode) && !access(cgi.c_str(), R_OK)) {
-      return true;
+    if (access(cgi.c_str(), R_OK)) {
+      LOG_ERROR("No permission to execute CGI script", cgi);
+      return false;
     }
   }
-  return false;
+  return true;
 }
 
 void CgiHandler::scriptLoader(Client& client) {
   if (!isValidScript()) {
-    throw httpBadGateway(client, "Invalid CGI script");
+    throw httpBadGateway(client, "Failed to execute CGI script");
   }
   if (client.getReq().getMethod() == "POST") {
     if (pipe(inPipeFd) == -1) {
-      throw httpBadGateway(client, "Invalid CGI script");
+      throw httpBadGateway(client, "Failed to create pipe");
     }
+    Utility::setCloseOnExec(inPipeFd[Read]);
+    Utility::setCloseOnExec(inPipeFd[Write]);
+    Utility::setNonBlocking(inPipeFd[Read]);
+    Utility::setNonBlocking(inPipeFd[Write]);
   }
   if (pipe(outPipeFd) == -1) {
-    throw httpBadGateway(client, "Invalid CGI script");
+    throw httpBadGateway(client, "Failed to create pipe");
+  }
+  Utility::setCloseOnExec(outPipeFd[Read]);
+  Utility::setCloseOnExec(outPipeFd[Write]);
+  Utility::setNonBlocking(outPipeFd[Read]);
+  Utility::setNonBlocking(outPipeFd[Write]);
+  LOG_DEBUG("Pipe out fds created:", outPipeFd[Fd::Read], outPipeFd[Fd::Write]);
+  LOG_DEBUG("Pipe in fds created:", inPipeFd[Fd::Read], inPipeFd[Fd::Write]);
+  if (fcntl(outPipeFd[Read], F_GETFD) == -1) {
+    LOG_ERROR("Failed to get file descriptor flags", outPipeFd[Read]);
+  }
+  if (fcntl(outPipeFd[Write], F_GETFD) == -1) {
+    LOG_ERROR("Failed to get file descriptor flags", outPipeFd[Write]);
   }
   forkChildProcess(client);
 }
@@ -164,11 +190,20 @@ void CgiHandler::executeRequest(Client& client) {
   LOG_TRACE("CgiHandler: executingRequest");
   cgi = client.getRes().getReqURI();
   std::string ext = cgi.substr(cgi.find_last_of(".") + 1);
-  if (ext == "py")
+  if (ext == "py") {
+    // is exist
+    if (client.getRes().getServerConfig().cgiInterpreters.find("py") ==
+        client.getRes().getServerConfig().cgiInterpreters.end()) {
+      throw httpBadGateway(client, "Python interpreter not found");
+    }
     args.push_back(client.getRes().getServerConfig().cgiInterpreters["py"]);
-  else if (ext == "php")
+  } else if (ext == "php") {
+    if (client.getRes().getServerConfig().cgiInterpreters.find("php") ==
+        client.getRes().getServerConfig().cgiInterpreters.end()) {
+      throw httpBadGateway(client, "PHP interpreter not found");
+    }
     args.push_back(client.getRes().getServerConfig().cgiInterpreters["php"]);
-  else {
+  } else {
     LOG_TRACE("Using binary:", cgi);
     isBin = true;
   }

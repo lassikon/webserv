@@ -19,7 +19,8 @@
 
 class ServerManager {
 
-#define CHILD_TIMEOUT 10
+#define CHILD_TIMEOUT 5
+#define IDLE_MSG_COOLDOWN 10
 
  private:
   std::vector<std::shared_ptr<Server>> servers;
@@ -35,6 +36,8 @@ class ServerManager {
   void serverLoop(PollManager& pollManager);
   bool checkServerExists(ServerConfig& serverConfig);
   void initializePollManager(PollManager& pollManager);
+  void startupMessage(void);
+  void logIdleCheck(void);
 
  private:
   void checkChildProcesses(PollManager& pollManager);

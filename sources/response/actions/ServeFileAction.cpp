@@ -51,9 +51,9 @@ bool ServeFileAction::isCookieFound(Client& client, std::string& path) {
 bool ServeFileAction::isIndexOrDefaultFile(Client& client) {
   std::string path = client.getRes().getReqURI();
   std::filesystem::path p(path);
-  if (p.filename().string() == "index.html" || p.filename().string() == "index.htm") {
-    return true;
-  }
+  // if (p.filename().string() == "index.html" || p.filename().string() == "index.htm") {
+  //   return true;
+  // }
   for (auto& defFile : client.getRes().getRouteConfig().defaultFile) {
     if (p.filename().string() == defFile) {
       return true;

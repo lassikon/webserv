@@ -54,9 +54,9 @@ std::array<bool, 4> Logger::enabledDetail;
 
 // define default settings for the logger
 void Logger::loadDefaults(void) {
-  currentLevel = logLevel::Trace;
-  currentOutput = logOutput::Both;
-  setLogDetails(false, true, true, true);
+  currentLevel = logLevel::Info;
+  currentOutput = logOutput::ConsoleOnly;
+  setLogDetails(1, 1, 1, 1);
   if (currentOutput != logOutput::ConsoleOnly) {
     createLogFile();
   }
@@ -91,7 +91,7 @@ std::string Logger::getDateTimeStamp(void) {
   auto now = std::chrono::system_clock::now();
   auto tt = std::chrono::system_clock::to_time_t(now);
   std::ostringstream oss;
-  oss << std::put_time(std::localtime(&tt), "%Y-%m-%d %X");
+  oss << std::put_time(std::localtime(&tt), "%X");
   return oss.str();
 }
 
@@ -112,11 +112,13 @@ void Logger::insertLogDetails(std::ostringstream& log, std::string src, const ch
 
 // helper fuction to print log entry into target ostream and ostringstream
 void Logger::printLogEntry(std::ostream& console, std::ostringstream& logEntry) {
+  std::ostringstream logFinal;
+  logFinal << logEntry.str() << RESET << '\n';
   if (currentOutput != logOutput::FileOnly) {
-    console << logEntry.str() << RESET << std::endl;
+    console << logFinal.str();
   }
   if (currentOutput != logOutput::ConsoleOnly && logFile.is_open()) {
-    logFile << logEntry.str() << RESET << std::endl;
+    logFile << logFinal.str();
   }
 }
 

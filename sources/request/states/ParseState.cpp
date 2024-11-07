@@ -3,12 +3,12 @@
 #include <ParseState.hpp>
 
 void ParseState::execute(Client& client) {
-  if (client.getClientState() != ClientState::READING || client.getReadBuf() == nullptr ||
+  if (client.getClientState() != ClientState::READING ||
+      client.getReadBuf() == nullptr ||
       client.getParsingState() == ParsingState::IDLE) {
     return;
   }
   LOG_TRACE("Parsing request from client fd:", client.getFd());
-  LOG_DEBUG("DATA:", client.getReadBuf()->data());
   if (client.getParsingState() == ParsingState::REQLINE) {
     parseRequestLine(client);
   }
@@ -16,19 +16,21 @@ void ParseState::execute(Client& client) {
     parseHeaders(client);
   }
   if (client.getParsingState() == ParsingState::VERIFY) {
-    verifyRequest(client); //verify request headers
+    verifyRequest(client);  // verify request headers
   }
   if (client.getParsingState() == ParsingState::BODY) {
     parseBody(client);
   }
   for (auto& cgi : g_CgiParams) {
     if (cgi.clientFd == client.getFd() && cgi.isExited) {
+      LOG_TRACE("Cgi process exited for client fd:", client.getFd());
       client.setCgiState(CgiState::DONE);
       client.setParsingState(ParsingState::DONE);
     }
   }
   if (client.getParsingState() == ParsingState::DONE) {
     LOG_TRACE("Request received from client fd:", client.getFd());
+    client.setParsingState(ParsingState::IDLE);
     client.setClientState(ClientState::PROCESSING);
   }
 }
@@ -45,7 +47,8 @@ void ParseState::parseRequestLine(Client& client) {
   iss >> reqMethod >> reqURI >> reqVersion;
   LOG_DEBUG("reqMethod:", reqMethod, "URI:", reqURI, "reqVersion:", reqVersion);
   if (reqMethod.empty() || reqURI.empty() || reqVersion.empty()) {
-    throw httpBadRequest(client, "Invalid request line for client fd:", client.getFd());
+    throw httpBadRequest(client,
+                         "Invalid request line for client fd:", client.getFd());
   }
   client.getReq().setMethod(reqMethod);
   client.getReq().setReqURI(reqURI);
@@ -84,15 +87,19 @@ void ParseState::parseHeaders(Client& client) {
 void ParseState::verifyRequest(Client& client) {
   LOG_TRACE("Verifying request");
   if (client.getReq().getVersion() != "HTTP/1.1") {
-    throw httpVersion(client, "Unsupported HTTP version for client fd:", client.getFd());
+    throw httpVersion(client, "Unsupported HTTP version",
+                      client.getReq().getVersion(),
+                      "for client fd:", client.getFd());
   }
-  client.getRes().setServerConfig(chooseServerConfig(client));  // choose server config
+  client.getRes().setServerConfig(
+      chooseServerConfig(client));  // choose server config
   buildPath(client);
   client.setParsingState(ParsingState::BODY);
 }
 
 void ParseState::parseBody(Client& client) {
   if (!isWithBody(client)) {
+    LOG_TRACE("No body to parse");
     client.setParsingState(ParsingState::DONE);
     return;
   }
@@ -103,15 +110,17 @@ void ParseState::parseBody(Client& client) {
     parseBodyWithContentLength(client);
   } else {
     if (client.getCgiState() != CgiState::IDLE) {
+      client.getReq().clearBody();
       parseBodyWithoutContentLength(client);
     } else {
-      throw httpLength(client, "Content-Length header not found for client fd:", client.getFd());
+      throw httpLength(client, "Content-Length header not found for client fd:",
+                       client.getFd());
     }
   }
 }
 
 void ParseState::parseBodyWithoutContentLength(Client& client) {
-  LOG_WARN("Content-Length header not found. Using EOF");
+  LOG_DEBUG("Content-Length header not found. Using EOF");
   std::vector<char>& buffer = *client.getReadBuf();
   size_t& curr = client.getReadCurr();
   size_t& end = client.getReadEnd();
@@ -131,7 +140,8 @@ void ParseState::parseBodyWithContentLength(Client& client) {
   std::vector<char>& buffer = *client.getReadBuf();
   size_t& curr = client.getReadCurr();
   size_t& end = client.getReadEnd();
-  size_t contentLength = std::stoi(client.getReq().getHeaders()["Content-Length"]);
+  size_t contentLength =
+      std::stoi(client.getReq().getHeaders()["Content-Length"]);
   client.getReq().setBodySize(contentLength);
   std::vector<char> bodyData(contentLength);
   bodyData.assign(buffer.begin() + curr, buffer.end());
@@ -152,23 +162,30 @@ void ParseState::parseChunkedBody(Client& client) {
   std::string chunkSizeHex;
   size_t saveCurr = curr;
   size_t saveEnd = end;
-  while (Utility::getLineVectoStr(buffer, chunkSizeHex, curr, end) && chunkSizeHex != "\r") {
+  while (Utility::getLineVectoStr(buffer, chunkSizeHex, curr, end) &&
+         chunkSizeHex != "\r") {
     if (chunkSizeHex.back() == '\r') {
       chunkSizeHex.pop_back();
     }
-    LOG_DEBUG("Chunk size:", chunkSizeHex);
+    LOG_DEBUG("Chunk size hex:", chunkSizeHex);
     size_t bodySize = client.getReq().getBodySize();
     size_t chunkSize = std::stoi(chunkSizeHex, 0, 16);
+    LOG_DEBUG("Chunk size:", chunkSize);
     bodySize += chunkSize;
+    LOG_DEBUG("Body size:", bodySize);
     client.getReq().setBodySize(bodySize);
     if (chunkSize == 0) {
       client.setParsingState(ParsingState::DONE);
+      isChunked = false;
       break;
     }
-    //check for client body size limit
-    if (bodySize >
-        Utility::convertSizetoBytes(client.getRes().getServerConfig().clientBodySizeLimit)) {
-      throw httpPayload(client, "Client body size limit exceeded for client fd:", client.getFd());
+    // check for client body size limit
+    if (bodySize > Utility::convertSizetoBytes(
+                       client.getRes().getServerConfig().clientBodySizeLimit)) {
+                        LOG_DEBUG("Client bodysize limit", client.getRes().getServerConfig().clientBodySizeLimit);
+      throw httpPayload(
+          client,
+          "Client body size limit exceeded for client fd:", client.getFd());
     }
     if (curr + chunkSize + 2 > end) {
       LOG_WARN("Body not fully received. Waiting for more data");
@@ -183,11 +200,13 @@ void ParseState::parseChunkedBody(Client& client) {
     client.getReq().setBody(body);
     curr += chunkSize + 2;  // skip CRLF
   }
+
 }
 
 // helper functions
 
-bool ParseState::substrKeyAndValue(std::string header, std::string& key, std::string& value) {
+bool ParseState::substrKeyAndValue(std::string header, std::string& key,
+                                   std::string& value) {
   auto pos = header.find(':');
   if (pos != std::string::npos) {
     key = header.substr(0, pos);
@@ -204,15 +223,18 @@ bool ParseState::isHeaderEnd(std::string header) {
 }
 
 bool ParseState::isWithBody(Client& client) {
-  return client.getReq().getMethod() == "POST" || client.getReadFd() != client.getFd();
+  return client.getReq().getMethod() == "POST" ||
+         client.getReadFd() != client.getFd();
 }
 
 bool ParseState::isWithContentLength(Client& client) {
-  return client.getReq().getHeaders().find("Content-Length") != client.getReq().getHeaders().end();
+  return client.getReq().getHeaders().find("Content-Length") !=
+         client.getReq().getHeaders().end();
 }
 
 bool ParseState::isConnectionClose(Client& client) {
-  return client.getReq().getHeaders().find("Connection") != client.getReq().getHeaders().end() &&
+  return client.getReq().getHeaders().find("Connection") !=
+             client.getReq().getHeaders().end() &&
          client.getReq().getHeaders()["Connection"] == "close";
 }
 
@@ -229,7 +251,8 @@ ServerConfig ParseState::chooseServerConfig(Client& client) {
 void ParseState::buildPath(Client& client) {
   LOG_TRACE("Building path for client fd:", client.getFd());
   std::shared_ptr<ProcessTreeBuilder> ptb =
-    std::make_shared<ProcessTreeBuilder>(client, client.getRes().getServerConfig());
+      std::make_shared<ProcessTreeBuilder>(client,
+                                           client.getRes().getServerConfig());
   client.getRes().setReqURI(client.getReq().getReqURI());
   root = ptb->buildPathTree();
   root->process(client);

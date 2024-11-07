@@ -14,10 +14,9 @@ std::string DeleteHandler::sanitizePath(std::string path) {
 
 void DeleteHandler::deleteFile(std::filesystem::path fullPath, Client& client) {
   if (!std::filesystem::exists(fullPath)) {
-    httpNotFound(client, "The requested file was not found");
-    return;
+    throw httpNotFound(client, "The requested file was not found");
   }
-  std::uintmax_t numRemoved = std::filesystem::remove_all(fullPath);
+  std::uintmax_t numRemoved = std::filesystem::remove_all(fullPath) ;
   if (numRemoved > 0) {
     LOG_INFO("File/directory deleted successfully, number of items removed: ", numRemoved);
     client.getRes().setResStatusCode(204);  // No content for successful deletion
@@ -25,7 +24,7 @@ void DeleteHandler::deleteFile(std::filesystem::path fullPath, Client& client) {
     client.getRes().setResBody({});
     return;
   }
-  httpForbidden(client, "Unable to delete the file/directory due to permission issues");
+  throw httpForbidden(client, "Unable to delete the file/directory due to permission issues");
 }
 
 void DeleteHandler::executeRequest(Client& client) {

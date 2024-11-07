@@ -1,6 +1,6 @@
 #include <SessionManager.hpp>
 
-SessionManager::SessionManager(void) : lifetime(3600) {
+SessionManager::SessionManager(void) : lifetime(COOKIE_TIMEOUT) {
   LOG_TRACE(Utility::getConstructor(*this));
 }
 
@@ -49,7 +49,13 @@ bool SessionManager::isSessionCookie(std::string sessionToken) {
   return false;
 }
 
-void checkExpiredCookies(void) {
-  // For Jarno to implement
-  return;
+void SessionManager::checkExpiredCookies(void) {
+  for (auto it = sessionIds.begin(); it != sessionIds.end();) {
+    if (std::chrono::system_clock::now() > it->second) {
+      LOG_INFO("Session cookie expired:", it->first);
+      it = sessionIds.erase(it);
+    } else {
+      ++it;
+    }
+  }
 }

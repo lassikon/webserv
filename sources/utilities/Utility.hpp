@@ -26,7 +26,7 @@ class Utility {
   static std::filesystem::path getExePath(std::filesystem::path& path);
   static std::string getMimeType(std::string& extension);
   static bool signalReceived(void) noexcept;
-  static size_t convertSizetoBytes(std::string& size);
+  static size_t convertSizetoBytes(std::string size);
   static void setNonBlocking(int& fd);
   static void setCloseOnExec(int& fd);
   static bool isCgiFd(int fd);
@@ -37,6 +37,10 @@ class Utility {
   static bool isInWriteFd(int fd);
   static bool getIsTimeout(int fd);
   static bool getIsFailed(int fd);
+  static bool getIsExited(int fd);
+  static void setIsExited(int fd, bool isExited);
+  static bool getPid(int clientFd);
+  
   static bool getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr,
                               size_t& end);
   void isValidFile(mode_t mode, int permission, const std::string& file, Client& client) const;

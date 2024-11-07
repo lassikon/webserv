@@ -14,10 +14,19 @@ PollManager::PollManager(void) {
 
 PollManager::~PollManager(void) {
   LOG_DEBUG(Utility::getDeconstructor(*this));
+  for (auto it = interestFdsList.begin(); it != interestFdsList.end(); it++) {
+    if (epoll_ctl(epollFd, EPOLL_CTL_DEL, it->first, nullptr) == -1) {
+      LOG_DEBUG("Failed to remove fd from epollFd");
+    }
+    LOG_DEBUG("Removed fd:", it->first, "from epollFd");
+    it->second(it->first);
+  }
+  LOG_DEBUG("Closed epollFd");
   close(epollFd);
 }
 
-void PollManager::addFd(int fd, uint32_t events, std::function<void(int)> cleanUp) {
+void PollManager::addFd(int fd, uint32_t events,
+                        std::function<void(int)> cleanUp) {
   struct epoll_event event;
   event.data.fd = fd;
   event.events = events;
@@ -29,32 +38,47 @@ void PollManager::addFd(int fd, uint32_t events, std::function<void(int)> cleanU
       LOG_DEBUG("Fd:", fd, "already exists in epollFd");
       return;
     } else {
-      throw serverError("Failed to add fd to epollFd");
+      throw serverError("Failed to add fd", fd, "to epollFd");
     }
   }
-  LOG_DEBUG("Added fd:", fd, "to epollFd");
   interestFdsList[fd] = cleanUp;
+  LOG_DEBUG("Added fd:", fd, "to epollFd");
 }
 
 void PollManager::removeFd(int fd) {
   auto it = interestFdsList.find(fd);
   if (it != interestFdsList.end() && (fcntl(fd, F_GETFD) != -1)) {
     if (epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1) {
-      throw serverError("Failed to remove fd from epollFd");
+      LOG_ERROR("Failed to remove fd",fd, " from epollFd");
+      LOG_ERROR("errno:", errno, ":", strerror(errno));
+      return;
     }
     LOG_DEBUG("Removed fd:", fd, "from epollFd");
     it->second(fd);
     interestFdsList.erase(it);
-  }
-  for (auto it = epollEvents.begin(); it != epollEvents.end(); it++) {
-    if (it->data.fd == fd) {
-      it->data.fd = -1;
+    for (auto it = epollEvents.begin(); it != epollEvents.end(); ++it) {
+      if (it->data.fd == fd) {
+        LOG_TRACE("Erasing fd:", fd, "from epollEvents");
+        it->data.fd = -1;
+      }
     }
-  }
-  for (auto it = g_CgiParams.begin(); it != g_CgiParams.end(); it++) {
-    if (it->outReadFd == fd || it->inWriteFd == fd) {
-      g_CgiParams.erase(it);
-      break;
+
+
+    for (auto it = g_CgiParams.begin(); it != g_CgiParams.end();) {
+      if (it->outReadFd == fd || it->inWriteFd == fd || it->outWriteFd == fd ||
+          it->inReadFd == fd || it->clientFd == fd) {
+        if(it->outReadFd == fd && it->inWriteFd != -1) {
+          auto it2 = interestFdsList.find(it->inWriteFd);
+          if(it2 != interestFdsList.end() && (fcntl(it->inWriteFd, F_GETFD) != -1)) {
+            epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr);
+            it2->second(it2->first);
+            interestFdsList.erase(it2);
+          }
+        }
+        it = g_CgiParams.erase(it);
+      } else {
+        ++it;
+      }
     }
   }
 }
@@ -64,7 +88,9 @@ void PollManager::modifyFd(int fd, uint32_t events) {
   event.data.fd = fd;
   event.events = events;
   if (epoll_ctl(epollFd, EPOLL_CTL_MOD, fd, &event) == -1) {
-    throw serverError("Failed to modify fd in epollFd");
+    LOG_ERROR("Failed to modify fd", fd, "in epollFd", "errno:", errno, ":",
+              strerror(errno));
+    return;
   }
   LOG_DEBUG("Modified events for fd:", fd, "in epollFd");
 }
@@ -79,6 +105,8 @@ bool PollManager::fdExists(int fd) {
 int PollManager::epollWait(void) {
   int numEvents;
   while (!Utility::signalReceived()) {
+    epollEvents.clear();
+    epollEvents.resize(MAX_EVENTS);
     numEvents = epoll_wait(epollFd, epollEvents.data(), MAX_EVENTS, TIMEOUT);
     if (numEvents == -1) {
       if (errno == EINTR) {  // if interrupted by signal, try again
@@ -94,4 +122,17 @@ int PollManager::epollWait(void) {
 
 std::vector<struct epoll_event>& PollManager::getEpollEvents(void) {
   return epollEvents;
+}
+
+std::map<int, std::function<void(int)>>& PollManager::getInterestFdsList(void) {
+  return interestFdsList;
+}
+
+bool PollManager::isValidFd(int fd) {
+  if (interestFdsList.find(fd) != interestFdsList.end() &&
+      fcntl(fd, F_GETFD) != -1) {
+    return true;
+  } else {
+    return false;
+  }
 }

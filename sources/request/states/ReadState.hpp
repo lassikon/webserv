@@ -7,6 +7,8 @@
 class client;
 
 class ReadState : public IStateHandler {
+  private:
+    bool crlfFound = false;
  public:
   ReadState() = default;
   virtual ~ReadState() = default;

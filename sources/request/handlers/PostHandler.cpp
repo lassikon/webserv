@@ -1,12 +1,13 @@
 
 #include <Client.hpp>
 #include <PostHandler.hpp>
+#include <NetworkException.hpp>
 
 void PostHandler::getContentType(Client& client) {
   LOG_TRACE("Getting content type");
   contentType = client.getReq().getHeaders()["Content-Type"];
   if (contentType.empty()) {
-    throw clientError("Content-Type header not found");
+    throw httpBadRequest(client, "Missing content type");
   }
   if (contentType.find("multipart/form-data") != std::string::npos) {
     contentType = "multipart/form-data";
@@ -22,7 +23,7 @@ void PostHandler::processFormUrlEncoded(Client& client) {
   while (std::getline(iss, pair, '&')) {
     auto delimiterPos = pair.find('=');
     if (delimiterPos == std::string::npos) {
-      throw clientError("Invalid form data");
+      throw httpBadRequest(client, "Invalid form data");
     }
     std::string key = pair.substr(0, delimiterPos);
     std::string value = pair.substr(delimiterPos + 1);
@@ -64,25 +65,26 @@ std::vector<std::string> PostHandler::splitByBoundary(std::string data, std::str
 }
 
 bool PostHandler::isFilePart(const std::string& part) {
+  LOG_DEBUG("Checking if part is file", part);
  return part.find("filename") != std::string::npos;
 }
 
-std::string PostHandler::extractFileName(const std::string& part) {
+std::string PostHandler::extractFileName(const std::string& part, Client& client) {
   LOG_TRACE("Extracting filename");
   size_t pos = part.find("filename=\"");
   if (pos == std::string::npos) {
-    throw clientError("Invalid file part");
+    throw httpBadRequest(client, "Invalid file part");
   }
   pos += 10;
   size_t end = part.find("\"", pos);
   return part.substr(pos, end - pos);
 }
 
-std::string PostHandler::extractFileData(const std::string& part) {
+std::string PostHandler::extractFileData(const std::string& part, Client& client) {
   LOG_TRACE("Extracting file data");
   size_t pos = part.find("\r\n\r\n");
   if (pos == std::string::npos) {
-    throw clientError("Invalid file part");
+    throw httpBadRequest(client, "Invalid file part");
   }
   pos += 4;
   return part.substr(pos);
@@ -90,34 +92,55 @@ std::string PostHandler::extractFileData(const std::string& part) {
 
 void PostHandler::processFilePart(Client& client, const std::string& part) {
   LOG_TRACE("Processing file part");
-  std::string fileName = extractFileName(part);
+  std::string fileName = extractFileName(part, client);
   if (fileName.empty()){
     return;
   }
-  std::string data = extractFileData(part);
+  std::string data = extractFileData(part, client);
   LOG_DEBUG("FileName:", fileName);
   // Save file to disk
   std::string path = client.getRes().getReqURI() + "/";
   LOG_DEBUG("Path:", path + fileName);
+  // Check for permission to write to the file
+  if (!access(path.c_str(), W_OK)) {
+    LOG_DEBUG("Permission to write to file");
+  } else {
+    throw httpForbidden(client, "Permission denied to write to file");
+  }
+  std::filesystem::path fsPath(path);
+  try {
+    auto spaceInfo = std::filesystem::space(fsPath);
+    LOG_DEBUG("Available space:", spaceInfo.available);
+    LOG_DEBUG("File size:", data.size());
+    if (spaceInfo.available < data.size()) {
+      throw httpInternal(client, "Insufficient disk space");
+    }
+  } catch (const std::filesystem::filesystem_error& e) {
+    LOG_ERROR("Filesystem error: ", e.what());
+    throw httpInternal(client, "Failed to retrieve filesystem information");
+  }
   std::ofstream file(path + fileName, std::ios::binary);
   if (!file.is_open()) {
-    throw clientError("Failed to open file");
+    throw httpInternal(client, "Failed to open file");
   } else {
     LOG_TRACE("File opened successfully");
     file.write(data.data(), data.length());
+    if (file.fail()) {
+      throw httpInternal(client, "Failed to write to file");
+    }
     file.close();
     upload = true;
   }
 }
 
-void PostHandler::processFormData(const std::string& part) {
+void PostHandler::processFormData(const std::string& part, Client& client) {
   LOG_TRACE("Processing form data");
   std::istringstream iss(part);
   std::string pair;
   while (std::getline(iss, pair, '&')) {
     auto delimiterPos = pair.find('=');
     if (delimiterPos == std::string::npos) {
-      throw clientError("Invalid form data");
+      throw httpBadRequest(client, "Invalid form data");
     }
     std::string key = pair.substr(0, delimiterPos);
     std::string value = pair.substr(delimiterPos + 1);
@@ -136,7 +159,7 @@ void PostHandler::processMultipartFormData(Client& client) {
   const auto& body = client.getReq().getBody();
   LOG_DEBUG("Body size:", body.size());
   if (body.empty()) {
-    throw clientError("Empty body");
+    throw httpBadRequest(client, "Empty body");
   }
   std::string data(body.begin(), body.end());
   LOG_DEBUG("data length:", data.length());
@@ -149,7 +172,7 @@ void PostHandler::processMultipartFormData(Client& client) {
     } else if (part == "--\r\n") {
       break;
     } else {
-      processFormData(part);
+      processFormData(part, client);
     }
   }
 }
@@ -194,8 +217,11 @@ void PostHandler::executeRequest(Client& client) {
     processFormUrlEncoded(client);
   } else if (contentType == "multipart/form-data") {
     processMultipartFormData(client);
+  } else if (contentType == "text/plain") {
+    std::string data(client.getReq().getBody().data(), client.getReq().getBody().size());
+    details.push_back(data);
   } else {
-    throw clientError("Unsupported content type:", contentType);
+    throw httpBadRequest(client, "Unsupported content type:", contentType);
   }
   setResponse(client);
 

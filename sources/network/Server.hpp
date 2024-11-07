@@ -1,5 +1,10 @@
 #pragma once
 
+#include <netdb.h>
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <Client.hpp>
 #include <Config.hpp>
 #include <IException.hpp>
@@ -8,12 +13,6 @@
 #include <PollManager.hpp>
 #include <SessionManager.hpp>
 #include <Socket.hpp>
-
-#include <netdb.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cstring>
@@ -45,25 +44,23 @@ class Server {
 
   void addServerConfig(ServerConfig& serverConfig);
   void acceptConnection(PollManager& pollManager);
-  void handleClientIn(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd);
-  void handleClientOut(PollManager& pollManager, uint32_t revents, int eventFd, int clientFd);
+  void handleClientIn(PollManager& pollManager, uint32_t revents, int eventFd,
+                      int clientFd);
+  void handleClientOut(PollManager& pollManager, uint32_t revents, int eventFd,
+                       int clientFd);
   void checkIdleClients(PollManager& pollManager);
   void updateClientLastActivity(int clientFd);
-  void modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> client, int eventFd,
-                     int clientFd);
+  void modifyFdEvent(PollManager& pollManager, std::shared_ptr<Client> client,
+                     int eventFd, int clientFd);
 
  public:
   int getSocketFd(void) const { return socket.getFd(); }
-
   int getPort(void) const { return port; }
-  void removeClient(int clientFd);
+  void removeClient(PollManager& pollManager, int clientFd);
   std::string getServerName(void) const { return serverName; }
-
-  SessionManager &getSession(void) { return session; }
-
+  SessionManager& getSession(void) { return session; }
   std::vector<std::shared_ptr<Client>>& getClients(void) { return clients; }
-
+  std::vector<std::shared_ptr<ServerConfig>>& getServerConfigs(void) { return serverConfigs;}
   std::string getIpAddress(void) const { return ipAddress; }
-
   bool isClientFd(int fd) const;
 };
