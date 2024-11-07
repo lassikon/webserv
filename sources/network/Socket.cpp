@@ -17,8 +17,16 @@ void Socket::setupSocket(ServerConfig& serverConfig) {
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE;
 
+  // Get IP address from config file
+  const char* ipAddress;
+  if (!serverConfig.ipAddress.empty()) {
+    ipAddress = serverConfig.ipAddress.c_str();
+  } else {
+    ipAddress = nullptr;
+  }
+
   // Get address information for binding the socket
-  int s = getaddrinfo(nullptr, std::to_string(serverConfig.port).c_str(), &hints, &addr);
+  int s = getaddrinfo(ipAddress, std::to_string(serverConfig.port).c_str(), &hints, &addr);
   if (s != 0) {
     throw socketError("Failed to get address info:", gai_strerror(s));
   }
@@ -31,8 +39,8 @@ void Socket::setupSocket(ServerConfig& serverConfig) {
   Utility::setNonBlocking(sockFd);
   Utility::setCloseOnExec(sockFd);
 
-  // Enable address reuse to avoid "Address already in use" errors on restart
   int opt = 1;
+  // Enable address reuse to avoid "Address already in use" errors on restart
   if (setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
     throw socketError("Failed to set socket options");
   }
