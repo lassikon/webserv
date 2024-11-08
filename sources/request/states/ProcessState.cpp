@@ -8,7 +8,6 @@ void ProcessState::execute(Client& client) {
     client.setClientState(ClientState::DONE);
     return;
   }
-
   if (client.getFd() != client.getWriteFd()) {
     LOG_TRACE("Processing cgi body for client fd:", client.getFd());
     client.getRes().setResBody(client.getReq().getBody());

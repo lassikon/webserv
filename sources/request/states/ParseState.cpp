@@ -79,8 +79,7 @@ void ParseState::parseHeaders(Client& client) {
         isChunked = true;
       }
       if (key == "Content-Length" && client.getReq().getMethod() == "GET") {
-        throw httpBadRequest(client, "Content-Length header found in GET request for client fd:",
-                             client.getFd());
+        throw httpBadRequest(client, "Content-Length header found in GET request for client fd:", client.getFd());
       }
     }
   }
@@ -89,8 +88,7 @@ void ParseState::parseHeaders(Client& client) {
 void ParseState::verifyRequest(Client& client) {
   LOG_TRACE("Verifying request");
   if (client.getReq().getVersion() != "HTTP/1.1") {
-    throw httpVersion(client, "Unsupported HTTP version", client.getReq().getVersion(),
-                      "for client fd:", client.getFd());
+    throw httpVersion(client, "Unsupported HTTP version", client.getReq().getVersion(), "for client fd:", client.getFd());
   }
   client.getRes().setServerConfig(chooseServerConfig(client));  // choose server config
   buildPath(client);
@@ -177,8 +175,7 @@ void ParseState::parseChunkedBody(Client& client) {
       break;
     }
     // check for client body size limit
-    if (bodySize >
-        Utility::convertSizetoBytes(client.getRes().getServerConfig().clientBodySizeLimit)) {
+    if (bodySize > Utility::convertSizetoBytes(client.getRes().getServerConfig().clientBodySizeLimit)) {
       LOG_DEBUG("Client bodysize limit", client.getRes().getServerConfig().clientBodySizeLimit);
       throw httpPayload(client, "Client body size limit exceeded for client fd:", client.getFd());
     }
@@ -240,8 +237,7 @@ ServerConfig ParseState::chooseServerConfig(Client& client) {
 
 void ParseState::buildPath(Client& client) {
   LOG_TRACE("Building path for client fd:", client.getFd());
-  std::shared_ptr<ProcessTreeBuilder> ptb =
-    std::make_shared<ProcessTreeBuilder>(client, client.getRes().getServerConfig());
+  std::shared_ptr<ProcessTreeBuilder> ptb = std::make_shared<ProcessTreeBuilder>(client, client.getRes().getServerConfig());
   client.getRes().setReqURI(client.getReq().getReqURI());
   root = ptb->buildPathTree();
   root->process(client);

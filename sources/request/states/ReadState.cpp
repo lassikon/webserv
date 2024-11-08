@@ -9,7 +9,7 @@ void ReadState::execute(Client& client) {
   nbytes = read(client.getReadFd(), buffer.data(), buffer.size());
   client.setReadNBytes(nbytes + client.getReadNBytes());
   if (nbytes == -1) {
-    LOG_ERROR("Failed to read from client fd:", client.getFd(), IException::expandErrno(), "(", errno, ")");
+    LOG_ERROR("Failed to read from client fd:", client.getFd(), IException::expandErrno());
     client.setCloseConnection(true);
     return;
   }
@@ -50,8 +50,7 @@ void ReadState::ifCRLF(Client& client) {
   }
   LOG_TRACE("Finding CRLF");
   std::vector<char> clrf = {'\r', '\n', '\r', '\n'};
-  auto pos =
-    std::search(client.getReadBuf()->begin(), client.getReadBuf()->end(), clrf.begin(), clrf.end());
+  auto pos = std::search(client.getReadBuf()->begin(), client.getReadBuf()->end(), clrf.begin(), clrf.end());
   if (pos != client.getReadBuf()->end()) {
     LOG_TRACE("CRLF found");
     LOG_DEBUG("Read curr:", client.getReadCurr());
