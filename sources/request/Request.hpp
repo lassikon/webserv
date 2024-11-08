@@ -1,14 +1,11 @@
 #pragma once
 
-#include <iostream>
-#include <map>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <vector>
-
 #include <Logger.hpp>
 #include <Utility.hpp>
+
+#include <map>
+#include <string>
+#include <vector>
 
 class Request {
  private:
@@ -34,7 +31,6 @@ class Request {
   std::map<std::string, std::string> getHeaders(void) const { return reqHeaders; }
   std::vector<char> getBody(void) const { return reqBody; }
   size_t getContentLength(void) const;
-  
 
  public:  // setters
   void setMethod(std::string method) { reqMethod = method; }

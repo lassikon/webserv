@@ -6,8 +6,8 @@
 
 #include <ServeDirectoryListingAction.hpp>
 #include <ServeFileAction.hpp>
-#include <ServeRedirectAction.hpp>
 #include <ServeQueryAction.hpp>
+#include <ServeRedirectAction.hpp>
 
 #include <sys/stat.h>
 

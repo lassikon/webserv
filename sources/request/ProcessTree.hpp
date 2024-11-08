@@ -3,7 +3,6 @@
 #include <IServeAction.hpp>
 #include <Logger.hpp>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <string>
 
@@ -12,8 +11,7 @@ class Client;
 class ProcessTree {
  public:
   using Validate = std::function<bool(std::string& path)>;
-  ProcessTree(Validate validate, std::shared_ptr<ProcessTree> trueBranch,
-              std::shared_ptr<ProcessTree> falseBranch);
+  ProcessTree(Validate validate, std::shared_ptr<ProcessTree> trueBranch, std::shared_ptr<ProcessTree> falseBranch);
   ProcessTree(std::shared_ptr<IServeAction> action);
   ProcessTree(int statusCode);
   ~ProcessTree();
@@ -25,5 +23,7 @@ class ProcessTree {
   std::shared_ptr<ProcessTree> falseBranch = nullptr;
   std::shared_ptr<IServeAction> action = nullptr;
   int statusCode = 0;
+
+ private:
   void thorwError(Client& client);
 };

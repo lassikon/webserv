@@ -35,13 +35,14 @@ std::vector<char> Utility::readFile(std::string& path) {
 }
 
 std::filesystem::path Utility::getExePath(std::filesystem::path& path) {
-  std::filesystem::path currentPath = std::filesystem::current_path();
-  std::filesystem::path exePath = currentPath / "webserv";
-  if (!std::filesystem::exists(exePath)) {
+  namespace fs = std::filesystem;
+  fs::path currentPath = fs::current_path();
+  fs::path exePath = currentPath / "webserv";
+  if (!fs::exists(exePath)) {
     LOG_ERROR("Parse: Could not find executable at ", exePath);
     return (path);
   }
-  path = std::filesystem::canonical(exePath).parent_path();
+  path = fs::canonical(exePath).parent_path();
   return (path);
 }
 
@@ -173,10 +174,6 @@ bool Utility::getPid(int clientFd) {
   return -1;
 }
 
-bool Utility::signalReceived(void) noexcept {
-  return g_ExitStatus == 0 ? false : true;
-}
-
 size_t Utility::convertSizetoBytes(std::string size) {
   LOG_DEBUG("Client bodysize limit", size);
   size_t bytes = 0;
@@ -220,4 +217,41 @@ bool Utility::getLineVectoStr(std::vector<char>& buffer, std::string& line, size
     return true;
   }
   return false;
+}
+
+bool Utility::signalReceived(void) noexcept {
+  return g_ExitStatus == 0 ? false : true;
+}
+
+bool Utility::isRegularFile(const std::string& path) {
+  namespace fs = std::filesystem;
+  if (!fs::exists(path) || !fs::is_regular_file(path)) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+bool Utility::hasExecPerm(const std::string& path) {
+  namespace fs = std::filesystem;
+  fs::path p(path);
+  fs::perms perms = fs::status(p).permissions();
+  if ((perms & fs::perms::owner_exec) == fs::perms::none || (perms & fs::perms::group_exec) == fs::perms::none ||
+      (perms & fs::perms::others_exec) == fs::perms::none) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+bool Utility::hasReadPerm(const std::string& path) {
+  namespace fs = std::filesystem;
+  fs::path p(path);
+  fs::perms perms = fs::status(p).permissions();
+  if ((perms & fs::perms::owner_read) == fs::perms::none || (perms & fs::perms::group_read) == fs::perms::none ||
+      (perms & fs::perms::others_read) == fs::perms::none) {
+    return false;
+  } else {
+    return true;
+  }
 }

@@ -7,23 +7,21 @@ void ServeFileAction::execute(Client& client) {
   std::string path = client.getRes().getReqURI();
   client.getRes().setResStatusCode(200);
   client.getRes().setResStatusMessage("OK");
-  ifCookie(client, path);
+  checkSetCookie(client, path);
   std::vector<char> ibody = Utility::readFile(path);
   client.getRes().setResBody(ibody);
-  std::string ext = path.substr(path.find_last_of(".") + 1);
-  std::string mimeType = Utility::getMimeType(ext);
+  std::string fileExt = path.substr(path.find_last_of(".") + 1);
+  std::string mimeType = Utility::getMimeType(fileExt);
   client.getRes().addHeader("Content-Type", mimeType);
   client.getRes().addHeader("Content-Length", std::to_string(ibody.size()));
   client.getRes().addHeader("Connection", "keep-alive");
   client.getRes().addHeader("Connection", client.getReq().getHeaders()["Connection"]);
 }
 
-void ServeFileAction::ifCookie(Client& client, std::string& path) {
-  if (isIndexOrDefaultFile(client) == true) {
-    if (!isCookieFound(client, path)) {
-      LOG_TRACE("Setting cookie");
-      client.getRes().addHeader("Set-Cookie", client.getClientSession().setSessionCookie());
-    }
+void ServeFileAction::checkSetCookie(Client& client, std::string& path) {
+  if (isIndexOrDefaultFile(client) == true && !isCookieFound(client, path)) {
+    LOG_TRACE("Setting cookie");
+    client.getRes().addHeader("Set-Cookie", client.getClientSession().setSessionCookie());
   }
 }
 
@@ -31,12 +29,11 @@ bool ServeFileAction::isCookieFound(Client& client, std::string& path) {
   if (client.getReq().getHeaders().find("Cookie") != client.getReq().getHeaders().end()) {
     LOG_DEBUG("Cookie found:", client.getReq().getHeaders()["Cookie"]);
     if (client.getClientSession().isSessionCookie(client.getReq().getHeaders()["Cookie"]) == true) {
-      std::filesystem::path p(path);
-      path = p.parent_path().string() + "/welcomeBack.html";
-      if (!isExist(path)) {
+      path = std::filesystem::path(path).parent_path().string() + "/welcomeBack.html";
+      if (!Utility::isRegularFile(path)) {
         throw httpNotFound(client, "HTTP Error 404 - Not Found");
       }
-      if (!isPerm(path)) {
+      if (!Utility::hasReadPerm(path)) {
         throw httpForbidden(client, "HTTP Error 403 - Forbidden");
       }
     } else {
@@ -44,36 +41,17 @@ bool ServeFileAction::isCookieFound(Client& client, std::string& path) {
       client.getRes().addHeader("Set-Cookie", client.getClientSession().setSessionCookie());
     }
     return true;
+  } else {
+    return false;
   }
-  return false;
 }
 
 bool ServeFileAction::isIndexOrDefaultFile(Client& client) {
   std::string path = client.getRes().getReqURI();
-  std::filesystem::path p(path);
-  // if (p.filename().string() == "index.html" || p.filename().string() == "index.htm") {
-  //   return true;
-  // }
   for (auto& defFile : client.getRes().getRouteConfig().defaultFile) {
-    if (p.filename().string() == defFile) {
+    if (std::filesystem::path(path).filename().string() == defFile) {
       return true;
     }
   }
   return false;
-}
-
-bool ServeFileAction::isExist(std::string path) const {
-  struct stat s;
-  if (!stat(path.c_str(), &s) && S_ISREG(s.st_mode)) {
-    return true;
-  }
-  return false;
-}
-
-bool ServeFileAction::isPerm(std::string path) const {
-  if (!access(path.c_str(), R_OK)) {
-    return true;
-  }
-  return false;
-  ;
 }

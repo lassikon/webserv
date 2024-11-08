@@ -15,7 +15,7 @@ size_t Request::getContentLength(void) const {
   try {
     return std::stoi(it->second);
   } catch (std::exception& e) {
-    LOG_ERROR("Failed to convert Content-Length to int:", e.what());
+    LOG_ERROR("Failed to convert Content-Length to int:", e.what(), IException::expandErrno());
     return 0;
   }
 }

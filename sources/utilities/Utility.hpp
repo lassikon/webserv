@@ -43,12 +43,14 @@ class Utility {
 
   static bool signalReceived(void) noexcept;
 
+  static bool hasExecPerm(const std::string& path);
+  static bool hasReadPerm(const std::string& path);
+  static bool isRegularFile(const std::string& path);
+
   static bool getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr, size_t& end);
   void isValidFile(mode_t mode, int permission, const std::string& file, Client& client) const;
 
-  template <class T> static std::string getConstructor(const T& object) {
-    return getClassName(object) + " constructor called";
-  };
+  template <class T> static std::string getConstructor(const T& object) { return getClassName(object) + " constructor called"; };
 
   template <class T> static std::string getDeconstructor(const T& object) {
     return getClassName(object) + " deconstructor called";

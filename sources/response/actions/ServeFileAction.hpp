@@ -4,12 +4,11 @@
 #include <Logger.hpp>
 
 class Client;
+
 class ServeFileAction : public IServeAction {
  private:
   bool isIndexOrDefaultFile(Client& client);
-  bool isExist(std::string path) const ;
-  bool isPerm(std::string path) const;
-  void ifCookie(Client& client, std::string& path);
+  void checkSetCookie(Client& client, std::string& path);
   bool isCookieFound(Client& client, std::string& path);
 
  public:

@@ -5,6 +5,7 @@
 #include <UrlEncoder.hpp>
 
 class Client;
+
 class ServeQueryAction : public IServeAction {
  public:
   ServeQueryAction() = default;

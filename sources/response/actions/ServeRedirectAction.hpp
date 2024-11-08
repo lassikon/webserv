@@ -4,6 +4,7 @@
 #include <Logger.hpp>
 
 class Client;
+
 class ServeRedirectAction : public IServeAction {
  public:
   ServeRedirectAction() = default;
