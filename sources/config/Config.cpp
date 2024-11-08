@@ -2,8 +2,8 @@
 
 int Config::_lineNumber = 0;
 
-Config::Config(std::unique_ptr<IDirectiveSetter> serverDirective,
-               std::unique_ptr<IDirectiveSetter> routeDirective, std::string configFilePath)
+Config::Config(std::unique_ptr<IDirectiveSetter> serverDirective, std::unique_ptr<IDirectiveSetter> routeDirective,
+               std::string configFilePath)
     : _configFilePath(configFilePath),
       _serverDirective(std::move(serverDirective)),
       _routeDirective(std::move(routeDirective)) {
@@ -61,7 +61,7 @@ void Config::parseServerBlock(std::stringstream& configFile) {
       return;
     } else
       LOG_WARN("Parse: Invalid directive,", _line, " in server block at line", _lineNumber);
-      _pos = configFile.tellg();
+    _pos = configFile.tellg();
   }
 }
 
@@ -95,7 +95,7 @@ void Config::populateServer(ServerConfig& serverConfig, std::size_t& pos) {
   value = Utility::trimWhitespaces(value);
   try {
     _serverDirective->handleDirective(&serverConfig, key, value, _lineNumber);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     LOG_ERROR("Error populating server information,", e.what(), IException::expandErrno());
   }
 }
@@ -109,7 +109,7 @@ void Config::populateRoute(RouteConfig& routeConfig, std::size_t& pos) {
   value = Utility::trimWhitespaces(value);
   try {
     _routeDirective->handleDirective(&routeConfig, key, value, _lineNumber);
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     LOG_ERROR("Error populating route information,", e.what(), IException::expandErrno());
   }
 }
@@ -124,7 +124,8 @@ void Config::addServerToMap(ServerConfig& serverConfig) {
   }
   for (auto& server : _servers) {
     if (server.second.port == serverConfig.port && server.second.serverName == serverConfig.serverName) {
-      LOG_WARN("Parse: Server with port  ", serverConfig.port, " and servername", serverConfig.serverName, " already exists");
+      LOG_WARN("Parse: Server with port  ", serverConfig.port, " and servername", serverConfig.serverName,
+               " already exists");
       return;
     }
   }
@@ -155,7 +156,7 @@ void Config::closeRouteBlock(std::stringstream& configFile) {
 }
 
 bool Config::callGetLine(std::stringstream& configFile) {
-  if (!std::getline(configFile, _line)) // handle unexpected EOF
+  if (!std::getline(configFile, _line))  // handle unexpected EOF
     return false;
   _line = Utility::trimComments(_line);
   _line = Utility::trimWhitespaces(_line);

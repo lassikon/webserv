@@ -58,8 +58,8 @@ class Logger {
   // template function called by macros defined at the bottom, receives all passed arguments
   // checks logging level, can log entries into separate file if enabled
   template <typename... Args>
-  static void Log(logLevel level, const char* title, const char* color, std::ostream& console,
-                  std::string fileName, const char* funcName, int lineNbr, Args&&... args) {
+  static void Log(logLevel level, const char* title, const char* color, std::ostream& console, std::string fileName,
+                  const char* funcName, int lineNbr, Args&&... args) {
     if (level < currentLevel) {
       return;
     } else {
@@ -76,8 +76,7 @@ class Logger {
 #define LOGDATA __FILE__, __func__, __LINE__
 
 // defined macros to call each level of logging, does not need to be instantiated
-// takes primitive variadic arguments (string, int, ...)
-// does not support complex data types like std::vector or std::map
+// takes primitive variadic arguments (string, int, ...) does not support complex data types like std::vector
 // example: LOG_ERROR("Failed to listen on socket fd:", sockFd);
 #define LOG_TRACE(...) (Logger::Log(logLevel::Trace, "TRACE", BLUE, std::cout, LOGDATA, __VA_ARGS__))
 #define LOG_DEBUG(...) (Logger::Log(logLevel::Debug, "DEBUG", GREEN, std::cout, LOGDATA, __VA_ARGS__))

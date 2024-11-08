@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fcntl.h>
 #include <CgiHandler.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
@@ -25,10 +24,11 @@ class Utility {
   static std::vector<char> readFile(std::string& path);
   static std::filesystem::path getExePath(std::filesystem::path& path);
   static std::string getMimeType(std::string& extension);
-  static bool signalReceived(void) noexcept;
+
   static size_t convertSizetoBytes(std::string size);
   static void setNonBlocking(int& fd);
   static void setCloseOnExec(int& fd);
+
   static bool isCgiFd(int fd);
   static int getClientFdFromCgiParams(int fd);
   static int getOutReadFdFromClientFd(int fd);
@@ -40,9 +40,10 @@ class Utility {
   static bool getIsExited(int fd);
   static void setIsExited(int fd, bool isExited);
   static bool getPid(int clientFd);
-  
-  static bool getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr,
-                              size_t& end);
+
+  static bool signalReceived(void) noexcept;
+
+  static bool getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr, size_t& end);
   void isValidFile(mode_t mode, int permission, const std::string& file, Client& client) const;
 
   template <class T> static std::string getConstructor(const T& object) {

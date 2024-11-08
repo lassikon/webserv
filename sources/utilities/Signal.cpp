@@ -11,7 +11,7 @@ void Signal::createSigMap(void) noexcept {
 }
 
 void Signal::signalHandler(int sigNum) noexcept {
-  std::cout << std::endl;
+  std::cout << std::endl;  // creates clear separation for ^C
   LOG_INFO("Server interrupted by signal:", sigNum, sigmap.at(sigNum));
   g_ExitStatus = (int)RuntimeError::Signal + sigNum;
   for (auto& cgiParam : g_CgiParams) {
@@ -20,13 +20,13 @@ void Signal::signalHandler(int sigNum) noexcept {
 }
 
 void Signal::sigPipeHandler(int sigNum) noexcept {
-  (void)sigNum;
   LOG_DEBUG("SIGPIPE received");
+  (void)sigNum;
 }
 
 void Signal::sigChildHandler(int sigNum) noexcept {
-  (void)sigNum;
   LOG_DEBUG("Child process exited");
+  (void)sigNum;
 }
 
 void Signal::trackSignals(void) noexcept {
@@ -36,6 +36,6 @@ void Signal::trackSignals(void) noexcept {
   signal(SIGTERM, signalHandler);
   signal(SIGKILL, signalHandler);
   signal(SIGPIPE, sigPipeHandler);
-  //signal(SIGCHLD, sigChildHandler);
+  signal(SIGCHLD, sigChildHandler);
   createSigMap();
 }

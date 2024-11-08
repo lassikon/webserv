@@ -3,7 +3,6 @@
 #include <CgiHandler.hpp>
 #include <Global.hpp>
 #include <Logger.hpp>
-#include <RuntimeException.hpp>
 #include <Typedef.hpp>
 
 #include <csignal>

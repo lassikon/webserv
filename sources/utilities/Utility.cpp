@@ -1,7 +1,5 @@
 #include <Utility.hpp>
 
-#include <NetworkException.hpp>
-
 static std::map<std::string, std::string> mimeTypes = {
   {"html", "text/html"}, {"css", "text/css"},   {"js", "application/javascript"},
   {"png", "image/png"},  {"jpg", "image/jpeg"}, {"jpeg", "image/jpeg"},
@@ -31,8 +29,7 @@ std::vector<char> Utility::readFile(std::string& path) {
     LOG_ERROR("Failed to open file:", path);
     return std::vector<char>();
   }
-  std::vector<char> content((std::istreambuf_iterator<char>(file)),
-                            std::istreambuf_iterator<char>());
+  std::vector<char> content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
   file.close();
   return content;
 }
@@ -167,7 +164,7 @@ void Utility::setIsExited(int fd, bool isExited) {
   }
 }
 
-bool Utility::getPid(int clientFd){
+bool Utility::getPid(int clientFd) {
   for (auto& cgi : g_CgiParams) {
     if (cgi.clientFd == clientFd) {
       return cgi.pid;
@@ -181,7 +178,7 @@ bool Utility::signalReceived(void) noexcept {
 }
 
 size_t Utility::convertSizetoBytes(std::string size) {
-  LOG_DEBUG("utility Client bodysize limit", size);
+  LOG_DEBUG("Client bodysize limit", size);
   size_t bytes = 0;
   size_t multiplier = 1;
   if (size.back() == 'k' || size.back() == 'K') {
@@ -195,20 +192,17 @@ size_t Utility::convertSizetoBytes(std::string size) {
     size.pop_back();
   }
   try {
-    LOG_DEBUG("multiplier", multiplier);  
+    LOG_DEBUG("Using multiplier", multiplier);
     bytes = std::stoull(size) * multiplier;
   } catch (const std::invalid_argument&) {
-    // Handle invalid argument
-    bytes = 0;
+    bytes = 0;  // Handle invalid argument
   } catch (const std::out_of_range&) {
-    // Handle out of range
-    bytes = SIZE_MAX;
+    bytes = SIZE_MAX;  // Handle out of range
   }
   return bytes;
 }
 
-bool Utility::getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr,
-                              size_t& end) {
+bool Utility::getLineVectoStr(std::vector<char>& buffer, std::string& line, size_t& curr, size_t& end) {
   std::string str;
   while (curr != end) {
     if (buffer[curr] == '\n') {

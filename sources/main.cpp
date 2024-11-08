@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   RuntimeException::tryCatch(&ServerManager::configServers, &server, config);
   if (server.getServers().empty()) {
     LOG_FATAL(ERR_MSG_SERVER, config.getFilePath());
-    return (int)RuntimeError::Config;
+    return (int)RuntimeError::Server;
   }
   RuntimeException::tryCatch(&ServerManager::runServers, &server);
   return g_ExitStatus;

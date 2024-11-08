@@ -2,17 +2,16 @@
 #include <Client.hpp>
 #include <NetworkException.hpp>
 
-CgiHandler::CgiHandler(void) { LOG_TRACE(Utility::getConstructor(*this)); }
+CgiHandler::CgiHandler(void) {
+  LOG_TRACE(Utility::getConstructor(*this));
+}
 
 void CgiHandler::generateEnvpVector(Client& client) {
   envps.push_back(std::string("REQUEST_METHOD=") + client.getReq().getMethod());
-  envps.push_back(std::string("SCRIPT_FILENAME=") +
-                  client.getRes().getReqURI());
+  envps.push_back(std::string("SCRIPT_FILENAME=") + client.getRes().getReqURI());
   envps.push_back(std::string("PATH_INFO=") + client.getRes().getReqURI());
-  envps.push_back(std::string("CONTENT_TYPE=") +
-                  client.getReq().getHeaders()["Content-Type"]);
-  envps.push_back(std::string("CONTENT_LENGTH=") +
-                  std::to_string(client.getReq().getBodySize()));
+  envps.push_back(std::string("CONTENT_TYPE=") + client.getReq().getHeaders()["Content-Type"]);
+  envps.push_back(std::string("CONTENT_LENGTH=") + std::to_string(client.getReq().getBodySize()));
   envps.push_back(std::string("QUERY_STRING=") + client.getReq().getQuery());
   envps.push_back(std::string("HTTP_COOKIE=") + "FILLME");
 }
@@ -48,8 +47,7 @@ void CgiHandler::killAllChildPids(void) {
   }
 }
 
-std::vector<char*> CgiHandler::convertStringToChar(
-    std::vector<std::string>& vec) {
+std::vector<char*> CgiHandler::convertStringToChar(std::vector<std::string>& vec) {
   std::vector<char*> vector{};
   for (auto& string : vec) {
     vector.push_back(&string.front());

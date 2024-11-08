@@ -3,9 +3,8 @@
 #include <Config.hpp>
 #include <Logger.hpp>
 #include <Utility.hpp>
-#include <iostream>
+
 #include <map>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -15,8 +14,7 @@ class Response {
   RouteConfig routeConfig;
   ServerConfig serverConfig;
 
-  // updated by ProcessTreeBuilder to full path
-  std::string reqURI; 
+  std::string reqURI;  // updated by ProcessTreeBuilder to full path
 
  private:  // for response
   int resStatusCode = 0;
