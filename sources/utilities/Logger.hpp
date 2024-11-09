@@ -11,7 +11,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
 enum class logLevel { Trace, Debug, Info, Announce, Warn, Error, Fatal };
