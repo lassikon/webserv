@@ -118,6 +118,7 @@ bool ProcessTreeBuilder::isDirectory(std::string& path) {
 //changes reqURI to full path
 bool ProcessTreeBuilder::isPathExist(std::string& path) {
   LOG_TRACE("Checking if path exists for:");
+  path = UrlEncoder::decode(path);
   LOG_TRACE("Requested path:", path);
   if (path.front() == '/') {
     if (path.size() > 1) {
